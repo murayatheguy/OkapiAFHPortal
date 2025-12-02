@@ -1,141 +1,305 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { Navbar } from "@/components/layout/navbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, MapPin, CheckCircle2, ShieldCheck, ArrowRight, Star } from "lucide-react";
-import { HERO_IMAGE, MOCK_FACILITIES } from "@/lib/mock-data";
-import { FacilityCard } from "@/components/facility-card";
-import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchValue, setSearchValue] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
+    setLocation(`/search?q=${encodeURIComponent(searchValue)}`);
   };
 
-  const featuredFacilities = MOCK_FACILITIES.slice(0, 3);
-
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <Navbar />
+    <div className="min-h-screen" style={{ 
+      fontFamily: "'Cormorant', serif",
+      backgroundColor: '#0d1a14'
+    }}>
+      {/* Subtle texture overlay */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-30"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Header */}
+      <header className="relative z-50 px-8 md:px-16 py-8 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span 
+            className="text-3xl md:text-4xl tracking-wide"
+            style={{ 
+              fontFamily: "'Cormorant', serif",
+              fontWeight: 300,
+              color: '#c9a962',
+              letterSpacing: '0.15em'
+            }}
+          >
+            OKAPI
+          </span>
+          <span 
+            className="text-3xl md:text-4xl tracking-wide"
+            style={{ 
+              fontFamily: "'Cormorant', serif",
+              fontWeight: 300,
+              fontStyle: 'italic',
+              color: '#e8e4dc',
+              letterSpacing: '0.05em'
+            }}
+          >
+            Care
+          </span>
+        </div>
+        
+        {/* Subtle decorative line */}
+        <div className="hidden md:block flex-1 mx-12 h-px bg-gradient-to-r from-transparent via-amber-700/30 to-transparent" />
+        
+        <nav className="hidden md:flex items-center gap-10">
+          <a href="/search" className="text-stone-400 hover:text-amber-200 transition-colors text-sm tracking-widest uppercase" style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300 }}>
+            Find Care
+          </a>
+          <a href="/owner" className="text-stone-400 hover:text-amber-200 transition-colors text-sm tracking-widest uppercase" style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300 }}>
+            For Owners
+          </a>
+        </nav>
+      </header>
 
       {/* Hero Section */}
-      <section className="relative h-[600px] w-full overflow-hidden flex items-center">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={HERO_IMAGE} 
-            alt="Elderly care" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-        </div>
-
-        <div className="container relative z-10 mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-2xl text-white space-y-6"
-          >
-            <h1 className="text-4xl md:text-6xl font-serif font-bold leading-tight">
-              Find the perfect care <br/>
-              <span className="text-primary-foreground/90">for your loved one.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/80 max-w-lg font-light">
-              Connect with trusted Adult Family Homes in Washington State. Verified reviews, real-time availability, and certified staff.
+      <section className="relative min-h-[85vh] flex items-center">
+        {/* Gradient orbs for depth */}
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-emerald-900/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-amber-900/10 rounded-full blur-3xl" />
+        
+        {/* Content */}
+        <div className="relative z-10 w-full px-8 md:px-16 lg:px-24">
+          <div className="max-w-4xl mx-auto text-center">
+            
+            {/* Refined pre-title */}
+            <p 
+              className="mb-8 tracking-[0.4em] uppercase"
+              style={{ 
+                fontFamily: "'Jost', sans-serif",
+                fontWeight: 300,
+                fontSize: '0.75rem',
+                color: '#c9a962'
+              }}
+              data-testid="text-tagline"
+            >
+              Washington State's Premier Care Network
             </p>
 
-            <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20 max-w-lg mt-8">
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative flex-1">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/70" />
-                  <Input 
-                    type="text" 
-                    placeholder="Zip Code, City, or County" 
-                    className="pl-10 bg-white/90 border-none text-black placeholder:text-gray-500 h-12 text-base focus-visible:ring-0"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+            {/* Main headline */}
+            <h1 
+              className="mb-8 leading-[1.05]"
+              style={{ 
+                fontFamily: "'Cormorant', serif",
+                fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
+                fontWeight: 300,
+                color: '#e8e4dc',
+                letterSpacing: '-0.01em'
+              }}
+              data-testid="text-headline"
+            >
+              Exceptional care,
+              <span 
+                className="block mt-2"
+                style={{ 
+                  fontStyle: 'italic',
+                  color: '#c9a962'
+                }}
+              >
+                thoughtfully curated.
+              </span>
+            </h1>
+            
+            {/* Decorative divider */}
+            <div className="flex items-center justify-center gap-4 my-10">
+              <div className="w-16 h-px bg-gradient-to-r from-transparent to-amber-700/50" />
+              <svg className="w-4 h-4 text-amber-700/60" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L9 9H2L7.5 13.5L5.5 21L12 16.5L18.5 21L16.5 13.5L22 9H15L12 2Z" />
+              </svg>
+              <div className="w-16 h-px bg-gradient-to-l from-transparent to-amber-700/50" />
+            </div>
+
+            <p 
+              className="max-w-xl mx-auto mb-14 leading-relaxed"
+              style={{ 
+                fontFamily: "'Jost', sans-serif",
+                fontWeight: 300,
+                fontSize: '1.1rem',
+                color: '#9a978f',
+                letterSpacing: '0.02em'
+              }}
+              data-testid="text-description"
+            >
+              Connect with verified Adult Family Homes offering 
+              personalized attention, certified professionals, and 
+              the dignity your loved ones deserve.
+            </p>
+
+            {/* Luxury Search Box */}
+            <div className="max-w-lg mx-auto mb-16">
+              <form onSubmit={handleSearch}>
+                <div 
+                  className="relative p-1 rounded-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(201, 169, 98, 0.3) 0%, rgba(201, 169, 98, 0.1) 50%, rgba(201, 169, 98, 0.3) 100%)'
+                  }}
+                >
+                  <div className="flex bg-[#0d1a14] rounded-sm overflow-hidden">
+                    <div className="relative flex-1">
+                      <svg 
+                        className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4"
+                        style={{ color: '#c9a962' }}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        placeholder="Enter your location"
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        className="w-full pl-14 pr-4 py-5 bg-transparent text-stone-200 placeholder-stone-600 focus:outline-none"
+                        style={{ 
+                          fontFamily: "'Jost', sans-serif",
+                          fontWeight: 300,
+                          letterSpacing: '0.05em',
+                          fontSize: '0.95rem'
+                        }}
+                        data-testid="input-search"
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      className="px-8 py-5 transition-all duration-500 hover:bg-amber-700"
+                      style={{ 
+                        fontFamily: "'Jost', sans-serif",
+                        fontWeight: 400,
+                        letterSpacing: '0.2em',
+                        fontSize: '0.75rem',
+                        color: '#0d1a14',
+                        backgroundColor: '#c9a962'
+                      }}
+                      data-testid="button-search"
+                    >
+                      DISCOVER
+                    </button>
+                  </div>
                 </div>
-                <Button size="lg" type="submit" className="h-12 px-8 font-semibold text-base shadow-lg">
-                  Search
-                </Button>
               </form>
             </div>
-            
-            <div className="flex items-center gap-6 pt-4 text-sm font-medium text-white/70">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                <span>DSHS Verified Homes</span>
+
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap justify-center gap-12">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-px h-8"
+                  style={{ backgroundColor: 'rgba(201, 169, 98, 0.3)' }}
+                />
+                <div>
+                  <p 
+                    className="text-left"
+                    style={{ 
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 300,
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.2em',
+                      color: '#c9a962'
+                    }}
+                  >
+                    DSHS VERIFIED
+                  </p>
+                  <p 
+                    style={{ 
+                      fontFamily: "'Cormorant', serif",
+                      fontWeight: 400,
+                      fontStyle: 'italic',
+                      fontSize: '0.95rem',
+                      color: '#9a978f'
+                    }}
+                  >
+                    Licensed Homes
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-amber-400" />
-                <span>Certified Caregivers</span>
+              
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-px h-8"
+                  style={{ backgroundColor: 'rgba(201, 169, 98, 0.3)' }}
+                />
+                <div>
+                  <p 
+                    className="text-left"
+                    style={{ 
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 300,
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.2em',
+                      color: '#c9a962'
+                    }}
+                  >
+                    PERSONALLY VETTED
+                  </p>
+                  <p 
+                    style={{ 
+                      fontFamily: "'Cormorant', serif",
+                      fontWeight: 400,
+                      fontStyle: 'italic',
+                      fontSize: '0.95rem',
+                      color: '#9a978f'
+                    }}
+                  >
+                    Certified Caregivers
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-px h-8"
+                  style={{ backgroundColor: 'rgba(201, 169, 98, 0.3)' }}
+                />
+                <div>
+                  <p 
+                    className="text-left"
+                    style={{ 
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 300,
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.2em',
+                      color: '#c9a962'
+                    }}
+                  >
+                    REAL-TIME
+                  </p>
+                  <p 
+                    style={{ 
+                      fontFamily: "'Cormorant', serif",
+                      fontWeight: 400,
+                      fontStyle: 'italic',
+                      fontSize: '0.95rem',
+                      color: '#9a978f'
+                    }}
+                  >
+                    Availability
+                  </p>
+                </div>
               </div>
             </div>
-          </motion.div>
+
+          </div>
         </div>
       </section>
 
-      {/* Featured Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <h2 className="text-3xl font-serif font-bold text-foreground mb-3">Top Rated Facilities</h2>
-              <p className="text-muted-foreground">Highly recommended homes with available beds near you.</p>
-            </div>
-            <Link href="/search" className="text-primary font-medium flex items-center gap-1 hover:underline">
-              View all listings <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredFacilities.map((facility) => (
-              <FacilityCard key={facility.id} facility={facility} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Value Props */}
-      <section className="py-20 border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="flex flex-col items-center text-center space-y-4 p-6">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
-                <Search className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold font-serif">Easy Search</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Filter by care needs, budget, and location to find the perfect match for your family's unique situation.
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center space-y-4 p-6">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
-                <CheckCircle2 className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold font-serif">Verified Compliance</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                We automatically sync with DSHS records to show you real-time license status and inspection history.
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center space-y-4 p-6">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-2">
-                <ShieldCheck className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-bold font-serif">Certified Staff</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Look for the Okapi Certified badge to find homes where staff training exceeds state requirements.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Bottom accent line */}
+      <div className="relative z-10 px-16">
+        <div className="h-px bg-gradient-to-r from-transparent via-amber-800/30 to-transparent" />
+      </div>
     </div>
   );
 }
