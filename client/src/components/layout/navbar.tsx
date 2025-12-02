@@ -25,9 +25,15 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden sm:inline-flex">
-            For AFH Owners
-          </Button>
+          {location !== "/owner" ? (
+             <Link href="/owner">
+               <Button variant="ghost" className="hidden sm:inline-flex">
+                 For AFH Owners
+               </Button>
+             </Link>
+          ) : (
+             <span className="text-sm font-medium text-muted-foreground">Owner Mode</span>
+          )}
           <Button>Sign In</Button>
         </div>
       </div>
