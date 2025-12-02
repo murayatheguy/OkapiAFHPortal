@@ -1,0 +1,99 @@
+Give this to your agent to enhance what you have:
+# OKAPI PORTAL ENHANCEMENTS
+
+I have a working landing page with facility listings. I need to add these features:
+
+## 1. COMPLIANCE SNAPSHOT ON FACILITY CARDS
+
+Add a small compliance section to each facility card showing:
+- License status (Active/Inactive)
+- Violations count in last 24 months
+- Last inspection date with pass/fail indicator
+
+Example:
+"License: Active • 0 Violations (24 mo) • Last Inspection: Oct 2025 ✓"
+
+This should appear below the TRUST section on each card.
+
+## 2. FACILITY DETAIL PAGE
+
+When user clicks "View Details" on a facility card, show a full detail page with:
+
+### Header Section:
+- Photo gallery (horizontal scroll or carousel)
+- Facility name
+- Address with map link
+- Trust badges (Claimed, Okapi Certified, DSHS Verified)
+- Beds available count
+- Price range
+
+### About Section:
+- Full description (2-3 paragraphs)
+- Services included (list with checkmarks):
+  - 24/7 Supervision
+  - Medication Management
+  - Meals Included
+  - Housekeeping
+  - Transportation
+  - etc.
+- Specialties: Memory Care, Hospice, etc.
+- Languages spoken
+- Visiting hours
+
+### DSHS Compliance Section (styled as official/trustworthy):
+- License number
+- License status with colored indicator (green=active)
+- Licensed since date
+- Expiration date
+- Administrator name
+- Capacity
+
+- Inspection History (list):
+  - Oct 2025: Routine - No violations ✓
+  - Oct 2024: Routine - No violations ✓
+  - Oct 2023: Routine - 1 minor violation (corrected)
+
+- Link: "View Full DSHS Report →"
+
+### Staff Credentials Section:
+- "All 4 caregivers current on required training" ✓
+- "Okapi Academy Certified Staff" badge
+- Last verified: [date]
+
+### Location Section:
+- Embedded map (Google Maps or static image)
+- Full address
+- Directions link
+
+### Contact Section (sticky on mobile):
+- Call button (prominent)
+- Message button (opens form)
+- Request Tour button (opens date picker)
+
+## 3. SEARCH FILTERS
+
+Add filter options below the search bar:
+
+Quick filter buttons (horizontal scroll on mobile):
+[Memory Care] [Hospice] [Dementia] [Medicaid] [Available Now]
+
+"More Filters" expandable section:
+- Care Needs (checkboxes): Memory Care, Hospice, Developmental, Mental Health, Respite
+- Payment Accepted (checkboxes): Medicaid, Private Pay, VA Benefits, LTC Insurance
+- Price Range: Slider from $3,000 to $10,000/mo
+- Max Distance: Slider from 5 to 50 miles
+- Only show beds available: Toggle
+
+Apply Filters button
+Clear All link
+
+## 4. MOCK DATA
+
+Update the mock facilities to include full data for the detail pages:
+- 5-10 facilities with complete information
+- Realistic inspection histories
+- Various specialties and price points
+- Mix of "Claimed" and "Unclaimed" listings
+- Mix of "Okapi Certified" and not
+
+Use Washington State cities: Seattle

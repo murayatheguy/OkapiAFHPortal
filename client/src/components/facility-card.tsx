@@ -3,7 +3,7 @@ import { Facility } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { MapPin, Phone, Calendar, CheckCircle2, ShieldCheck, AlertCircle } from "lucide-react";
+import { MapPin, Phone, Calendar, CheckCircle2, ShieldCheck, AlertCircle, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FacilityCardProps {
@@ -12,8 +12,8 @@ interface FacilityCardProps {
 
 export function FacilityCard({ facility }: FacilityCardProps) {
   return (
-    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 bg-card">
-      <div className="relative h-48 overflow-hidden">
+    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 bg-card flex flex-col h-full">
+      <div className="relative h-48 overflow-hidden shrink-0">
         <img 
           src={facility.images[0]} 
           alt={facility.name} 
@@ -40,7 +40,7 @@ export function FacilityCard({ facility }: FacilityCardProps) {
         </div>
       </div>
 
-      <CardContent className="p-5 space-y-4">
+      <CardContent className="p-5 space-y-4 flex-1">
         <div>
           <div className="flex justify-between items-start mb-1">
             <h3 className="font-serif font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors">
@@ -92,6 +92,25 @@ export function FacilityCard({ facility }: FacilityCardProps) {
                  DSHS Verified
                </div>
              </div>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-border/50">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Compliance Snapshot</p>
+          <div className="text-xs space-y-1">
+            <div className="flex items-center gap-2">
+               <span className={cn("font-medium", facility.license_status === 'Active' ? "text-green-600" : "text-amber-600")}>
+                 License: {facility.license_status}
+               </span>
+               <span className="text-muted-foreground">•</span>
+               <span className={cn(facility.violations_24m > 0 ? "text-amber-600 font-medium" : "text-muted-foreground")}>
+                 {facility.violations_24m} Violations (24 mo)
+               </span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <span>Last Inspection: {new Date(facility.last_inspection_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+              {facility.last_inspection_result === 'Pass' && <Check className="h-3 w-3 text-green-600" />}
+            </div>
           </div>
         </div>
       </CardContent>

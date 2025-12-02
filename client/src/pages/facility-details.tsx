@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { 
   MapPin, Phone, Mail, Calendar, CheckCircle2, ShieldCheck, 
-  AlertTriangle, Clock, Users, Languages, Banknote, ArrowLeft
+  AlertTriangle, Clock, Users, Languages, Banknote, ArrowLeft, ArrowRight, Check
 } from "lucide-react";
 import { 
   Carousel,
@@ -19,6 +19,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
+import mapImage from '@assets/generated_images/clean_google_maps_style_street_map_of_a_residential_neighborhood.png';
 
 export default function FacilityDetails() {
   const [match, params] = useRoute("/facility/:id");
@@ -43,7 +44,7 @@ export default function FacilityDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background font-sans pb-24 lg:pb-0">
       <Navbar />
       
       <div className="container mx-auto px-4 py-6">
@@ -66,6 +67,7 @@ export default function FacilityDetails() {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     <span>{facility.address}, {facility.city}, WA {facility.zip}</span>
+                    <a href="#" className="text-primary hover:underline text-sm ml-1">(Map)</a>
                   </div>
                 </div>
                 {facility.is_claimed && (
@@ -80,6 +82,30 @@ export default function FacilityDetails() {
                 {facility.specialties.map(spec => (
                   <Badge key={spec} variant="secondary">{spec}</Badge>
                 ))}
+                {facility.has_okapi_certified_staff && (
+                   <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
+                     <ShieldCheck className="h-3 w-3 mr-1" />
+                     Okapi Certified
+                   </Badge>
+                )}
+                {facility.is_dshs_verified && (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    DSHS Verified
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm mb-6">
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-lg">{facility.beds_available}</span> 
+                  <span className="text-muted-foreground">Beds Available</span>
+                </div>
+                <div className="h-4 w-px bg-border" />
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-lg">${facility.price_min.toLocaleString()} - ${facility.price_max.toLocaleString()}</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
               </div>
             </div>
 
@@ -110,9 +136,21 @@ export default function FacilityDetails() {
               <TabsContent value="about" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="prose max-w-none">
                   <h3 className="text-xl font-serif font-bold mb-3">About This Home</h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                     {facility.description}
                   </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-3">Services Included</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {facility.services.map(service => (
+                      <div key={service} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-600 shrink-0" />
+                        <span className="text-sm text-muted-foreground">{service}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -142,8 +180,8 @@ export default function FacilityDetails() {
               </TabsContent>
 
               <TabsContent value="compliance" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader>
+                <Card className="border-l-4 border-l-primary shadow-sm overflow-hidden">
+                  <CardHeader className="bg-muted/20 pb-4">
                     <CardTitle className="flex items-center gap-2">
                       <ShieldCheck className="h-5 w-5 text-primary" />
                       DSHS Compliance Record
@@ -152,47 +190,62 @@ export default function FacilityDetails() {
                       Data automatically synced from Department of Social and Health Services
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">License Status</p>
-                        <p className="font-medium text-green-600 flex items-center gap-1">
-                          <CheckCircle2 className="h-4 w-4" />
-                          {facility.license_status}
-                        </p>
+                        <p className="text-sm text-muted-foreground mb-1">License Status</p>
+                        <div className="flex items-center gap-2">
+                          <div className={cn("h-2.5 w-2.5 rounded-full", facility.license_status === 'Active' ? "bg-green-500" : "bg-amber-500")} />
+                          <span className="font-medium">{facility.license_status}</span>
+                        </div>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">License Number</p>
-                        <p className="font-medium">{facility.license_number}</p>
+                        <p className="text-sm text-muted-foreground mb-1">License Number</p>
+                        <p className="font-medium font-mono text-sm">{facility.license_number}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Licensed Since</p>
-                        <p className="font-medium">{facility.licensed_since}</p>
+                        <p className="text-sm text-muted-foreground mb-1">Licensed Since</p>
+                        <p className="font-medium">{new Date(facility.licensed_since).toLocaleDateString()}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Last Inspection</p>
-                        <p className="font-medium">{facility.last_inspection}</p>
+                        <p className="text-sm text-muted-foreground mb-1">Capacity</p>
+                        <p className="font-medium">{facility.capacity} Residents</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-sm text-muted-foreground mb-1">Administrator</p>
+                        <p className="font-medium">{facility.administrator}</p>
                       </div>
                     </div>
                     
                     <Separator />
                     
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Violations (Last 24 Months)</p>
-                      <div className="flex items-center gap-2">
-                         {facility.violations_24m === 0 ? (
-                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">0 Violations</Badge>
-                         ) : (
-                           <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                             <AlertTriangle className="h-3 w-3 mr-1" />
-                             {facility.violations_24m} Violation{facility.violations_24m > 1 ? 's' : ''}
-                           </Badge>
-                         )}
+                      <h4 className="font-semibold mb-4">Inspection History</h4>
+                      <div className="space-y-3">
+                        {facility.inspection_history.map((inspection, idx) => (
+                          <div key={idx} className="flex items-start gap-3 text-sm">
+                            <div className="mt-0.5">
+                              {inspection.result.includes("No violations") || inspection.violations === 0 ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {new Date(inspection.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}: {inspection.type}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {inspection.result}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     
-                    <Button variant="link" className="px-0 text-primary h-auto">
-                      View Full DSHS Report &rarr;
+                    <Button variant="link" className="px-0 text-primary h-auto group">
+                      View Full DSHS Report <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </CardContent>
                 </Card>
@@ -211,16 +264,21 @@ export default function FacilityDetails() {
                    </div>
                    
                    <div className="space-y-4">
+                     <div className="flex items-center gap-2 text-green-700 font-medium bg-green-50 p-3 rounded-lg border border-green-100">
+                        <CheckCircle2 className="h-5 w-5" />
+                        All caregivers current on required training
+                     </div>
+
                      <div className="flex items-center justify-between p-4 bg-card rounded-lg border shadow-sm">
-                        <span className="font-medium">Administrator</span>
-                        <span>{facility.administrator}</span>
+                        <span className="font-medium">Last Verified</span>
+                        <span className="text-muted-foreground">{new Date().toLocaleDateString()}</span>
                      </div>
                      
                      {facility.has_okapi_certified_staff && (
                        <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-800">
                          <ShieldCheck className="h-6 w-6 text-emerald-600" />
                          <div>
-                           <p className="font-bold">Okapi Certified Staff</p>
+                           <p className="font-bold">Okapi Academy Certified Staff</p>
                            <p className="text-sm opacity-90">Caregivers at this home have completed advanced training through Okapi Academy.</p>
                          </div>
                        </div>
@@ -276,12 +334,24 @@ export default function FacilityDetails() {
                       </CardContent>
                     </Card>
                  </div>
+
+                 <div>
+                   <h3 className="text-xl font-serif font-bold mb-4">Location</h3>
+                   <div className="rounded-xl overflow-hidden border border-border h-[300px] bg-muted relative group">
+                     <img src={mapImage} alt="Map location" className="w-full h-full object-cover" />
+                     <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur p-3 rounded-lg shadow-sm border border-border">
+                       <p className="font-medium text-sm">{facility.address}</p>
+                       <p className="text-xs text-muted-foreground">{facility.city}, WA {facility.zip}</p>
+                       <a href="#" className="text-xs text-primary font-medium hover:underline mt-1 block">Get Directions</a>
+                     </div>
+                   </div>
+                 </div>
               </TabsContent>
             </Tabs>
           </div>
 
           {/* Right Column - Sticky Sidebar */}
-          <div className="relative">
+          <div className="relative hidden lg:block">
             <div className="sticky top-24 space-y-6">
               <Card className="border-primary/20 shadow-lg">
                 <CardHeader className="pb-4 border-b bg-muted/20">
@@ -301,7 +371,7 @@ export default function FacilityDetails() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-6">
-                  <Button className="w-full h-12 text-lg font-semibold" size="lg">
+                  <Button className="w-full h-12 text-lg font-semibold shadow-sm" size="lg">
                     Schedule a Tour
                   </Button>
                   <Button variant="outline" className="w-full">
@@ -327,6 +397,17 @@ export default function FacilityDetails() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 lg:hidden z-50 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <Button variant="outline" className="flex-1">
+          <Mail className="h-4 w-4 mr-2" />
+          Message
+        </Button>
+        <Button className="flex-1 shadow-md">
+          Schedule Tour
+        </Button>
       </div>
     </div>
   );
