@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Facility } from "@/lib/mock-data";
+import type { Facility } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -11,18 +11,23 @@ interface FacilityCardProps {
 }
 
 export function FacilityCard({ facility }: FacilityCardProps) {
+  const hasImage = facility.images && facility.images.length > 0;
+  const safeImages = facility.images || [];
+  
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 bg-card flex flex-col h-full">
-      <div className="relative h-48 overflow-hidden shrink-0">
-        <img 
-          src={facility.images[0]} 
-          alt={facility.name} 
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+      <div className="relative h-48 overflow-hidden shrink-0 bg-muted/30">
+        {hasImage && (
+          <img 
+            src={safeImages[0]} 
+            alt={facility.name} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {facility.beds_available > 0 ? (
+          {facility.availableBeds > 0 ? (
             <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white border-none shadow-sm">
-              {facility.beds_available} Bed{facility.beds_available > 1 ? 's' : ''} Available
+              {facility.availableBeds} Bed{facility.availableBeds > 1 ? 's' : ''} Available
             </Badge>
           ) : (
             <Badge variant="secondary" className="bg-muted/80 backdrop-blur text-muted-foreground">
@@ -35,7 +40,7 @@ export function FacilityCard({ facility }: FacilityCardProps) {
             <MapPin className="h-3.5 w-3.5" />
             <span>{facility.city}, WA</span>
             <span className="mx-1">•</span>
-            <span>{facility.zip}</span>
+            <span>{facility.zipCode}</span>
           </div>
         </div>
       </div>
@@ -46,51 +51,49 @@ export function FacilityCard({ facility }: FacilityCardProps) {
             <h3 className="font-serif font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors">
               {facility.name}
             </h3>
-            {facility.is_claimed && (
-              <div className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                <CheckCircle2 className="h-3 w-3" />
-                Claimed
-              </div>
-            )}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-            {facility.description}
+            {facility.description || "Quality care in a comfortable, home-like setting."}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {facility.specialties.slice(0, 3).map((spec) => (
-            <Badge key={spec} variant="outline" className="text-xs font-normal bg-muted/30">
-              {spec}
-            </Badge>
-          ))}
-          {facility.specialties.length > 3 && (
-            <Badge variant="outline" className="text-xs font-normal bg-muted/30">
-              +{facility.specialties.length - 3}
-            </Badge>
-          )}
-        </div>
+        {facility.specialties && facility.specialties.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {facility.specialties.slice(0, 3).map((spec) => (
+              <Badge key={spec} variant="outline" className="text-xs font-normal bg-muted/30">
+                {spec}
+              </Badge>
+            ))}
+            {facility.specialties.length > 3 && (
+              <Badge variant="outline" className="text-xs font-normal bg-muted/30">
+                +{facility.specialties.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Price</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Capacity</p>
             <p className="font-medium text-sm">
-              ${facility.price_min.toLocaleString()} - ${facility.price_max.toLocaleString()}<span className="text-xs text-muted-foreground">/mo</span>
+              {facility.capacity} beds
             </p>
           </div>
           <div>
-             <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Trust</p>
+             <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Payment</p>
              <div className="flex flex-col gap-1">
-               {facility.has_okapi_certified_staff && (
-                 <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                   <ShieldCheck className="h-3.5 w-3.5" />
-                   Okapi Certified
+               {facility.acceptsMedicaid && (
+                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                   <CheckCircle2 className="h-3.5 w-3.5" />
+                   Medicaid
                  </div>
                )}
-               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                 <CheckCircle2 className="h-3.5 w-3.5" />
-                 DSHS Verified
-               </div>
+               {facility.acceptsPrivatePay && (
+                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                   <CheckCircle2 className="h-3.5 w-3.5" />
+                   Private Pay
+                 </div>
+               )}
              </div>
           </div>
         </div>
@@ -99,18 +102,20 @@ export function FacilityCard({ facility }: FacilityCardProps) {
           <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Compliance Snapshot</p>
           <div className="text-xs space-y-1">
             <div className="flex items-center gap-2">
-               <span className={cn("font-medium", facility.license_status === 'Active' ? "text-green-600" : "text-amber-600")}>
-                 License: {facility.license_status}
+               <span className={cn("font-medium", facility.licenseStatus === 'Active' ? "text-green-600" : "text-amber-600")}>
+                 License: {facility.licenseStatus}
                </span>
                <span className="text-muted-foreground">•</span>
-               <span className={cn(facility.violations_24m > 0 ? "text-amber-600 font-medium" : "text-muted-foreground")}>
-                 {facility.violations_24m} Violations (24 mo)
+               <span className={cn((facility.violationsCount || 0) > 0 ? "text-amber-600 font-medium" : "text-muted-foreground")}>
+                 {facility.violationsCount || 0} Violations
                </span>
             </div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <span>Last Inspection: {new Date(facility.last_inspection_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-              {facility.last_inspection_result === 'Pass' && <Check className="h-3 w-3 text-green-600" />}
-            </div>
+            {facility.lastInspectionDate && (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <span>Last Inspection: {new Date(facility.lastInspectionDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                <Check className="h-3 w-3 text-green-600" />
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

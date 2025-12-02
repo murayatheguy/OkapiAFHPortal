@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
-import { MOCK_FACILITIES } from "@/lib/mock-data";
+import { searchFacilities } from "@/lib/api";
 import { FacilityCard } from "@/components/facility-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import {
   SheetTitle, 
   SheetTrigger 
 } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, Map, X } from "lucide-react";
+import { Search, SlidersHorizontal, Map, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SearchResults() {
@@ -49,26 +50,27 @@ export default function SearchResults() {
     );
   };
 
+  const { data: facilities = [], isLoading } = useQuery({
+    queryKey: ["facilities"],
+    queryFn: () => searchFacilities(),
+  });
+
   const filteredFacilities = useMemo(() => {
-    return MOCK_FACILITIES.filter(facility => {
+    return facilities.filter(facility => {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
         facility.name.toLowerCase().includes(query) ||
         facility.city.toLowerCase().includes(query) ||
-        facility.zip.includes(query);
+        facility.zipCode.includes(query);
 
-      const matchesAvailability = showOnlyAvailable ? facility.beds_available > 0 : true;
-
-      const matchesPrice = 
-        facility.price_min <= priceRange[1] && 
-        facility.price_max >= priceRange[0];
+      const matchesAvailability = showOnlyAvailable ? facility.availableBeds > 0 : true;
 
       const matchesSpecialties = selectedSpecialties.length === 0 || 
-        selectedSpecialties.every(s => facility.specialties.includes(s));
+        (facility.specialties && selectedSpecialties.some(s => facility.specialties!.includes(s)));
 
-      return matchesSearch && matchesAvailability && matchesPrice && matchesSpecialties;
+      return matchesSearch && matchesAvailability && matchesSpecialties;
     });
-  }, [searchQuery, showOnlyAvailable, priceRange, selectedSpecialties]);
+  }, [facilities, searchQuery, showOnlyAvailable, selectedSpecialties]);
 
   const quickFilters = [
     { label: "Memory Care", action: () => toggleSpecialty("Memory Care"), active: selectedSpecialties.includes("Memory Care") },
