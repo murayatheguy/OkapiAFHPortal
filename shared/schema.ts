@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, date, timestamp, decimal, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, date, timestamp, decimal, index, json } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -17,13 +17,30 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// Admins table for admin dashboard
+export const admins = pgTable("admins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name").notNull(),
+  role: text("role").notNull().default("admin"), // super_admin, admin, moderator
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  emailIdx: index("admins_email_idx").on(table.email),
+}));
+
+export const insertAdminSchema = createInsertSchema(admins).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type Admin = typeof admins.$inferSelect;
+
 // Owners table for facility management
 export const owners = pgTable("owners", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
+  password: text("password"),
   name: text("name").notNull(),
   phone: text("phone"),
-  password: text("password"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -41,7 +58,10 @@ export const ownerInvites = pgTable("owner_invites", {
   status: text("status").notNull().default("pending"), // pending, accepted, expired
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  tokenIdx: index("owner_invites_token_idx").on(table.inviteToken),
+  statusIdx: index("owner_invites_status_idx").on(table.status),
+}));
 
 export const insertOwnerInviteSchema = createInsertSchema(ownerInvites).omit({ id: true, createdAt: true });
 export type InsertOwnerInvite = z.infer<typeof insertOwnerInviteSchema>;
@@ -51,10 +71,14 @@ export type OwnerInvite = typeof ownerInvites.$inferSelect;
 export const facilities = pgTable("facilities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
   address: text("address").notNull(),
   city: text("city").notNull(),
+  state: text("state").notNull().default("WA"),
   zipCode: text("zip_code").notNull(),
   county: text("county").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   phone: text("phone"),
   email: text("email"),
   website: text("website"),
@@ -80,6 +104,7 @@ export const facilities = pgTable("facilities", {
   acceptsPrivatePay: boolean("accepts_private_pay").default(false),
   specialties: text("specialties").array().default(sql`ARRAY[]::text[]`),
   amenities: text("amenities").array().default(sql`ARRAY[]::text[]`),
+  careTypes: text("care_types").array().default(sql`ARRAY[]::text[]`),
   certifications: text("certifications").array().default(sql`ARRAY[]::text[]`),
   
   // Media
@@ -93,11 +118,13 @@ export const facilities = pgTable("facilities", {
   // Status
   status: text("status").notNull().default("active"), // active, pending, inactive
   featured: boolean("featured").default(false),
+  acceptingInquiries: text("accepting_inquiries").default("accepting"), // accepting, waitlist, not_accepting
   
   // Metadata
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
+  slugIdx: index("facilities_slug_idx").on(table.slug),
   cityIdx: index("facilities_city_idx").on(table.city),
   statusIdx: index("facilities_status_idx").on(table.status),
   featuredIdx: index("facilities_featured_idx").on(table.featured),
@@ -125,15 +152,53 @@ export const inquiries = pgTable("inquiries", {
   
   // Status
   status: text("status").notNull().default("new"), // new, contacted, toured, admitted, closed
+  ownerNotes: text("owner_notes"),
   
   // Metadata
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  facilityIdx: index("inquiries_facility_idx").on(table.facilityId),
+  statusIdx: index("inquiries_status_idx").on(table.status),
+  createdIdx: index("inquiries_created_idx").on(table.createdAt),
+}));
 
 export const insertInquirySchema = createInsertSchema(inquiries).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertInquiry = z.infer<typeof insertInquirySchema>;
 export type Inquiry = typeof inquiries.$inferSelect;
+
+// Reviews table for facility reviews
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").notNull(),
+  
+  // Author Info
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  
+  // Review Content
+  rating: integer("rating").notNull(), // 1-5
+  title: text("title"),
+  content: text("content").notNull(),
+  
+  // Owner Response
+  ownerResponse: text("owner_response"),
+  ownerRespondedAt: timestamp("owner_responded_at"),
+  
+  // Moderation
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("reviews_facility_idx").on(table.facilityId),
+  statusIdx: index("reviews_status_idx").on(table.status),
+}));
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
 
 // Team Members table (caregivers and staff)
 export const teamMembers = pgTable("team_members", {
@@ -196,6 +261,7 @@ export type Credential = typeof credentials.$inferSelect;
 export const facilitiesRelations = relations(facilities, ({ many, one }) => ({
   teamMembers: many(teamMembers),
   inquiries: many(inquiries),
+  reviews: many(reviews),
   owner: one(owners, {
     fields: [facilities.ownerId],
     references: [owners.id],
@@ -216,6 +282,13 @@ export const ownerInvitesRelations = relations(ownerInvites, ({ one }) => ({
 export const inquiriesRelations = relations(inquiries, ({ one }) => ({
   facility: one(facilities, {
     fields: [inquiries.facilityId],
+    references: [facilities.id],
+  }),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [reviews.facilityId],
     references: [facilities.id],
   }),
 }));

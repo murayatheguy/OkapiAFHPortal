@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema } from "@shared/schema";
+import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import bcrypt from "bcryptjs";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -299,6 +300,249 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating inquiry:", error);
       res.status(500).json({ error: "Failed to update inquiry" });
+    }
+  });
+
+  // ============================================
+  // ADMIN API
+  // ============================================
+
+  // Admin login
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      const admin = await storage.getAdminByEmail(email);
+      if (!admin) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const isValid = await bcrypt.compare(password, admin.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const { passwordHash, ...adminData } = admin;
+      res.json({ admin: adminData });
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Get admin stats for dashboard
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      const stats = await storage.getStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting admin stats:", error);
+      res.status(500).json({ error: "Failed to get stats" });
+    }
+  });
+
+  // Get all inquiries for admin
+  app.get("/api/admin/inquiries", async (req, res) => {
+    try {
+      const allInquiries = await storage.getAllInquiries();
+      res.json(allInquiries);
+    } catch (error) {
+      console.error("Error getting all inquiries:", error);
+      res.status(500).json({ error: "Failed to get inquiries" });
+    }
+  });
+
+  // ============================================
+  // REVIEWS API
+  // ============================================
+
+  // Get all reviews (admin)
+  app.get("/api/reviews", async (req, res) => {
+    try {
+      const status = req.query.status as string;
+      const reviewsList = status 
+        ? await storage.getReviewsByStatus(status)
+        : await storage.getAllReviews();
+      res.json(reviewsList);
+    } catch (error) {
+      console.error("Error getting reviews:", error);
+      res.status(500).json({ error: "Failed to get reviews" });
+    }
+  });
+
+  // Get approved reviews for a facility (public)
+  app.get("/api/facilities/:facilityId/reviews", async (req, res) => {
+    try {
+      const reviewsList = await storage.getApprovedReviewsByFacility(req.params.facilityId);
+      res.json(reviewsList);
+    } catch (error) {
+      console.error("Error getting facility reviews:", error);
+      res.status(500).json({ error: "Failed to get reviews" });
+    }
+  });
+
+  // Create review
+  app.post("/api/reviews", async (req, res) => {
+    try {
+      const result = insertReviewSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+      
+      const review = await storage.createReview(result.data);
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ error: "Failed to create review" });
+    }
+  });
+
+  // Update review (admin moderation, owner response)
+  app.patch("/api/reviews/:id", async (req, res) => {
+    try {
+      const review = await storage.updateReview(req.params.id, req.body);
+      if (!review) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+      res.json(review);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ error: "Failed to update review" });
+    }
+  });
+
+  // Delete review (admin)
+  app.delete("/api/reviews/:id", async (req, res) => {
+    try {
+      await storage.deleteReview(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ error: "Failed to delete review" });
+    }
+  });
+
+  // ============================================
+  // OWNERS API
+  // ============================================
+
+  // Get all owners (admin)
+  app.get("/api/owners", async (req, res) => {
+    try {
+      const ownersList = await storage.getAllOwners();
+      res.json(ownersList);
+    } catch (error) {
+      console.error("Error getting owners:", error);
+      res.status(500).json({ error: "Failed to get owners" });
+    }
+  });
+
+  // Get single owner
+  app.get("/api/owners/:id", async (req, res) => {
+    try {
+      const owner = await storage.getOwner(req.params.id);
+      if (!owner) {
+        return res.status(404).json({ error: "Owner not found" });
+      }
+      res.json(owner);
+    } catch (error) {
+      console.error("Error getting owner:", error);
+      res.status(500).json({ error: "Failed to get owner" });
+    }
+  });
+
+  // Owner login
+  app.post("/api/owners/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      const owner = await storage.getOwnerByEmail(email);
+      if (!owner) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      if (!owner.password) {
+        return res.status(401).json({ error: "Password not set. Please contact support." });
+      }
+
+      const isValid = await bcrypt.compare(password, owner.password);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const { password: _, ...ownerData } = owner;
+      res.json({ owner: ownerData });
+    } catch (error) {
+      console.error("Error during owner login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Create owner (admin)
+  app.post("/api/owners", async (req, res) => {
+    try {
+      const result = insertOwnerSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+
+      const existingOwner = await storage.getOwnerByEmail(result.data.email);
+      if (existingOwner) {
+        return res.status(400).json({ error: "Owner with this email already exists" });
+      }
+
+      let ownerData = { ...result.data };
+      if (ownerData.password) {
+        ownerData.password = await bcrypt.hash(ownerData.password, 10);
+      }
+      
+      const owner = await storage.createOwner(ownerData);
+      res.status(201).json(owner);
+    } catch (error) {
+      console.error("Error creating owner:", error);
+      res.status(500).json({ error: "Failed to create owner" });
+    }
+  });
+
+  // Update owner
+  app.patch("/api/owners/:id", async (req, res) => {
+    try {
+      let updateData = { ...req.body };
+      if (updateData.password) {
+        updateData.password = await bcrypt.hash(updateData.password, 10);
+      }
+
+      const owner = await storage.updateOwner(req.params.id, updateData);
+      if (!owner) {
+        return res.status(404).json({ error: "Owner not found" });
+      }
+      res.json(owner);
+    } catch (error) {
+      console.error("Error updating owner:", error);
+      res.status(500).json({ error: "Failed to update owner" });
+    }
+  });
+
+  // Delete facility (admin)
+  app.delete("/api/facilities/:id", async (req, res) => {
+    try {
+      await storage.updateFacility(req.params.id, { status: "deleted" });
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting facility:", error);
+      res.status(500).json({ error: "Failed to delete facility" });
     }
   });
 

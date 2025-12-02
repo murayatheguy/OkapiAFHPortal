@@ -1,0 +1,361 @@
+Ha! You're absolutely right — I've been describing a whole system that doesn't exist yet. We've only built a pretty landing page. 😅
+
+Let me add the **Admin Panel** to the Replit prompt. Here's the complete, updated version:
+
+---
+
+**Complete Replit Prompt:**
+
+```
+## Project: Okapi Care Network — Full Production Build
+
+### PART 1: Font Consistency
+
+Update the entire project to use these fonts consistently across ALL pages:
+- Primary/Display: 'Cormorant' (serif) - headings, titles, hero text
+- Secondary/Body: 'Jost' (sans-serif) - body text, labels, buttons, navigation
+- Import: https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap
+- Apply globally in root CSS
+
+---
+
+### PART 2: Homepage Updates
+
+Remove the "Sign In" button from the homepage header. Keep navigation links.
+
+---
+
+### PART 3: Database Schema
+
+Create the following tables:
+
+```sql
+-- Homes (Adult Family Homes)
+homes:
+  - id (primary key)
+  - name
+  - slug (unique, URL-friendly)
+  - description (text)
+  - address
+  - city
+  - state (default: "WA")
+  - zip_code
+  - latitude (decimal, nullable)
+  - longitude (decimal, nullable)
+  - phone
+  - email
+  - website (nullable)
+  - price_min (integer, monthly)
+  - price_max (integer, monthly)
+  - beds_total (integer)
+  - beds_available (integer)
+  - rating (decimal, 0-5)
+  - review_count (integer)
+  - year_established (integer)
+  - license_number (string)
+  - amenities (json array)
+  - care_types (json array)
+  - certifications (json array)
+  - images (json array of URLs)
+  - featured (boolean, default false)
+  - status: "active" | "pending" | "inactive"
+  - owner_id (foreign key to owners, nullable)
+  - created_at
+  - updated_at
+
+-- Owners (AFH Owners/Operators)
+owners:
+  - id (primary key)
+  - email (unique)
+  - password_hash
+  - name
+  - phone
+  - created_at
+  - updated_at
+
+-- Owner Invites
+owner_invites:
+  - id (primary key)
+  - home_id (foreign key to homes)
+  - email
+  - invite_token (unique)
+  - status: "pending" | "accepted" | "expired"
+  - expires_at (datetime)
+  - created_at
+
+-- Admins
+admins:
+  - id (primary key)
+  - email (unique)
+  - password_hash
+  - name
+  - role: "super_admin" | "admin" | "moderator"
+  - created_at
+  - updated_at
+
+-- Inquiries (from families)
+inquiries:
+  - id (primary key)
+  - home_id (foreign key to homes)
+  - name
+  - email
+  - phone
+  - message (text)
+  - care_type_needed
+  - move_in_timeline
+  - status: "new" | "contacted" | "toured" | "admitted" | "closed"
+  - owner_notes (text, nullable)
+  - created_at
+  - updated_at
+
+-- Reviews
+reviews:
+  - id (primary key)
+  - home_id (foreign key to homes)
+  - author_name
+  - author_email
+  - rating (1-5)
+  - title
+  - content (text)
+  - owner_response (text, nullable)
+  - owner_responded_at (datetime, nullable)
+  - status: "pending" | "approved" | "rejected"
+  - created_at
+  - updated_at
+```
+
+---
+
+### PART 4: Admin Panel (/admin)
+
+Build a complete admin dashboard with authentication:
+
+**Authentication:**
+- /admin/login — Admin login page
+- Session-based auth with secure cookies
+- Role-based permissions (super_admin can do everything, moderator can only view)
+
+**Dashboard (/admin/dashboard):**
+- Overview stats: Total homes, Active homes, Pending reviews, New inquiries this week
+- Recent activity feed
+- Quick action buttons
+
+**Homes Management (/admin/homes):**
+- Table view of all homes with search, filter, sort
+- Filters: status, city, care type, has owner, featured
+- Bulk actions: activate, deactivate, feature
+- Click row to view/edit
+
+**Home Detail (/admin/homes/[id]):**
+- View all home information
+- Edit all fields
+- Image management (add/remove/reorder)
+- Owner section:
+  - If no owner: "Invite Owner" button → modal with email input
+  - If owner exists: Show owner info, "Revoke Access" button
+- View inquiries for this home
+- View reviews for this home
+- Activity log
+
+**Add New Home (/admin/homes/new):**
+- Full form to create a new AFH listing
+- Image upload
+- Auto-generate slug from name
+- Save as "pending" or "active"
+
+**Owners Management (/admin/owners):**
+- Table of all owner accounts
+- See which homes they manage
+- Resend invite, revoke access, delete account
+
+**Inquiries (/admin/inquiries):**
+- All inquiries across all homes
+- Filter by status, date, home
+- View inquiry details
+- Update status
+
+**Reviews (/admin/reviews):**
+- All reviews awaiting moderation
+- Approve / Reject buttons
+- View approved and rejected reviews
+
+**Settings (/admin/settings):**
+- Manage admin accounts (super_admin only)
+- Site settings (site name, contact email)
+
+**Admin UI Style:**
+- Clean, professional dashboard aesthetic
+- Use the Jost font throughout
+- Dark sidebar navigation
+- White/light content area
+- Gold (#c9a962) accent color for buttons and highlights
+- Responsive (works on tablet)
+
+---
+
+### PART 5: Owner Dashboard (/owner)
+
+**Authentication:**
+- /owner/login — Owner login
+- /owner/accept-invite?token=xxx — Accept invite, create password
+- /owner/forgot-password — Password reset
+
+**Dashboard (/owner/dashboard):**
+- Welcome message with home name
+- Stats: Profile views, Inquiries, Average rating
+- Quick links to common actions
+- Recent inquiries preview
+
+**Profile Management (/owner/dashboard/profile):**
+- Edit home description
+- Update amenities, care types
+- Manage photos (upload, reorder, delete)
+- Update contact info
+- Preview how listing looks on site
+
+**Availability (/owner/dashboard/availability):**
+- Current beds: X available of Y total
+- Toggle to update available beds
+- Set status: "Accepting Inquiries" | "Waitlist Only" | "Not Accepting"
+
+**Inquiries (/owner/dashboard/inquiries):**
+- List of all inquiries for their home
+- Filter by status
+- View inquiry details
+- Add notes, update status
+- Reply button (sends email to family)
+
+**Reviews (/owner/dashboard/reviews):**
+- All approved reviews for their home
+- Add public response to reviews
+- See average rating breakdown
+
+**Owner UI Style:**
+- Warm, approachable but professional
+- Match the luxury feel of the main site
+- Cormorant for headings, Jost for body
+- Cream/ivory background (#f8f6f1)
+- Dark green (#0d1a14) and gold (#c9a962) accents
+
+---
+
+### PART 6: Seed Data
+
+Create seed script with:
+
+**1 Admin Account:**
+- email: admin@okapicare.com
+- password: "AdminPassword123!" (hash it)
+- role: super_admin
+
+**26 Adult Family Homes:**
+Include the original 6 plus 20 more with realistic data:
+
+Names like:
+- Evergreen Manor
+- The Residence at Pine Valley
+- Lakeside Care Home
+- Mountain View AFH
+- Peaceful Meadows
+- Golden Years Home
+- Sunrise Senior Care
+- The Birches
+- Comfort Care Home
+- Haven House
+- etc.
+
+Cities across Washington:
+Seattle, Bellevue, Tacoma, Spokane, Olympia, Vancouver, Bellingham, 
+Yakima, Kennewick, Redmond, Kirkland, Sammamish, Issaquah, Mercer Island,
+Bothell, Lynnwood, Everett, Renton, Kent, Federal Way
+
+Each home needs:
+- All fields populated realistically
+- 3-5 Unsplash images (luxury homes/interiors)
+- Rating between 4.5-5.0
+- Mix of care types
+- Some featured (5-6 homes)
+- Some with 0 available beds (waitlist)
+- owner_id: null (no owners yet — they get invited)
+
+Use these Unsplash IDs:
+1600596542815-ffad4c1539a9, 1600585154340-be6161a56a0c,
+1600607687939-ce8a6c25118c, 1600566753086-00f18fb6b3ea,
+1600573472550-8090b5e0745e, 1564013799919-ab600027ffc6,
+1600047509807-ba8f99d2cdde, 1600585154526-990dced4db0d,
+1600210492493-0946911123ea, 1600607687644-c7171b42498f,
+1600566752355-35792bedcfea, 1600585154084-4e5fe7c39198,
+1600573472591-ee6981cf35b6, 1600566752547-33a300e65718,
+1600210491892-ed7f4a455770, 1600607688969-a5bfcd646154
+
+**10 Sample Reviews:**
+Spread across different homes, all with status: "approved"
+
+**5 Sample Inquiries:**
+Different statuses to show the workflow
+
+---
+
+### PART 7: Production Readiness
+
+1. **Environment variables** for:
+   - DATABASE_URL
+   - SESSION_SECRET
+   - SMTP settings (for invite emails)
+   - ADMIN_EMAIL
+
+2. **Database indexes** on:
+   - homes: city, status, featured, owner_id, slug
+   - inquiries: home_id, status, created_at
+   - reviews: home_id, status
+   - owner_invites: invite_token, status
+
+3. **Input validation** on all forms
+
+4. **Error handling** with user-friendly messages
+
+5. **Seed script** that's idempotent (can run multiple times safely)
+
+6. **Image fallbacks** if Unsplash fails
+
+---
+
+### Routes Summary
+
+**Public:**
+- / — Homepage
+- /homes — Browse all homes
+- /homes/[slug] — Individual home profile
+- /homes/[slug]/inquiry — Send inquiry form
+
+**Admin:**
+- /admin/login
+- /admin/dashboard
+- /admin/homes (list, create, edit)
+- /admin/owners
+- /admin/inquiries
+- /admin/reviews
+- /admin/settings
+
+**Owner:**
+- /owner/login
+- /owner/accept-invite
+- /owner/forgot-password
+- /owner/dashboard
+- /owner/dashboard/profile
+- /owner/dashboard/availability
+- /owner/dashboard/inquiries
+- /owner/dashboard/reviews
+```
+
+---
+
+This prompt now includes **everything**:
+- ✅ Your landing page (with font fix)
+- ✅ Full admin panel to manage the whole site
+- ✅ Owner portal with invite system
+- ✅ 26 seeded homes
+- ✅ Database schema
+- ✅ All the routes
+
+Want me to add anything else — like a family account system, saved homes, or email notification specs?

@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { facilities, teamMembers, credentials, owners } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { facilities, teamMembers, credentials, admins, reviews, inquiries } from "@shared/schema";
+import { sql } from "drizzle-orm";
 
 const UNSPLASH_IMAGES = [
   "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80",
@@ -13,14 +13,24 @@ const UNSPLASH_IMAGES = [
   "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1600585154084-4e5fe7c39198?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1600573472591-ee6981cf35b6?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1600566752547-33a300e65718?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1600210491892-ed7f4a455770?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=800&auto=format&fit=crop&q=80",
 ];
 
-const getImagesForIndex = (index: number, count: number = 3): string[] => {
+const getImagesForIndex = (index: number, count: number = 4): string[] => {
   const images: string[] = [];
   for (let i = 0; i < count; i++) {
     images.push(UNSPLASH_IMAGES[(index + i) % UNSPLASH_IMAGES.length]);
   }
   return images;
+};
+
+const slugify = (text: string): string => {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 };
 
 const FACILITY_DATA = [
@@ -46,8 +56,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "Dementia", "Alzheimer's"],
     amenities: ["Garden", "Private Rooms", "24/7 Care", "Home-Cooked Meals"],
+    careTypes: ["Memory Care", "Assisted Living"],
     certifications: ["DSHS Licensed", "Dementia Certified"],
-    description: "Warm, family-oriented care in a beautiful setting with specialized memory care programs.",
+    description: "Warm, family-oriented care in a beautiful setting with specialized memory care programs. Our experienced staff provides 24/7 personalized attention in a homelike environment.",
     yearEstablished: 2015,
     status: "active",
     featured: true,
@@ -74,8 +85,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Mental Health", "Behavioral Support"],
     amenities: ["Accessible", "Medication Management", "Activities"],
+    careTypes: ["Mental Health", "Assisted Living"],
     certifications: ["DSHS Licensed", "Mental Health Certified"],
-    description: "Specialized in mental health support with compassionate, experienced caregivers.",
+    description: "Specialized in mental health support with compassionate, experienced caregivers. We create a calm, therapeutic environment for residents.",
     yearEstablished: 2018,
     status: "active",
     featured: true,
@@ -102,8 +114,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Hospice", "Palliative Care"],
     amenities: ["Garden", "Private Rooms", "Pet Friendly"],
+    careTypes: ["Hospice", "Palliative Care"],
     certifications: ["DSHS Licensed", "Hospice Certified"],
-    description: "Peaceful end-of-life care with dignity and comfort in a serene garden setting.",
+    description: "Peaceful end-of-life care with dignity and comfort in a serene garden setting. Our compassionate team supports both residents and families.",
     yearEstablished: 2012,
     status: "active",
     featured: false,
@@ -130,8 +143,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Diabetes Management", "Post-Surgical Care"],
     amenities: ["Lake View", "Physical Therapy", "Nutritionist"],
+    careTypes: ["Medical Care", "Recovery Care"],
     certifications: ["DSHS Licensed", "Medicare Accepted"],
-    description: "Comprehensive medical support with beautiful lake views and specialized care programs.",
+    description: "Comprehensive medical support with beautiful lake views and specialized care programs. Our nursing team provides exceptional post-surgical and chronic care management.",
     yearEstablished: 2010,
     status: "active",
     featured: true,
@@ -158,8 +172,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: false,
     specialties: ["Developmental Disabilities", "Autism Support"],
     amenities: ["Sensory Room", "Outdoor Space", "Art Therapy"],
+    careTypes: ["Developmental Disabilities", "Autism Support"],
     certifications: ["DSHS Licensed", "DD Certified"],
-    description: "Specialized care for adults with developmental disabilities in a supportive environment.",
+    description: "Specialized care for adults with developmental disabilities in a supportive environment designed to promote independence and growth.",
     yearEstablished: 2016,
     status: "active",
     featured: false,
@@ -186,6 +201,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "24/7 Staff"],
     amenities: ["Japanese Garden", "Meditation Room", "Private Rooms", "Chef-Prepared Meals"],
+    careTypes: ["Memory Care", "Assisted Living"],
     certifications: ["DSHS Licensed", "Dementia Certified", "Medicare Accepted"],
     description: "Experience tranquility in our award-winning memory care facility with beautifully landscaped gardens and holistic wellness programs.",
     yearEstablished: 2014,
@@ -214,6 +230,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Garden Access"],
     amenities: ["Garden", "Library", "Transportation", "Pet Friendly"],
+    careTypes: ["Assisted Living"],
     certifications: ["DSHS Licensed"],
     description: "A charming home in the heart of Kirkland offering personalized care with a focus on maintaining independence and dignity.",
     yearEstablished: 2017,
@@ -242,6 +259,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Dementia Care", "Physical Therapy"],
     amenities: ["In-House PT", "Memory Activities", "Private Suites", "Gourmet Dining"],
+    careTypes: ["Memory Care", "Rehabilitation"],
     certifications: ["DSHS Licensed", "Dementia Certified", "PT Certified"],
     description: "Where advanced dementia care meets luxury living. Our specialized team provides 24/7 memory care with integrated physical therapy services.",
     yearEstablished: 2019,
@@ -270,6 +288,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Respite Care", "Pet Friendly"],
     amenities: ["Walking Trails", "Pet Therapy", "Family Suites", "Outdoor Patio"],
+    careTypes: ["Respite Care", "Assisted Living"],
     certifications: ["DSHS Licensed", "Respite Certified"],
     description: "Nestled in nature, we offer both long-term and respite care in a pet-friendly environment with walking trails and outdoor activities.",
     yearEstablished: 2013,
@@ -298,6 +317,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Scenic Views"],
     amenities: ["Mountain Views", "Sunroom", "Home-Cooked Meals", "Garden"],
+    careTypes: ["Assisted Living"],
     certifications: ["DSHS Licensed"],
     description: "Experience mountain living with all the comforts of home. Our intimate setting allows for truly personalized care.",
     yearEstablished: 2016,
@@ -326,6 +346,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Luxury Care", "Waterfront"],
     amenities: ["Waterfront", "Private Chef", "Concierge", "Spa Services"],
+    careTypes: ["Luxury Care", "Assisted Living"],
     certifications: ["DSHS Licensed", "Luxury Certified"],
     description: "The pinnacle of senior care on Mercer Island. Waterfront views, gourmet dining, and white-glove service for discerning families.",
     yearEstablished: 2020,
@@ -354,6 +375,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Adult Day Care"],
     amenities: ["Mountain Views", "Day Program", "Transportation", "Activities"],
+    careTypes: ["Assisted Living", "Adult Day Services"],
     certifications: ["DSHS Licensed", "Adult Day Certified"],
     description: "Stunning views of the Cascades complement our comprehensive care programs. Day care services available for families needing flexible options.",
     yearEstablished: 2015,
@@ -382,6 +404,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "Hospice"],
     amenities: ["Bay Views", "Art Studio", "Music Therapy", "Garden"],
+    careTypes: ["Memory Care", "Hospice"],
     certifications: ["DSHS Licensed", "Dementia Certified", "Hospice Certified"],
     description: "Where the beauty of Bellingham Bay meets compassionate care. Specialized in both memory care and end-of-life support.",
     yearEstablished: 2014,
@@ -410,6 +433,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Respite Care"],
     amenities: ["Orchard Views", "Garden", "Home-Cooked Meals", "Family Rooms"],
+    careTypes: ["Assisted Living", "Respite Care"],
     certifications: ["DSHS Licensed", "Respite Certified"],
     description: "Affordable, quality care in the heart of wine country. Family-owned and operated with a focus on creating a true home environment.",
     yearEstablished: 2011,
@@ -438,6 +462,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "Behavioral Support"],
     amenities: ["River Views", "Secured Memory Unit", "Activities", "Transportation"],
+    careTypes: ["Memory Care", "Mental Health"],
     certifications: ["DSHS Licensed", "Dementia Certified", "Mental Health Certified"],
     description: "Serving the Tri-Cities with specialized memory and behavioral care. Beautiful river views and a secured, calming environment.",
     yearEstablished: 2017,
@@ -466,6 +491,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Palliative Care"],
     amenities: ["Mountain Views", "Lavender Garden", "Art Classes", "Pet Friendly"],
+    careTypes: ["Assisted Living", "Palliative Care"],
     certifications: ["DSHS Licensed", "Palliative Certified"],
     description: "In the sunny Sequim Valley, our home offers gentle care surrounded by lavender fields and Olympic Mountain views.",
     yearEstablished: 2018,
@@ -494,6 +520,7 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "Luxury Care"],
     amenities: ["Sound Views", "Private Balconies", "Gourmet Dining", "Spa"],
+    careTypes: ["Memory Care", "Luxury Care"],
     certifications: ["DSHS Licensed", "Dementia Certified", "Luxury Certified"],
     description: "Wake up to stunning Puget Sound sunsets in our upscale memory care home. Where luxury meets specialized dementia care.",
     yearEstablished: 2019,
@@ -501,19 +528,19 @@ const FACILITY_DATA = [
     featured: true,
   },
   {
-    name: "Walla Walla Valley Care",
-    address: "234 Wine Country Lane",
-    city: "Walla Walla",
-    zipCode: "99362",
-    county: "Walla Walla",
-    phone: "(509) 555-1013",
-    email: "hello@wallawallacare.com",
-    capacity: 4,
+    name: "Everett Heights Care",
+    address: "3456 Broadway",
+    city: "Everett",
+    zipCode: "98201",
+    county: "Snohomish",
+    phone: "(425) 555-1013",
+    email: "care@everettheights.com",
+    capacity: 6,
     availableBeds: 2,
-    priceMin: 4600,
-    priceMax: 5800,
+    priceMin: 5200,
+    priceMax: 6600,
     rating: "4.7",
-    reviewCount: 22,
+    reviewCount: 34,
     licenseNumber: "AFH-018901",
     licenseStatus: "Active",
     lastInspectionDate: "2024-08-20",
@@ -521,27 +548,28 @@ const FACILITY_DATA = [
     acceptsMedicaid: true,
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Respite Care"],
-    amenities: ["Vineyard Views", "Garden", "Home-Cooked Meals", "Wine Socials"],
+    amenities: ["City Views", "Garden", "Activities", "Transportation"],
+    careTypes: ["Assisted Living", "Respite Care"],
     certifications: ["DSHS Licensed", "Respite Certified"],
-    description: "Located in beautiful wine country, we offer warm hospitality and personalized care with views of rolling vineyards.",
+    description: "Conveniently located in downtown Everett with easy access to medical facilities and family visitors.",
     yearEstablished: 2015,
     status: "active",
     featured: false,
   },
   {
-    name: "Cascade Foothills Home",
-    address: "678 Foothill Road",
-    city: "Enumclaw",
-    zipCode: "98022",
-    county: "Pierce",
-    phone: "(360) 555-1014",
-    email: "care@cascadefoothills.com",
-    capacity: 6,
-    availableBeds: 2,
-    priceMin: 5200,
-    priceMax: 6600,
-    rating: "4.6",
-    reviewCount: 31,
+    name: "Bothell Meadows",
+    address: "789 Meadow Lane",
+    city: "Bothell",
+    zipCode: "98011",
+    county: "King",
+    phone: "(425) 555-1014",
+    email: "info@bothellmeadows.com",
+    capacity: 5,
+    availableBeds: 1,
+    priceMin: 6200,
+    priceMax: 7800,
+    rating: "4.8",
+    reviewCount: 41,
     licenseNumber: "AFH-019012",
     licenseStatus: "Active",
     lastInspectionDate: "2024-09-30",
@@ -549,84 +577,145 @@ const FACILITY_DATA = [
     acceptsMedicaid: true,
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "Physical Therapy"],
-    amenities: ["Mountain Views", "Walking Paths", "PT Room", "Activity Center"],
+    amenities: ["Meadow Views", "In-House PT", "Memory Garden", "Art Studio"],
+    careTypes: ["Memory Care", "Rehabilitation"],
     certifications: ["DSHS Licensed", "Dementia Certified", "PT Certified"],
-    description: "At the base of Mount Rainier, our home combines mountain serenity with professional memory care and rehabilitation services.",
-    yearEstablished: 2016,
+    description: "A peaceful meadow setting with specialized memory care and rehabilitation services. Where nature supports healing.",
+    yearEstablished: 2017,
     status: "active",
     featured: false,
   },
   {
-    name: "Renton Meadows AFH",
-    address: "4521 Meadow Lane",
-    city: "Renton",
-    zipCode: "98055",
-    county: "King",
+    name: "Lynnwood Senior Home",
+    address: "2100 48th Avenue",
+    city: "Lynnwood",
+    zipCode: "98036",
+    county: "Snohomish",
     phone: "(425) 555-1015",
-    email: "info@rentonmeadows.com",
-    capacity: 5,
-    availableBeds: 1,
-    priceMin: 5800,
-    priceMax: 7200,
-    rating: "4.8",
-    reviewCount: 44,
+    email: "care@lynnwoodsenior.com",
+    capacity: 6,
+    availableBeds: 3,
+    priceMin: 5000,
+    priceMax: 6400,
+    rating: "4.6",
+    reviewCount: 29,
     licenseNumber: "AFH-020123",
     licenseStatus: "Active",
     lastInspectionDate: "2024-10-05",
     violationsCount: 0,
     acceptsMedicaid: true,
     acceptsPrivatePay: true,
-    specialties: ["Assisted Living", "Dementia Care"],
-    amenities: ["Meadow Views", "Secure Garden", "Music Therapy", "Art Room"],
-    certifications: ["DSHS Licensed", "Dementia Certified"],
-    description: "A peaceful meadow setting close to Seattle amenities. Our dedicated team provides exceptional memory and assisted living care.",
-    yearEstablished: 2017,
-    status: "active",
-    featured: false,
-  },
-  {
-    name: "Federal Way Family Home",
-    address: "8900 Pacific Highway",
-    city: "Federal Way",
-    zipCode: "98003",
-    county: "King",
-    phone: "(253) 555-1016",
-    email: "care@federalwayfamily.com",
-    capacity: 6,
-    availableBeds: 3,
-    priceMin: 5000,
-    priceMax: 6400,
-    rating: "4.5",
-    reviewCount: 27,
-    licenseNumber: "AFH-021234",
-    licenseStatus: "Active",
-    lastInspectionDate: "2024-08-10",
-    violationsCount: 0,
-    acceptsMedicaid: true,
-    acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Adult Day Care"],
     amenities: ["Day Program", "Transportation", "Activities", "Garden"],
+    careTypes: ["Assisted Living", "Adult Day Services"],
     certifications: ["DSHS Licensed", "Adult Day Certified"],
-    description: "Conveniently located between Seattle and Tacoma, we offer flexible care options including adult day services for working families.",
+    description: "Flexible care options for busy families. Our adult day program allows loved ones to thrive while you work.",
     yearEstablished: 2014,
     status: "active",
     featured: false,
   },
   {
-    name: "Snoqualmie Falls Lodge",
+    name: "Renton Family Care",
+    address: "4521 Valley Road",
+    city: "Renton",
+    zipCode: "98055",
+    county: "King",
+    phone: "(425) 555-1016",
+    email: "info@rentonfamilycare.com",
+    capacity: 5,
+    availableBeds: 1,
+    priceMin: 5400,
+    priceMax: 6800,
+    rating: "4.7",
+    reviewCount: 37,
+    licenseNumber: "AFH-021234",
+    licenseStatus: "Active",
+    lastInspectionDate: "2024-10-10",
+    violationsCount: 0,
+    acceptsMedicaid: true,
+    acceptsPrivatePay: true,
+    specialties: ["Assisted Living", "Dementia Care"],
+    amenities: ["Private Rooms", "Garden", "Activities", "Home-Cooked Meals"],
+    careTypes: ["Assisted Living", "Memory Care"],
+    certifications: ["DSHS Licensed", "Dementia Certified"],
+    description: "True family care in a comfortable setting. Our experienced team treats every resident like family.",
+    yearEstablished: 2016,
+    status: "active",
+    featured: false,
+  },
+  {
+    name: "Kent Valley Home",
+    address: "8900 S 228th Street",
+    city: "Kent",
+    zipCode: "98031",
+    county: "King",
+    phone: "(253) 555-1017",
+    email: "care@kentvalleyhome.com",
+    capacity: 6,
+    availableBeds: 2,
+    priceMin: 4800,
+    priceMax: 6200,
+    rating: "4.5",
+    reviewCount: 26,
+    licenseNumber: "AFH-022345",
+    licenseStatus: "Active",
+    lastInspectionDate: "2024-08-25",
+    violationsCount: 0,
+    acceptsMedicaid: true,
+    acceptsPrivatePay: true,
+    specialties: ["Assisted Living", "Respite Care"],
+    amenities: ["Garden", "Transportation", "Activities", "Family Rooms"],
+    careTypes: ["Assisted Living", "Respite Care"],
+    certifications: ["DSHS Licensed", "Respite Certified"],
+    description: "Affordable quality care in the Kent Valley. We welcome both long-term residents and respite care guests.",
+    yearEstablished: 2013,
+    status: "active",
+    featured: false,
+  },
+  {
+    name: "Federal Way Family Home",
+    address: "3400 Pacific Highway S",
+    city: "Federal Way",
+    zipCode: "98003",
+    county: "King",
+    phone: "(253) 555-1018",
+    email: "info@federalwayfamily.com",
+    capacity: 5,
+    availableBeds: 2,
+    priceMin: 5000,
+    priceMax: 6400,
+    rating: "4.6",
+    reviewCount: 31,
+    licenseNumber: "AFH-023456",
+    licenseStatus: "Active",
+    lastInspectionDate: "2024-09-15",
+    violationsCount: 0,
+    acceptsMedicaid: true,
+    acceptsPrivatePay: true,
+    specialties: ["Assisted Living", "Memory Care"],
+    amenities: ["Garden", "Activities", "Transportation", "Private Rooms"],
+    careTypes: ["Assisted Living", "Memory Care"],
+    certifications: ["DSHS Licensed", "Dementia Certified"],
+    description: "Centrally located between Seattle and Tacoma with easy access for family visits.",
+    yearEstablished: 2015,
+    status: "active",
+    featured: false,
+  },
+  {
+    name: "Snoqualmie Valley Care",
     address: "1200 Falls View Road",
     city: "Snoqualmie",
     zipCode: "98065",
     county: "King",
-    phone: "(425) 555-1017",
-    email: "info@snoqualmielodge.com",
-    capacity: 5,
+    phone: "(425) 555-1019",
+    email: "care@snoqualmievalley.com",
+    capacity: 4,
     availableBeds: 1,
-    priceMin: 6800,
-    priceMax: 8200,
+    priceMin: 6400,
+    priceMax: 7800,
     rating: "4.9",
-    reviewCount: 36,
-    licenseNumber: "AFH-022345",
+    reviewCount: 33,
+    licenseNumber: "AFH-024567",
     licenseStatus: "Active",
     lastInspectionDate: "2024-11-01",
     violationsCount: 0,
@@ -634,39 +723,12 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Memory Care", "Respite Care"],
     amenities: ["Falls Views", "Lodge Atmosphere", "Nature Walks", "Fireplace Lounge"],
+    careTypes: ["Memory Care", "Respite Care"],
     certifications: ["DSHS Licensed", "Dementia Certified", "Respite Certified"],
-    description: "A Pacific Northwest lodge experience for seniors. Steps from the famous falls, our rustic-elegant home provides exceptional memory care.",
+    description: "A Pacific Northwest lodge experience for seniors. Steps from the famous falls with exceptional memory care.",
     yearEstablished: 2018,
     status: "active",
     featured: true,
-  },
-  {
-    name: "Tacoma Heights Care",
-    address: "3456 Heights Boulevard",
-    city: "Tacoma",
-    zipCode: "98406",
-    county: "Pierce",
-    phone: "(253) 555-1018",
-    email: "hello@tacomaheights.com",
-    capacity: 6,
-    availableBeds: 2,
-    priceMin: 5400,
-    priceMax: 6800,
-    rating: "4.7",
-    reviewCount: 38,
-    licenseNumber: "AFH-023456",
-    licenseStatus: "Active",
-    lastInspectionDate: "2024-09-15",
-    violationsCount: 0,
-    acceptsMedicaid: true,
-    acceptsPrivatePay: true,
-    specialties: ["Assisted Living", "Mental Health"],
-    amenities: ["City Views", "Rooftop Garden", "Group Activities", "Transportation"],
-    certifications: ["DSHS Licensed", "Mental Health Certified"],
-    description: "Urban living with a personal touch. Our hilltop location offers stunning views and easy access to Tacoma's cultural amenities.",
-    yearEstablished: 2016,
-    status: "active",
-    featured: false,
   },
   {
     name: "Whidbey Island Retreat",
@@ -674,15 +736,15 @@ const FACILITY_DATA = [
     city: "Coupeville",
     zipCode: "98239",
     county: "Island",
-    phone: "(360) 555-1019",
-    email: "care@whidbeyretreat.com",
+    phone: "(360) 555-1020",
+    email: "info@whidbeyretreat.com",
     capacity: 4,
     availableBeds: 1,
     priceMin: 6200,
     priceMax: 7800,
     rating: "5.0",
-    reviewCount: 19,
-    licenseNumber: "AFH-024567",
+    reviewCount: 22,
+    licenseNumber: "AFH-025678",
     licenseStatus: "Active",
     lastInspectionDate: "2024-10-20",
     violationsCount: 0,
@@ -690,8 +752,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Hospice", "Palliative Care"],
     amenities: ["Ocean Views", "Beach Access", "Art Therapy", "Meditation Garden"],
+    careTypes: ["Hospice", "Palliative Care"],
     certifications: ["DSHS Licensed", "Hospice Certified", "Palliative Certified"],
-    description: "An island sanctuary for end-of-life care. Our peaceful oceanfront setting and holistic approach bring comfort to residents and families.",
+    description: "An island sanctuary for end-of-life care. Our peaceful oceanfront setting brings comfort to residents and families.",
     yearEstablished: 2019,
     status: "active",
     featured: true,
@@ -702,15 +765,15 @@ const FACILITY_DATA = [
     city: "Spokane Valley",
     zipCode: "99206",
     county: "Spokane",
-    phone: "(509) 555-1020",
-    email: "info@spokanevalleyhome.com",
+    phone: "(509) 555-1021",
+    email: "care@spokanevalleyhome.com",
     capacity: 6,
     availableBeds: 4,
-    priceMin: 4800,
-    priceMax: 6000,
-    rating: "4.6",
-    reviewCount: 35,
-    licenseNumber: "AFH-025678",
+    priceMin: 4600,
+    priceMax: 5800,
+    rating: "4.5",
+    reviewCount: 28,
+    licenseNumber: "AFH-026789",
     licenseStatus: "Active",
     lastInspectionDate: "2024-08-25",
     violationsCount: 0,
@@ -718,8 +781,9 @@ const FACILITY_DATA = [
     acceptsPrivatePay: true,
     specialties: ["Assisted Living", "Memory Care"],
     amenities: ["Valley Views", "Garden", "Activities", "Home-Cooked Meals"],
+    careTypes: ["Assisted Living", "Memory Care"],
     certifications: ["DSHS Licensed", "Dementia Certified"],
-    description: "Affordable excellence in the Spokane Valley. Our experienced team provides personalized care in a warm, homelike environment.",
+    description: "Affordable excellence in the Spokane Valley. Quality care in a warm, homelike environment.",
     yearEstablished: 2013,
     status: "active",
     featured: false,
@@ -730,143 +794,162 @@ async function seed() {
   console.log("Starting database seed...");
 
   try {
-    // Check if we already have enough facilities (idempotent check)
     const existingFacilities = await db.select().from(facilities);
     
     if (existingFacilities.length >= FACILITY_DATA.length) {
-      console.log(`Database already has ${existingFacilities.length} facilities. Skipping seed.`);
-      return;
-    }
+      console.log(`Database already has ${existingFacilities.length} facilities. Skipping facility seed.`);
+    } else {
+      console.log("Clearing existing data...");
+      await db.delete(reviews);
+      await db.delete(inquiries);
+      await db.delete(credentials);
+      await db.delete(teamMembers);
+      await db.delete(facilities);
 
-    // Clear existing data for fresh seed
-    console.log("Clearing existing data...");
-    await db.delete(credentials);
-    await db.delete(teamMembers);
-    await db.delete(facilities);
+      console.log(`Inserting ${FACILITY_DATA.length} facilities...`);
+      const insertedFacilities = await db.insert(facilities).values(
+        FACILITY_DATA.map((f, index) => ({
+          ...f,
+          slug: slugify(f.name),
+          state: "WA",
+          images: getImagesForIndex(index, 4),
+        }))
+      ).returning();
 
-    // Insert all facilities
-    console.log(`Inserting ${FACILITY_DATA.length} facilities...`);
-    const insertedFacilities = await db.insert(facilities).values(
-      FACILITY_DATA.map((f, index) => ({
-        ...f,
-        images: getImagesForIndex(index, 3),
-      }))
-    ).returning();
+      console.log(`Inserted ${insertedFacilities.length} facilities`);
 
-    console.log(`✓ Inserted ${insertedFacilities.length} facilities`);
-
-    // Add team members to first facility (Sunshine AFH) for demo
-    const sunshineAFH = insertedFacilities.find(f => f.name === "Sunshine Adult Family Home");
-    
-    if (sunshineAFH) {
-      console.log("Adding team members to Sunshine AFH...");
+      const sunshineAFH = insertedFacilities.find(f => f.name === "Sunshine Adult Family Home");
       
-      const teamData = [
-        {
-          facilityId: sunshineAFH.id,
-          name: "Sarah Johnson",
-          email: "sarah@sunshineafh.com",
-          role: "Owner / Administrator",
-          status: "Active",
-          joinedAt: new Date("2022-01-15"),
-          isManualEntry: false,
-          avatarUrl: "/generic_portrait_of_a_friendly_female_caregiver.png",
-        },
-        {
-          facilityId: sunshineAFH.id,
-          name: "Michael Chen",
-          email: "michael.c@email.com",
-          role: "Resident Care Manager",
-          status: "Active",
-          joinedAt: new Date("2023-03-20"),
-          isManualEntry: false,
-          avatarUrl: "/generic_portrait_of_a_friendly_male_caregiver.png",
-        },
-        {
-          facilityId: sunshineAFH.id,
-          name: "Jessica Davis",
-          email: "jessica.d@email.com",
-          role: "Caregiver (HCA)",
-          status: "Invited",
-          invitedAt: new Date("2024-11-01"),
-          isManualEntry: false,
-        },
+      if (sunshineAFH) {
+        console.log("Adding team members to Sunshine AFH...");
+        
+        const teamData = [
+          {
+            facilityId: sunshineAFH.id,
+            name: "Sarah Johnson",
+            email: "sarah@sunshineafh.com",
+            role: "Owner / Administrator",
+            status: "Active",
+            joinedAt: new Date("2022-01-15"),
+            isManualEntry: false,
+            avatarUrl: "/generic_portrait_of_a_friendly_female_caregiver.png",
+          },
+          {
+            facilityId: sunshineAFH.id,
+            name: "Michael Chen",
+            email: "michael.c@email.com",
+            role: "Resident Care Manager",
+            status: "Active",
+            joinedAt: new Date("2023-03-20"),
+            isManualEntry: false,
+            avatarUrl: "/generic_portrait_of_a_friendly_male_caregiver.png",
+          },
+          {
+            facilityId: sunshineAFH.id,
+            name: "Jessica Davis",
+            email: "jessica.d@email.com",
+            role: "Caregiver (HCA)",
+            status: "Invited",
+            invitedAt: new Date("2024-11-01"),
+            isManualEntry: false,
+          },
+        ];
+
+        const insertedTeam = await db.insert(teamMembers).values(teamData).returning();
+        console.log(`Inserted ${insertedTeam.length} team members`);
+
+        const credentialData = [
+          {
+            teamMemberId: insertedTeam[0].id,
+            name: "Administrator Training",
+            type: "Required",
+            status: "Current",
+            issuedDate: "2024-05-01",
+            expiryDate: "2026-05-15",
+            source: "Okapi Academy",
+            issuer: "Okapi Academy",
+          },
+          {
+            teamMemberId: insertedTeam[0].id,
+            name: "CPR/First Aid",
+            type: "Required",
+            status: "Current",
+            issuedDate: "2023-11-15",
+            expiryDate: "2025-11-20",
+            source: "External",
+            issuer: "American Red Cross",
+          },
+          {
+            teamMemberId: insertedTeam[1].id,
+            name: "Mental Health Specialty",
+            type: "Specialty",
+            status: "Current",
+            issuedDate: "2023-07-15",
+            expiryDate: "2025-08-01",
+            source: "Okapi Academy",
+            issuer: "Okapi Academy",
+          },
+          {
+            teamMemberId: insertedTeam[1].id,
+            name: "CPR/First Aid",
+            type: "Required",
+            status: "Expiring Soon",
+            issuedDate: "2023-04-10",
+            expiryDate: "2025-04-15",
+            source: "External",
+            issuer: "American Red Cross",
+          },
+        ];
+
+        await db.insert(credentials).values(credentialData);
+        console.log(`Inserted credentials`);
+      }
+
+      console.log("Adding sample reviews...");
+      const sampleReviews = [
+        { facilityId: insertedFacilities[0].id, authorName: "Margaret Thompson", authorEmail: "margaret.t@email.com", rating: 5, title: "Exceptional Care for Mom", content: "The staff at Sunshine AFH has been incredible with my mother. She has dementia and they treat her with such patience and kindness. The home is always clean and the meals are delicious.", status: "approved" },
+        { facilityId: insertedFacilities[0].id, authorName: "Robert Chen", authorEmail: "robert.c@email.com", rating: 5, title: "Couldn't Be Happier", content: "After visiting many facilities, we chose Sunshine AFH for my father. Best decision we ever made. The personalized attention is remarkable.", status: "approved" },
+        { facilityId: insertedFacilities[3].id, authorName: "Jennifer Martinez", authorEmail: "jenn.m@email.com", rating: 5, title: "World-Class Care", content: "Lakeside Family Care provided exceptional post-surgical care for my husband. The nursing staff is top-notch and the views are therapeutic!", status: "approved" },
+        { facilityId: insertedFacilities[5].id, authorName: "William Parker", authorEmail: "will.p@email.com", rating: 5, title: "Peaceful Environment", content: "The Japanese garden at Serenity Gardens has become my mother's favorite place. The holistic approach to memory care has made such a difference.", status: "approved" },
+        { facilityId: insertedFacilities[7].id, authorName: "Susan Williams", authorEmail: "susan.w@email.com", rating: 5, title: "Outstanding Memory Care", content: "Harmony House provides the perfect balance of luxury and specialized dementia care. My aunt loves the gourmet meals and PT sessions.", status: "approved" },
+        { facilityId: insertedFacilities[10].id, authorName: "David Anderson", authorEmail: "david.a@email.com", rating: 5, title: "Luxury at Its Finest", content: "The Pines at Mercer exceeded all expectations. Worth every penny for the level of care and attention my father receives.", status: "approved" },
+        { facilityId: insertedFacilities[16].id, authorName: "Patricia Brown", authorEmail: "pat.b@email.com", rating: 5, title: "Sunset Views", content: "My mother loves watching the sunsets over Puget Sound. The staff treats her like royalty.", status: "approved" },
+        { facilityId: insertedFacilities[24].id, authorName: "Michael O'Brien", authorEmail: "mike.ob@email.com", rating: 5, title: "Lodge Living", content: "Snoqualmie Valley Care feels like a vacation lodge. The falls views and nature walks have improved Dad's mood tremendously.", status: "approved" },
+        { facilityId: insertedFacilities[25].id, authorName: "Elizabeth Turner", authorEmail: "liz.t@email.com", rating: 5, title: "Island Sanctuary", content: "Whidbey Island Retreat gave my mother the most peaceful final months. The compassionate hospice care was beyond compare.", status: "approved" },
+        { facilityId: insertedFacilities[1].id, authorName: "James Wilson", authorEmail: "james.w@email.com", rating: 4, title: "Great Mental Health Support", content: "Peaceful Haven has been wonderful for my brother's mental health needs. The staff truly understands behavioral support.", status: "approved" },
       ];
 
-      const insertedTeam = await db.insert(teamMembers).values(teamData).returning();
-      console.log(`✓ Inserted ${insertedTeam.length} team members`);
+      await db.insert(reviews).values(sampleReviews);
+      console.log("Inserted sample reviews");
 
-      // Add credentials for team members
-      const credentialData = [
-        {
-          teamMemberId: insertedTeam[0].id,
-          name: "Administrator Training",
-          type: "Required",
-          status: "Current",
-          issuedDate: "2024-05-01",
-          expiryDate: "2026-05-15",
-          source: "Okapi Academy",
-          issuer: "Okapi Academy",
-        },
-        {
-          teamMemberId: insertedTeam[0].id,
-          name: "CPR/First Aid",
-          type: "Required",
-          status: "Current",
-          issuedDate: "2023-11-15",
-          expiryDate: "2025-11-20",
-          source: "External",
-          issuer: "American Red Cross",
-        },
-        {
-          teamMemberId: insertedTeam[0].id,
-          name: "Food Worker Card",
-          type: "Required",
-          status: "Current",
-          issuedDate: "2024-01-05",
-          expiryDate: "2026-01-10",
-          source: "External",
-          issuer: "King County Health Dept",
-        },
-        {
-          teamMemberId: insertedTeam[1].id,
-          name: "Mental Health Specialty",
-          type: "Specialty",
-          status: "Current",
-          issuedDate: "2023-07-15",
-          expiryDate: "2025-08-01",
-          source: "Okapi Academy",
-          issuer: "Okapi Academy",
-        },
-        {
-          teamMemberId: insertedTeam[1].id,
-          name: "CPR/First Aid",
-          type: "Required",
-          status: "Expiring Soon",
-          issuedDate: "2023-04-10",
-          expiryDate: "2025-04-15",
-          source: "External",
-          issuer: "American Red Cross",
-        },
-        {
-          teamMemberId: insertedTeam[1].id,
-          name: "Dementia Specialty",
-          type: "Specialty",
-          status: "Current",
-          issuedDate: "2024-02-01",
-          expiryDate: "2026-02-20",
-          source: "Okapi Academy",
-          issuer: "Okapi Academy",
-        },
+      console.log("Adding sample inquiries...");
+      const sampleInquiries = [
+        { facilityId: insertedFacilities[0].id, name: "Linda Johnson", email: "linda.j@email.com", phone: "(206) 555-9876", message: "I'm looking for memory care for my mother who was recently diagnosed with early-stage Alzheimer's. Can we schedule a tour?", careType: "Memory Care", moveInTimeline: "1-3 months", status: "new" },
+        { facilityId: insertedFacilities[3].id, name: "Thomas Greene", email: "tgreene@email.com", phone: "(425) 555-4321", message: "My father needs post-surgical care after hip replacement. Do you have availability?", careType: "Recovery Care", moveInTimeline: "Immediately", status: "contacted" },
+        { facilityId: insertedFacilities[5].id, name: "Maria Rodriguez", email: "maria.r@email.com", phone: "(206) 555-8765", message: "We're interested in learning more about your memory care program and the Japanese garden.", careType: "Memory Care", moveInTimeline: "3-6 months", status: "toured" },
+        { facilityId: insertedFacilities[7].id, name: "Steven Baker", email: "sbaker@email.com", message: "Looking for respite care for my wife while I travel for work next month.", careType: "Respite Care", moveInTimeline: "1 month", status: "new" },
+        { facilityId: insertedFacilities[10].id, name: "Catherine Phillips", email: "cathy.p@email.com", phone: "(206) 555-2345", message: "We're interested in your luxury care services for my father. Price is not a concern - we want the best.", careType: "Luxury Care", moveInTimeline: "1-3 months", status: "new" },
       ];
 
-      const insertedCreds = await db.insert(credentials).values(credentialData).returning();
-      console.log(`✓ Inserted ${insertedCreds.length} credentials`);
+      await db.insert(inquiries).values(sampleInquiries);
+      console.log("Inserted sample inquiries");
     }
 
-    console.log("\n✅ Database seeding complete!");
-    console.log(`\nSummary:`);
-    console.log(`  - ${insertedFacilities.length} facilities`);
+    const existingAdmins = await db.select().from(admins);
+    if (existingAdmins.length === 0) {
+      console.log("Creating admin account...");
+      await db.insert(admins).values({
+        email: "admin@okapicare.com",
+        passwordHash: "$2b$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu3Vu", // AdminPassword123!
+        name: "Admin User",
+        role: "super_admin",
+      });
+      console.log("Created admin account: admin@okapicare.com / AdminPassword123!");
+    } else {
+      console.log("Admin account already exists");
+    }
+
+    console.log("\nSeed completed successfully!");
   } catch (error) {
     console.error("Seed failed:", error);
     throw error;
@@ -875,10 +958,10 @@ async function seed() {
 
 seed()
   .then(() => {
-    console.log("\nSeed completed successfully");
+    console.log("\nSeed script finished");
     process.exit(0);
   })
   .catch((error) => {
-    console.error("Error seeding database:", error);
+    console.error("Error:", error);
     process.exit(1);
   });

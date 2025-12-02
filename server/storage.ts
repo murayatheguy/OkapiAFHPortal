@@ -4,6 +4,9 @@ import {
   teamMembers, 
   credentials,
   inquiries,
+  admins,
+  reviews,
+  owners,
   type User, 
   type InsertUser,
   type Facility,
@@ -13,10 +16,16 @@ import {
   type Credential,
   type InsertCredential,
   type Inquiry,
-  type InsertInquiry
+  type InsertInquiry,
+  type Admin,
+  type InsertAdmin,
+  type Review,
+  type InsertReview,
+  type Owner,
+  type InsertOwner
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, sql, inArray, desc } from "drizzle-orm";
+import { eq, and, ilike, or, sql, inArray, desc, count, gte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -61,6 +70,41 @@ export interface IStorage {
 
   // Featured Facilities
   getFeaturedFacilities(limit?: number): Promise<Facility[]>;
+
+  // Admins
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  getAdmin(id: string): Promise<Admin | undefined>;
+  getAllAdmins(): Promise<Admin[]>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
+
+  // Reviews
+  getReview(id: string): Promise<Review | undefined>;
+  getReviewsByFacility(facilityId: string): Promise<Review[]>;
+  getApprovedReviewsByFacility(facilityId: string): Promise<Review[]>;
+  getAllReviews(): Promise<Review[]>;
+  getReviewsByStatus(status: string): Promise<Review[]>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: string, review: Partial<InsertReview>): Promise<Review | undefined>;
+  deleteReview(id: string): Promise<void>;
+
+  // Owners
+  getOwner(id: string): Promise<Owner | undefined>;
+  getOwnerByEmail(email: string): Promise<Owner | undefined>;
+  getAllOwners(): Promise<Owner[]>;
+  createOwner(owner: InsertOwner): Promise<Owner>;
+  updateOwner(id: string, owner: Partial<InsertOwner>): Promise<Owner | undefined>;
+
+  // Stats for Admin Dashboard
+  getStats(): Promise<{
+    totalFacilities: number;
+    activeFacilities: number;
+    totalOwners: number;
+    pendingReviews: number;
+    newInquiries: number;
+  }>;
+
+  // All inquiries for admin
+  getAllInquiries(): Promise<Inquiry[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -255,6 +299,138 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(facilities.rating))
       .limit(limit);
+  }
+
+  // Admins
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.email, email));
+    return admin || undefined;
+  }
+
+  async getAdmin(id: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin || undefined;
+  }
+
+  async getAllAdmins(): Promise<Admin[]> {
+    return await db.select().from(admins).orderBy(desc(admins.createdAt));
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const [admin] = await db.insert(admins).values(insertAdmin).returning();
+    return admin;
+  }
+
+  // Reviews
+  async getReview(id: string): Promise<Review | undefined> {
+    const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
+    return review || undefined;
+  }
+
+  async getReviewsByFacility(facilityId: string): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.facilityId, facilityId))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async getApprovedReviewsByFacility(facilityId: string): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(and(
+        eq(reviews.facilityId, facilityId),
+        eq(reviews.status, "approved")
+      ))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async getAllReviews(): Promise<Review[]> {
+    return await db.select().from(reviews).orderBy(desc(reviews.createdAt));
+  }
+
+  async getReviewsByStatus(status: string): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.status, status))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async createReview(insertReview: InsertReview): Promise<Review> {
+    const [review] = await db.insert(reviews).values(insertReview).returning();
+    return review;
+  }
+
+  async updateReview(id: string, updateData: Partial<InsertReview>): Promise<Review | undefined> {
+    const [review] = await db
+      .update(reviews)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(reviews.id, id))
+      .returning();
+    return review || undefined;
+  }
+
+  async deleteReview(id: string): Promise<void> {
+    await db.delete(reviews).where(eq(reviews.id, id));
+  }
+
+  // Owners
+  async getOwner(id: string): Promise<Owner | undefined> {
+    const [owner] = await db.select().from(owners).where(eq(owners.id, id));
+    return owner || undefined;
+  }
+
+  async getOwnerByEmail(email: string): Promise<Owner | undefined> {
+    const [owner] = await db.select().from(owners).where(eq(owners.email, email));
+    return owner || undefined;
+  }
+
+  async getAllOwners(): Promise<Owner[]> {
+    return await db.select().from(owners).orderBy(desc(owners.createdAt));
+  }
+
+  async createOwner(insertOwner: InsertOwner): Promise<Owner> {
+    const [owner] = await db.insert(owners).values(insertOwner).returning();
+    return owner;
+  }
+
+  async updateOwner(id: string, updateData: Partial<InsertOwner>): Promise<Owner | undefined> {
+    const [owner] = await db
+      .update(owners)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(owners.id, id))
+      .returning();
+    return owner || undefined;
+  }
+
+  // Stats for Admin Dashboard
+  async getStats(): Promise<{
+    totalFacilities: number;
+    activeFacilities: number;
+    totalOwners: number;
+    pendingReviews: number;
+    newInquiries: number;
+  }> {
+    const [totalFacilitiesResult] = await db.select({ count: count() }).from(facilities);
+    const [activeFacilitiesResult] = await db.select({ count: count() }).from(facilities).where(eq(facilities.status, "active"));
+    const [totalOwnersResult] = await db.select({ count: count() }).from(owners);
+    const [pendingReviewsResult] = await db.select({ count: count() }).from(reviews).where(eq(reviews.status, "pending"));
+    const [newInquiriesResult] = await db.select({ count: count() }).from(inquiries).where(eq(inquiries.status, "new"));
+
+    return {
+      totalFacilities: totalFacilitiesResult?.count || 0,
+      activeFacilities: activeFacilitiesResult?.count || 0,
+      totalOwners: totalOwnersResult?.count || 0,
+      pendingReviews: pendingReviewsResult?.count || 0,
+      newInquiries: newInquiriesResult?.count || 0,
+    };
+  }
+
+  // All inquiries for admin
+  async getAllInquiries(): Promise<Inquiry[]> {
+    return await db.select().from(inquiries).orderBy(desc(inquiries.createdAt));
   }
 }
 

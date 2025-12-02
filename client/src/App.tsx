@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import SearchResults from "@/pages/search-results";
 import FacilityDetails from "@/pages/facility-details";
 import OwnerPortal from "@/pages/owner-portal";
+import AdminPage from "@/pages/admin";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/search" component={SearchResults} />
       <Route path="/facility/:id" component={FacilityDetails} />
       <Route path="/owner" component={OwnerPortal} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );
