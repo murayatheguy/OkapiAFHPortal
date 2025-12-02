@@ -1,0 +1,412 @@
+The Prompt for Replit Agent
+Copy everything below and paste it into Replit Agent:
+# OKAPI AFH PORTAL + OKAPI ACADEMY
+## Complete Build Specification
+
+I want to build a web application that connects Adult Family Home (AFH) owners in Washington State with families looking for care, integrated with a training/certification platform called Okapi Academy.
+
+This is a two-sided marketplace with three user types:
+1. FAMILIES searching for care facilities
+2. AFH OWNERS managing their facility listings and staff
+3. CAREGIVERS completing training and managing their credentials
+
+---
+
+## TECH STACK
+- Frontend: React with Tailwind CSS
+- Backend: Node.js with Express (or Python FastAPI if easier)
+- Database: PostgreSQL (or SQLite for MVP)
+- Authentication: Email/password with JWT tokens
+- File storage: For certificate PDFs and photos
+
+---
+
+## PHASE 1: FAMILY-FACING SEARCH (Build this first)
+
+### 1.1 Landing Page
+- Hero section: "Find care for your loved one"
+- Search bar: Location/ZIP code input
+- Filter checkboxes:
+  - Care needs: Memory Care, Hospice, Developmental Disabilities, Mental Health, Respite
+  - Payment: Medicaid, Private Pay, VA Benefits, LTC Insurance
+  - Checkbox: "Show only homes with beds available now"
+- Call-to-action button: "Search"
+
+### 1.2 Search Results Page
+Display facility cards with:
+- Facility photo (placeholder if none)
+- Facility name
+- Distance from search location
+- Trust badges: "DSHS Verified" (always shown), "Claimed" (if owner claimed), "Okapi Certified Staff"
+- Beds available count
+- Starting price
+- Specialties tags (Memory Care, Hospice, etc.)
+- Payment types accepted
+- Compliance snapshot box:
+  - License status (Active/Inactive)
+  - Violations count in last 24 months
+  - Last inspection date
+- Action buttons: "Call", "Message", "Request Tour", "View Details"
+
+### 1.3 Facility Detail Page
+Full facility profile with sections:
+
+**Header:**
+- Photo gallery (carousel)
+- Facility name and address
+- Trust badges
+- Quick stats: beds available, price range
+
+**DSHS Compliance Record (auto-synced, not editable):**
+- License number and status
+- Licensed since / expires date
+- Administrator name
+- Capacity
+- Inspection history (list of dates with outcomes)
+- Link: "View Full DSHS Report"
+
+**About This Home (owner-provided):**
+- Description text
+- Services included (checkboxes displayed as list)
+- Specialties
+- Equipment available
+- Languages spoken
+- Visiting hours policy
+
+**Staff Credentials Section:**
+- "X of X caregivers current on required training"
+- "Okapi Academy Certified" badge if applicable
+- Last verified date
+
+**Location:**
+- Map embed
+- Full address
+
+**Contact Actions:**
+- Call button
+- Message button (opens inquiry form)
+- Schedule Tour button (date/time picker)
+
+---
+
+## PHASE 2: AFH OWNER PORTAL
+
+### 2.1 Owner Registration & Claiming Flow
+1. Owner clicks "Claim Your Listing" on any facility page
+2. Registration form: Name, email, password
+3. Identity verification: 
+   - Enter facility license number
+   - System sends verification code to address on file (simulate this for MVP)
+4. Once verified, owner can manage their facility
+
+### 2.2 Owner Dashboard
+Left sidebar navigation:
+- Dashboard (overview)
+- My Facility (profile editing)
+- Listings (bed availability)
+- Inquiries
+- Tours
+- Messages
+- Team & Credentials ← Links to Okapi Academy
+- Training Courses ← Links to Okapi Academy
+- Settings
+
+**Dashboard Overview shows:**
+- Quick stats: Inquiries this month, Tours scheduled, Response rate
+- Action needed alerts:
+  - "X new inquiries awaiting response"
+  - "Tour request pending confirmation"
+  - "Bed availability not updated in X days"
+  - "X staff credentials expiring soon"
+- DSHS compliance status card (pulled automatically)
+
+### 2.3 My Facility (Profile Editing)
+Owner can edit:
+- Photos (upload multiple, drag to reorder)
+- Description text
+- Services checkboxes
+- Specialties checkboxes
+- Equipment checkboxes
+- Payment types accepted
+- Languages spoken
+- Visiting hours
+
+Owner CANNOT edit (shown as read-only):
+- License number, status, expiration
+- Administrator of record
+- Inspection history
+- Violations
+
+### 2.4 Listings (Bed Availability)
+Table showing each room/bed:
+- Room name/number
+- Status dropdown: Available / Occupied / Pending Move-in
+- Room type: Private / Shared
+- Price
+- Last updated timestamp
+- Edit button
+
+"Update All Now" button to refresh timestamp
+Tip text: "Homes updated in the last 24 hours get 3x more inquiries"
+
+### 2.5 Inquiries Management
+List of inquiries with:
+- Family name
+- Date received
+- Status: New / Responded / Converted / Closed
+- Preview of message
+- Action buttons: Respond, Mark as Converted
+
+### 2.6 Tour Management
+Calendar view of scheduled tours
+Each tour shows:
+- Family name
+- Date/time
+- Status: Pending / Confirmed / Completed / Cancelled
+- Action buttons: Confirm, Reschedule, Cancel
+
+---
+
+## PHASE 3: TEAM & CREDENTIALS MANAGEMENT
+
+### 3.1 Team Roster
+Owner can add team members (caregivers):
+- Name
+- Email
+- Role (Owner, Caregiver, etc.)
+- Start date
+
+Each team member has credential tracking.
+
+### 3.2 Credentials Dashboard
+Shows compliance overview:
+- "X of X team members current"
+- "X credentials expiring in 30 days"
+- "X credentials expired"
+
+Table of all team members:
+- Name
+- Role
+- Status: Current / Expiring Soon / Expired
+- Action: View Details
+
+### 3.3 Individual Team Member Credentials
+List of credentials with:
+- Credential name (CPR/First Aid, Food Worker, etc.)
+- Status: Current / Expiring / Expired
+- Expiration date
+- Certificate file (if uploaded)
+- Actions: Upload New, Assign Course (links to Okapi Academy)
+
+Required credentials list:
+- CPR/First Aid (2 year)
+- Food Worker Card (2 year)
+- Bloodborne Pathogens (1 year)
+- HIV/AIDS Training (one-time)
+- Abuse Recognition (2 year)
+- Fire Safety (1 year)
+- Background Check (per DSHS)
+
+Specialty credentials (if facility has specialty):
+- Dementia Care (for Memory Care homes)
+- Mental Health (for MH homes)
+- Nurse Delegation (if applicable)
+
+---
+
+## PHASE 4: OKAPI ACADEMY INTEGRATION
+
+### 4.1 Course Catalog Page
+Accessible from owner portal sidebar and standalone URL.
+
+Header: "Okapi Academy - Training & Certification for Care Professionals"
+
+Filter tabs: All Courses, Required, CE Credits, Specialties
+
+Course cards showing:
+- Course icon/image
+- Course title
+- Description
+- Duration
+- Price (or "FREE")
+- CE credits (if applicable)
+- Validity period
+- DSHS/OSHA approval badges
+- Buttons: "View Details", "Assign to Staff", "Enroll Now"
+
+### 4.2 Course Categories
+
+**Division A: Compliance Core**
+- CPR + First Aid + AED ($45, 4 hrs, 2 year validity)
+- Bloodborne Pathogens (FREE, 2 hrs, 1 year validity)
+- Food Safety + WA Food Worker Card ($15, 2 hrs, 2 year validity)
+- Abuse & Neglect Recognition ($20, 2 hrs, 2 year validity)
+- Fire Safety & Emergency Prep (FREE, 1 hr, 1 year validity)
+
+**CNA/HCA Continuing Education**
+- 12-Hour CE Bundle ($89, 12 hrs, annual)
+  - Individual modules available at $12 each
+
+**Specialty Certifications**
+- Dementia Care Specialist ($75, 8 hrs, 2 year validity)
+- Mental Health Specialty ($75, 8 hrs, 2 year validity)
+- Nurse Delegation ($60, 6 hrs)
+
+**Okapi Professional Certification**
+- Okapi Certified Care Professional - OCCP ($199, 16 hrs, 2 year validity)
+
+### 4.3 Course Detail Page
+- Course title and badges
+- Full description
+- Module list/curriculum outline
+- Learning objectives
+- Assessment info
+- Certificate preview
+- Price and enrollment button
+
+### 4.4 Course Player (LMS)
+When user enrolls in a course:
+- Video player for each module
+- Progress tracking (modules completed)
+- Quiz at end of each module (multiple choice)
+- Final assessment (80% to pass)
+- Certificate generation on completion
+
+### 4.5 Caregiver Self-Service Portal
+Caregivers invited by owners can log in to:
+- See assigned courses
+- Complete courses
+- View their credentials
+- Download certificates
+- Upload external certificates
+
+### 4.6 Certificate System
+On course completion:
+- Generate PDF certificate with:
+  - Okapi Academy branding
+  - Student name
+  - Course name
+  - Completion date
+  - Expiration date
+  - Certificate ID
+  - QR code for verification
+- Store in database
+- Auto-update credential status in owner's dashboard
+
+### 4.7 Certificate Verification Page
+Public page at /verify/[certificate-id]
+Shows:
+- Verification status (Valid/Expired/Not Found)
+- Certificate holder name
+- Course name
+- Issue date
+- Expiration date
+- Employer (if linked)
+
+---
+
+## PHASE 5: FAMILY INQUIRY & TOUR FLOW
+
+### 5.1 Message/Inquiry Form
+Family fills out:
+- Their name
+- Email
+- Phone
+- Relationship to person needing care
+- Message/questions
+- Preferred contact method
+
+Sends notification to facility owner.
+
+### 5.2 Tour Request Form
+Family selects:
+- Preferred dates (calendar picker, select up to 3)
+- Preferred times
+- Number of people attending
+- Special requests
+
+Owner receives notification to confirm.
+
+### 5.3 Family Dashboard (Optional for MVP)
+If families create accounts:
+- Saved facilities
+- Inquiry history
+- Scheduled tours
+- Messages with facilities
+
+---
+
+## DATABASE SCHEMA (Key Tables)
+
+**facilities**
+- id, name, address, city, zip, county
+- license_number, license_status, license_expiration
+- administrator_name, capacity
+- description, visiting_hours
+- created_at, updated_at, claimed_at
+
+**facility_services** (many-to-many)
+- facility_id, service_type
+
+**facility_specialties** (many-to-many)
+- facility_id, specialty_type
+
+**facility_photos**
+- id, facility_id, url, order, created_at
+
+**rooms**
+- id, facility_id, name, room_type, status, price, updated_at
+
+**users**
+- id, email, password_hash, role (family/owner/caregiver), created_at
+
+**team_members**
+- id, facility_id, user_id, name, email, role, start_date
+
+**credentials**
+- id, team_member_id, credential_type, status, expiration_date, certificate_url
+
+**courses**
+- id, title, description, duration_hours, price, validity_months, category, modules_json
+
+**enrollments**
+- id, user_id, course_id, status, progress_percent, started_at, completed_at
+
+**certificates**
+- id, user_id, course_id, certificate_number, issued_at, expires_at, pdf_url
+
+**inquiries**
+- id, facility_id, family_user_id, message, status, created_at
+
+**tours**
+- id, facility_id, family_user_id, requested_dates, confirmed_date, status
+
+---
+
+## DESIGN GUIDELINES
+
+- Clean, professional look (healthcare context)
+- Primary color: Teal/green (Okapi brand)
+- Plenty of white space
+- Trust badges prominently displayed
+- Mobile-responsive
+- Clear typography, easy to read for older users
+- Accessibility: good contrast, screen reader friendly
+
+---
+
+## START WITH PHASE 1
+
+Please build Phase 1 first (Family-Facing Search). 
+
+Create:
+1. Landing page with search
+2. Search results page with mock facility data
+3. Facility detail page
+
+Use mock/seed data for facilities (create 5-10 sample AFHs in Washington State with realistic data).
+
+Once Phase 1 is working, I'll ask you to add Phase 2.
+After You Paste This
+Tell Replit Agent:
+"Start with Phase 1 only. Build the landing page, search results, and facility detail page with mock data. Don't build the other phases yet."
