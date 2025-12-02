@@ -1,4 +1,4 @@
-import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users } from "lucide-react";
+import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,58 +11,60 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getTeamMembers, getFacility, createTeamMember } from "@/lib/api";
 import caregiver1 from '@assets/generated_images/generic_portrait_of_a_friendly_male_caregiver.png';
 import caregiver2 from '@assets/generated_images/generic_portrait_of_a_friendly_female_caregiver.png';
-
-// Mock Data for Team Members
-const MOCK_TEAM = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    role: "Owner / Administrator",
-    email: "sarah@sunshineafh.com",
-    image: caregiver2,
-    status: "Active",
-    credentials_status: "Current",
-    credentials: [
-      { name: "Administrator Training", type: "Required", status: "Current", expiry: "2026-05-15", source: "Okapi Academy" },
-      { name: "CPR/First Aid", type: "Required", status: "Current", expiry: "2025-11-20", source: "External" },
-      { name: "Food Worker Card", type: "Required", status: "Current", expiry: "2026-01-10", source: "External" }
-    ]
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    role: "Resident Care Manager",
-    email: "michael.c@email.com",
-    image: caregiver1,
-    status: "Active",
-    credentials_status: "Expiring Soon",
-    credentials: [
-      { name: "Mental Health Specialty", type: "Specialty", status: "Current", expiry: "2025-08-01", source: "Okapi Academy" },
-      { name: "CPR/First Aid", type: "Required", status: "Expiring Soon", expiry: "2025-04-15", source: "External" },
-      { name: "Dementia Specialty", type: "Specialty", status: "Current", expiry: "2026-02-20", source: "Okapi Academy" }
-    ]
-  },
-  {
-    id: "3",
-    name: "Jessica Davis",
-    role: "Caregiver (HCA)",
-    email: "jessica.d@email.com",
-    image: null,
-    status: "Invited",
-    credentials_status: "Pending",
-    credentials: []
-  }
-];
 
 export default function OwnerDashboard() {
   const [activeTab, setActiveTab] = useState("team");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const queryClient = useQueryClient();
+  
+  const FACILITY_ID = "3c173ee5-0573-4979-8686-f21f5beb8778";
+  
+  const { data: facility, isLoading: facilityLoading } = useQuery({
+    queryKey: ["facility", FACILITY_ID],
+    queryFn: async () => {
+      const facilities = await getFacility(FACILITY_ID);
+      return facilities;
+    },
+    retry: false,
+  });
+
+  const { data: teamMembers = [], isLoading: teamLoading } = useQuery({
+    queryKey: ["team-members", FACILITY_ID],
+    queryFn: async () => {
+      const members = await getTeamMembers(FACILITY_ID);
+      return members;
+    },
+    retry: false,
+  });
+
+  const createMemberMutation = useMutation({
+    mutationFn: createTeamMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team-members", FACILITY_ID] });
+      setShowInviteDialog(false);
+    },
+  });
+  
+  const isLoading = facilityLoading || teamLoading;
 
   return (
     <div className="min-h-screen bg-muted/10 font-sans">
       <Navbar />
+      
+      {isLoading && (
+        <div className="container mx-auto px-4 py-20">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      )}
+      
+      {!isLoading && (
+        <div>
       
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -73,10 +75,10 @@ export default function OwnerDashboard() {
               <div className="flex items-center gap-3 mb-4">
                 <Avatar className="h-12 w-12 border-2 border-primary/10">
                   <AvatarImage src={caregiver2} />
-                  <AvatarFallback>SJ</AvatarFallback>
+                  <AvatarFallback>{facility?.name.substring(0, 2).toUpperCase() || "OK"}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold text-sm">Sunshine AFH</p>
+                  <p className="font-bold text-sm">{facility?.name || "Loading..."}</p>
                   <p className="text-xs text-muted-foreground">Owner Portal</p>
                 </div>
               </div>
@@ -211,7 +213,7 @@ export default function OwnerDashboard() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Total Staff</p>
-                      <h3 className="text-2xl font-bold mt-1">3</h3>
+                      <h3 className="text-2xl font-bold mt-1">{teamMembers.length}</h3>
                     </div>
                     <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
                       <Users className="h-4 w-4" />
@@ -237,7 +239,12 @@ export default function OwnerDashboard() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-sm font-medium text-amber-800">Expiring Soon</p>
-                      <h3 className="text-2xl font-bold mt-1 text-amber-700">1</h3>
+                      <h3 className="text-2xl font-bold mt-1 text-amber-700">
+                        {teamMembers.reduce((count, member) => {
+                          const expiring = member.credentials?.filter(c => c.status === "Expiring Soon").length || 0;
+                          return count + expiring;
+                        }, 0)}
+                      </h3>
                     </div>
                     <div className="h-8 w-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">
                       <AlertCircle className="h-4 w-4" />
@@ -257,97 +264,113 @@ export default function OwnerDashboard() {
               </div>
               
               <div className="divide-y">
-                {MOCK_TEAM.map((member) => (
-                  <div key={member.id} className="p-4 hover:bg-muted/5 transition-colors">
-                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border">
-                          <AvatarImage src={member.image || ""} />
-                          <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-semibold">{member.name}</h4>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{member.role}</span>
-                            {member.status === "Invited" && (
-                              <Badge variant="secondary" className="text-xs h-5 font-normal">Invited</Badge>
-                            )}
+                {teamMembers.map((member) => {
+                  const getCredentialStatus = () => {
+                    if (member.status === "Invited") return "Pending";
+                    if (!member.credentials || member.credentials.length === 0) return "Pending";
+                    
+                    const hasExpiring = member.credentials.some(c => c.status === "Expiring Soon");
+                    if (hasExpiring) return "Expiring Soon";
+                    return "Current";
+                  };
+                  
+                  const credStatus = getCredentialStatus();
+                  
+                  return (
+                    <div key={member.id} className="p-4 hover:bg-muted/5 transition-colors">
+                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 border">
+                            <AvatarImage src={member.avatarUrl || ""} />
+                            <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-semibold">{member.name}</h4>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{member.role}</span>
+                              {member.status === "Invited" && (
+                                <Badge variant="secondary" className="text-xs h-5 font-normal">Invited</Badge>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground mb-1">Credentials Status</p>
-                          {member.credentials_status === "Current" && (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Current</Badge>
-                          )}
-                          {member.credentials_status === "Expiring Soon" && (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Expiring Soon</Badge>
-                          )}
-                          {member.credentials_status === "Pending" && (
-                            <Badge variant="outline" className="text-muted-foreground">Pending Setup</Badge>
-                          )}
                         </div>
                         
-                        <Button variant="ghost" size="sm">Manage</Button>
-                      </div>
-                    </div>
-
-                    {/* Expanded Credentials View (Simplified for mockup) */}
-                    {member.credentials.length > 0 && (
-                      <div className="mt-4 pl-[64px] grid gap-2">
-                        {member.credentials.map((cred, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm p-2 bg-muted/20 rounded border border-transparent hover:border-border">
-                            <div className="flex items-center gap-2">
-                              {cred.source === "Okapi Academy" ? (
-                                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                              ) : (
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                              )}
-                              <span className="font-medium">{cred.name}</span>
-                              <span className="text-xs text-muted-foreground px-2 py-0.5 bg-white rounded border">{cred.type}</span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <span className={cn(
-                                "text-xs",
-                                cred.status === "Expiring Soon" ? "text-amber-600 font-medium" : "text-muted-foreground"
-                              )}>
-                                Expires: {cred.expiry}
-                              </span>
-                              {cred.source === "Okapi Academy" && (
-                                <Badge variant="secondary" className="text-[10px] h-5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
-                                  Okapi Verified
-                                </Badge>
-                              )}
-                            </div>
+                        <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground mb-1">Credentials Status</p>
+                            {credStatus === "Current" && (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Current</Badge>
+                            )}
+                            {credStatus === "Expiring Soon" && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Expiring Soon</Badge>
+                            )}
+                            {credStatus === "Pending" && (
+                              <Badge variant="outline" className="text-muted-foreground">Pending Setup</Badge>
+                            )}
                           </div>
-                        ))}
-                        <div className="flex gap-2 mt-2">
-                           <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
-                             <Plus className="h-3 w-3" /> Add Credential
-                           </Button>
-                           <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
-                             <GraduationCap className="h-3 w-3" /> Assign Training
-                           </Button>
+                          
+                          <Button variant="ghost" size="sm">Manage</Button>
                         </div>
                       </div>
-                    )}
-                    
-                    {member.status === "Invited" && (
-                      <div className="mt-4 pl-[64px] text-sm text-muted-foreground flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        Invitation sent to {member.email}
-                        <Button variant="link" className="h-auto p-0 text-xs">Resend</Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+
+                      {member.credentials && member.credentials.length > 0 && (
+                        <div className="mt-4 pl-[64px] grid gap-2">
+                          {member.credentials.map((cred) => (
+                            <div key={cred.id} className="flex items-center justify-between text-sm p-2 bg-muted/20 rounded border border-transparent hover:border-border">
+                              <div className="flex items-center gap-2">
+                                {cred.source === "Okapi Academy" ? (
+                                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                                ) : (
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                )}
+                                <span className="font-medium">{cred.name}</span>
+                                <span className="text-xs text-muted-foreground px-2 py-0.5 bg-white rounded border">{cred.type}</span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                {cred.expiryDate && (
+                                  <span className={cn(
+                                    "text-xs",
+                                    cred.status === "Expiring Soon" ? "text-amber-600 font-medium" : "text-muted-foreground"
+                                  )}>
+                                    Expires: {new Date(cred.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                                  </span>
+                                )}
+                                {cred.source === "Okapi Academy" && (
+                                  <Badge variant="secondary" className="text-[10px] h-5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+                                    Okapi Verified
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
+                              <Plus className="h-3 w-3" /> Add Credential
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
+                              <GraduationCap className="h-3 w-3" /> Assign Training
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {member.status === "Invited" && member.email && (
+                        <div className="mt-4 pl-[64px] text-sm text-muted-foreground flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          Invitation sent to {member.email}
+                          <Button variant="link" className="h-auto p-0 text-xs">Resend</Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }
