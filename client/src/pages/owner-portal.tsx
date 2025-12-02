@@ -21,7 +21,7 @@ export default function OwnerDashboard() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const queryClient = useQueryClient();
   
-  const FACILITY_ID = "3c173ee5-0573-4979-8686-f21f5beb8778";
+  const FACILITY_ID = "db531303-8925-458b-9554-57271b72104c";
   
   const { data: facility, isLoading: facilityLoading } = useQuery({
     queryKey: ["facility", FACILITY_ID],
@@ -336,7 +336,7 @@ export default function OwnerDashboard() {
                                   </span>
                                 )}
                                 {cred.source === "Okapi Academy" && (
-                                  <Badge variant="secondary" className="text-[10px] h-5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+                                  <Badge variant="secondary" className="text-[10px] h-5 bg-blue-50 text-blue-700 hover:bg-blue-100">
                                     Okapi Verified
                                   </Badge>
                                 )}

@@ -3,6 +3,7 @@ import {
   facilities, 
   teamMembers, 
   credentials,
+  inquiries,
   type User, 
   type InsertUser,
   type Facility,
@@ -10,10 +11,12 @@ import {
   type TeamMember,
   type InsertTeamMember,
   type Credential,
-  type InsertCredential
+  type InsertCredential,
+  type Inquiry,
+  type InsertInquiry
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, sql, inArray } from "drizzle-orm";
+import { eq, and, ilike, or, sql, inArray, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -49,6 +52,15 @@ export interface IStorage {
   createCredential(credential: InsertCredential): Promise<Credential>;
   updateCredential(id: string, credential: Partial<InsertCredential>): Promise<Credential | undefined>;
   deleteCredential(id: string): Promise<void>;
+
+  // Inquiries
+  getInquiry(id: string): Promise<Inquiry | undefined>;
+  getInquiriesByFacility(facilityId: string): Promise<Inquiry[]>;
+  createInquiry(inquiry: InsertInquiry): Promise<Inquiry>;
+  updateInquiry(id: string, inquiry: Partial<InsertInquiry>): Promise<Inquiry | undefined>;
+
+  // Featured Facilities
+  getFeaturedFacilities(limit?: number): Promise<Facility[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -202,6 +214,47 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCredential(id: string): Promise<void> {
     await db.delete(credentials).where(eq(credentials.id, id));
+  }
+
+  // Inquiries
+  async getInquiry(id: string): Promise<Inquiry | undefined> {
+    const [inquiry] = await db.select().from(inquiries).where(eq(inquiries.id, id));
+    return inquiry || undefined;
+  }
+
+  async getInquiriesByFacility(facilityId: string): Promise<Inquiry[]> {
+    return await db
+      .select()
+      .from(inquiries)
+      .where(eq(inquiries.facilityId, facilityId))
+      .orderBy(desc(inquiries.createdAt));
+  }
+
+  async createInquiry(insertInquiry: InsertInquiry): Promise<Inquiry> {
+    const [inquiry] = await db.insert(inquiries).values(insertInquiry).returning();
+    return inquiry;
+  }
+
+  async updateInquiry(id: string, updateData: Partial<InsertInquiry>): Promise<Inquiry | undefined> {
+    const [inquiry] = await db
+      .update(inquiries)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(inquiries.id, id))
+      .returning();
+    return inquiry || undefined;
+  }
+
+  // Featured Facilities
+  async getFeaturedFacilities(limit: number = 6): Promise<Facility[]> {
+    return await db
+      .select()
+      .from(facilities)
+      .where(and(
+        eq(facilities.featured, true),
+        eq(facilities.status, "active")
+      ))
+      .orderBy(desc(facilities.rating))
+      .limit(limit);
   }
 }
 

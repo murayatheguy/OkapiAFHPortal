@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { searchFacilities } from "@/lib/api";
+import { getFeaturedFacilities, searchFacilities } from "@/lib/api";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [searchValue, setSearchValue] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
 
-  const { data: facilities = [] } = useQuery({
+  const { data: featuredFacilities = [] } = useQuery({
+    queryKey: ["featured-facilities"],
+    queryFn: () => getFeaturedFacilities(9),
+  });
+
+  const { data: allFacilities = [] } = useQuery({
     queryKey: ["facilities"],
     queryFn: () => searchFacilities(),
   });
+
+  const facilities = activeFilter === 'all' ? featuredFacilities : allFacilities;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,13 +81,6 @@ export default function Home() {
           ))}
         </nav>
 
-        <Link 
-          href="/owner"
-          className="px-5 py-2 border border-amber-700/50 text-amber-200 hover:bg-amber-900/20 transition-all"
-          style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.75rem', letterSpacing: '0.15em' }}
-        >
-          SIGN IN
-        </Link>
       </header>
 
       {/* Hero Section - Compact */}
@@ -253,12 +253,16 @@ export default function Home() {
                     {facility.availableBeds > 0 ? `${facility.availableBeds} BED${facility.availableBeds > 1 ? 'S' : ''} AVAILABLE` : 'WAITLIST'}
                   </div>
 
-                  {/* Price placeholder */}
+                  {/* Price */}
                   <div 
                     className="absolute bottom-4 right-4"
                     style={{ fontFamily: "'Cormorant', serif", fontSize: '1.1rem', fontWeight: 500, color: '#fff' }}
                   >
-                    Contact for Pricing
+                    {facility.priceMin && facility.priceMax ? (
+                      `$${(facility.priceMin / 1000).toFixed(1)}k - $${(facility.priceMax / 1000).toFixed(1)}k/mo`
+                    ) : (
+                      'Contact for Pricing'
+                    )}
                   </div>
                 </div>
 
@@ -283,15 +287,32 @@ export default function Home() {
                     )}
                   </div>
 
-                  <p 
-                    className="mb-3 flex items-center gap-1"
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', color: '#6b7c72' }}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    </svg>
-                    {facility.city}, WA · {facility.capacity} beds
-                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p 
+                      className="flex items-center gap-1"
+                      style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', color: '#6b7c72' }}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      </svg>
+                      {facility.city}, WA · {facility.capacity} beds
+                    </p>
+                    {facility.rating && (
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', fontWeight: 500, color: '#6b7c72' }}>
+                          {facility.rating}
+                        </span>
+                        {facility.reviewCount && (
+                          <span style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', color: '#9a978f' }}>
+                            ({facility.reviewCount})
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Tags */}
                   {facility.specialties && facility.specialties.length > 0 && (

@@ -1,6 +1,13 @@
-import type { Facility, TeamMember, Credential } from "@shared/schema";
+import type { Facility, TeamMember, Credential, Inquiry } from "@shared/schema";
 
 const API_BASE = "/api";
+
+// Featured Facilities API
+export async function getFeaturedFacilities(limit: number = 6): Promise<Facility[]> {
+  const response = await fetch(`${API_BASE}/facilities/featured?limit=${limit}`);
+  if (!response.ok) throw new Error("Failed to fetch featured facilities");
+  return response.json();
+}
 
 // Facilities API
 export async function searchFacilities(params?: {
@@ -126,4 +133,42 @@ export async function deleteCredential(id: string): Promise<void> {
     method: "DELETE",
   });
   if (!response.ok) throw new Error("Failed to delete credential");
+}
+
+// Inquiries API
+export async function getInquiries(facilityId: string): Promise<Inquiry[]> {
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/inquiries`);
+  if (!response.ok) throw new Error("Failed to fetch inquiries");
+  return response.json();
+}
+
+export async function createInquiry(data: {
+  facilityId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  message?: string;
+  careType?: string;
+  moveInTimeline?: string;
+}): Promise<Inquiry> {
+  const response = await fetch(`${API_BASE}/inquiries`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to create inquiry");
+  return response.json();
+}
+
+export async function updateInquiry(
+  id: string,
+  data: Partial<Inquiry>
+): Promise<Inquiry> {
+  const response = await fetch(`${API_BASE}/inquiries/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to update inquiry");
+  return response.json();
 }

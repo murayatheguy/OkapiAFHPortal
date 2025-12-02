@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema } from "@shared/schema";
+import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(
@@ -12,6 +12,18 @@ export async function registerRoutes(
   // ============================================
   // FACILITIES API
   // ============================================
+  
+  // Get featured facilities for homepage (must be before :id route)
+  app.get("/api/facilities/featured", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : 6;
+      const featuredFacilities = await storage.getFeaturedFacilities(limit);
+      res.json(featuredFacilities);
+    } catch (error) {
+      console.error("Error getting featured facilities:", error);
+      res.status(500).json({ error: "Failed to get featured facilities" });
+    }
+  });
   
   // Get all facilities (for search page)
   app.get("/api/facilities", async (req, res) => {
@@ -240,6 +252,53 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting credential:", error);
       res.status(500).json({ error: "Failed to delete credential" });
+    }
+  });
+
+  // ============================================
+  // INQUIRIES API
+  // ============================================
+  
+  // Get inquiries for a facility
+  app.get("/api/facilities/:facilityId/inquiries", async (req, res) => {
+    try {
+      const inquiriesList = await storage.getInquiriesByFacility(req.params.facilityId);
+      res.json(inquiriesList);
+    } catch (error) {
+      console.error("Error getting inquiries:", error);
+      res.status(500).json({ error: "Failed to get inquiries" });
+    }
+  });
+
+  // Create inquiry (for families contacting facilities)
+  app.post("/api/inquiries", async (req, res) => {
+    try {
+      const result = insertInquirySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+      
+      const inquiry = await storage.createInquiry(result.data);
+      res.status(201).json(inquiry);
+    } catch (error) {
+      console.error("Error creating inquiry:", error);
+      res.status(500).json({ error: "Failed to create inquiry" });
+    }
+  });
+
+  // Update inquiry status
+  app.patch("/api/inquiries/:id", async (req, res) => {
+    try {
+      const inquiry = await storage.updateInquiry(req.params.id, req.body);
+      if (!inquiry) {
+        return res.status(404).json({ error: "Inquiry not found" });
+      }
+      res.json(inquiry);
+    } catch (error) {
+      console.error("Error updating inquiry:", error);
+      res.status(500).json({ error: "Failed to update inquiry" });
     }
   });
 
