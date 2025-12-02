@@ -1,0 +1,552 @@
+Here's the full prompt. Copy and paste into Replit Agent:
+
+---
+
+```
+# FACILITY DETAIL PAGE - OKAPI CARE NETWORK
+
+When a family clicks "View Details" on a facility card, show a comprehensive detail page that answers: "Would I trust this place with my loved one?"
+
+## URL STRUCTURE
+/facility/[facility-id] or /facility/[slug]
+Example: /facility/sunshine-adult-family-home
+
+---
+
+## SECTION 1: PHOTO GALLERY (Top, Full Width)
+
+- Horizontal carousel of 4-10 photos
+- Swipeable on mobile, arrows on desktop
+- Show: exterior, common areas, bedrooms, dining area, outdoor space
+- Dot indicators for position
+- Tap/click for fullscreen view
+- If no photos uploaded: Show placeholder "Photos coming soon - contact facility for a tour"
+
+---
+
+## SECTION 2: HEADER INFO
+
+**Facility Name** (large, bold)
+Example: "Sunshine Adult Family Home"
+
+**Location:**
+📍 Bellevue, WA 98004 • 3.2 miles away
+
+**Trust Badges (horizontal row):**
+- ✅ DSHS Verified (teal, always present)
+- ✅ Claimed (green outline, if owner verified identity)
+- ⭐ Okapi Certified (gold/amber, if staff trained through Okapi Academy)
+
+**Quick Stats Row (3 columns):**
+┌─────────────┬─────────────┬─────────────┐
+│ 🛏️ 2 Beds   │ 👥 Capacity │ 💰 $4,500-  │
+│ Available   │ 6 Residents │ $6,000/mo   │
+└─────────────┴─────────────┴─────────────┘
+
+**Specialty Tags (pill-shaped):**
+[Memory Care] [Dementia] [Hospice]
+
+**Last Updated:** "Availability updated 2 hours ago"
+
+---
+
+## SECTION 3: ACTION BUTTONS (Sticky on Mobile)
+
+Three buttons - stack vertically on mobile, horizontal on desktop:
+
+[📞 Call Now] — Primary teal button, tap-to-call
+[💬 Send Message] — Secondary outline, opens message modal
+[📅 Request Tour] — Secondary outline, opens tour request modal
+
+Below buttons:
+"⚡ Usually responds within 24 hours"
+
+On mobile: These buttons stick to bottom of screen while scrolling.
+
+---
+
+## SECTION 4: DSHS COMPLIANCE RECORD ⭐ (Key Differentiator)
+
+**Section Header:** "DSHS Compliance Record"
+**Subheader:** "Official Washington State data • Auto-synced from DSHS"
+
+Style this section to look OFFICIAL - light blue/gray background, state shield icon.
+
+**License Information:**
+┌─────────────────────────────────────────────────────────────┐
+│ 🏛️ WASHINGTON STATE DSHS                                    │
+├─────────────────────────────────────────────────────────────┤
+│ License Number:     AFH-12345678                            │
+│ License Status:     ● ACTIVE (green dot)                    │
+│ Licensed Since:     March 2018 (7 years)                    │
+│ Expires:            March 2026                              │
+│ Administrator:      Sarah Johnson                           │
+│ Licensed Capacity:  6 residents                             │
+└─────────────────────────────────────────────────────────────┘
+
+**Inspection History:**
+Show last 3-5 inspections with expandable details:
+
+📋 **October 2025** - Routine Inspection
+   ✅ No violations
+
+📋 **October 2024** - Routine Inspection
+   ✅ No violations
+
+📋 **October 2023** - Routine Inspection
+   ⚠️ 1 minor violation
+   → "Medication log documentation incomplete"
+   → Status: ✅ Corrected within 30 days
+
+📋 **October 2022** - Routine Inspection
+   ✅ No violations
+
+**Compliance Summary Box:**
+┌─────────────────────────────────────────┐
+│ 📊 5-YEAR SUMMARY                       │
+│                                         │
+│ Total Inspections: 5                    │
+│ Violations: 1 minor (corrected)         │
+│ Enforcement Actions: None               │
+│ License Suspensions: None               │
+└─────────────────────────────────────────┘
+
+**Link:** [View Full Report on DSHS Website →]
+
+**Important:** This section should NOT be editable by facility owner. Make it visually clear this is official government data.
+
+---
+
+## SECTION 5: CARE CAPABILITIES
+
+**Section Header:** "Care Capabilities"
+**Subheader:** "What this home can provide"
+
+**Specialties (if any):**
+✓ Memory Care & Dementia
+✓ Hospice & End-of-Life Care
+✓ Mental Health
+
+**Services Included (two-column grid):**
+✓ 24/7 Supervision             ✓ Medication Management
+✓ 3 Meals + Snacks Daily       ✓ Special Diets Available
+✓ Bathing & Personal Care      ✓ Dressing Assistance
+✓ Housekeeping                 ✓ Laundry Service
+✓ Transportation to Appts      ✓ Appointment Accompaniment
+✓ Activities Program           ✓ Daily Companionship
+
+**Equipment Available:**
+✓ Hoyer Lift
+✓ Hospital Beds
+✓ Wheelchair Accessible
+✓ Grab Bars & Safety Rails
+
+**Care Level:**
+"Accepts residents requiring high-acuity care including bedbound patients"
+
+---
+
+## SECTION 6: STAFF & CREDENTIALS
+
+**Section Header:** "Staff & Training"
+**Subheader:** "Verified through Okapi Academy"
+
+**If Okapi Certified:**
+┌─────────────────────────────────────────────────────────────┐
+│ ⭐ OKAPI CERTIFIED FACILITY                                 │
+│                                                             │
+│ This facility's staff complete ongoing training through     │
+│ Okapi Academy, exceeding state requirements.                │
+└─────────────────────────────────────────────────────────────┘
+
+**Credential Summary:**
+✅ All 4 caregivers current on required training
+
+**Details (collapsible):**
+├─ CPR/First Aid:           4/4 current ✓
+├─ Food Worker Card:        4/4 current ✓
+├─ Bloodborne Pathogens:    4/4 current ✓
+├─ Background Check:        4/4 current ✓
+├─ Dementia Specialty:      3/4 certified
+└─ Mental Health Specialty: 2/4 certified
+
+**Staff-to-Resident Ratio:**
+"1:3 during daytime hours, 1:6 overnight"
+
+**Nurse Coverage:**
+"RN on-call 24/7, weekly nurse visits"
+
+**Last Verified:** November 28, 2025
+
+**If NOT Okapi Certified:**
+┌─────────────────────────────────────────────────────────────┐
+│ Staff credentials not verified through Okapi Academy.       │
+│ Contact facility directly to inquire about staff training.  │
+└─────────────────────────────────────────────────────────────┘
+
+---
+
+## SECTION 7: ABOUT THIS HOME
+
+**Section Header:** "About This Home"
+**Subheader:** "From the owner" (small, gray - indicates owner-provided content)
+
+**Description (2-3 paragraphs):**
+"Sunshine Adult Family Home has been serving families in the Bellevue area since 2018. We specialize in memory care with a warm, home-like environment where residents feel like family.
+
+Our caregivers are trained in dementia care techniques and provide compassionate, person-centered care. We maintain a 1:3 caregiver-to-resident ratio during daytime hours to ensure personalized attention.
+
+Our home features a secure backyard garden where residents can safely enjoy fresh air and sunshine. We serve home-cooked meals with accommodations for dietary needs and preferences."
+
+[Read More] if text is long
+
+**Additional Details:**
+- **Languages Spoken:** English, Tagalog, Spanish
+- **Visiting Hours:** Open visiting 8am - 8pm daily
+- **Pets:** Small pets allowed with approval
+- **Religious/Cultural:** Non-denominational, all backgrounds welcome
+
+---
+
+## SECTION 8: PRICING & PAYMENT
+
+**Section Header:** "Pricing"
+
+**Monthly Rate:**
+💰 **$4,500 - $6,000 / month**
+
+**What's Included:**
+- Room accommodation
+- All meals and snacks
+- Basic personal care assistance
+- Medication management
+- Housekeeping and laundry
+- Activities program
+
+**What May Cost Extra:**
+- Higher levels of care (assessed individually)
+- Specialized medical supplies
+- Personal items and clothing
+
+**Price Note:**
+"Final pricing depends on level of care needed. Contact us for a personalized assessment and quote."
+
+**Payment Types Accepted:**
+✓ Private Pay
+✓ Medicaid
+✓ Long-Term Care Insurance
+✓ VA Benefits
+
+[Request Personalized Quote →] button
+
+---
+
+## SECTION 9: LOCATION
+
+**Section Header:** "Location"
+
+**Map:**
+- Embedded Google Map or static map image
+- Pin showing facility location
+- Zoom level showing neighborhood context
+
+**Address (tap to open maps):**
+1234 Sunrise Way
+Bellevue, WA 98004
+King County
+
+**Links:**
+[Get Directions →]
+[View Larger Map →]
+
+**Nearby (optional):**
+- 1.2 miles from Overlake Medical Center
+- 0.5 miles from Bellevue Square
+
+---
+
+## SECTION 10: CONTACT (Bottom CTA Section)
+
+**Section Header:** "Ready to Learn More?"
+
+**Three options side by side (stacked on mobile):**
+
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ 📞 CALL         │ │ 💬 MESSAGE      │ │ 📅 TOUR         │
+│                 │ │                 │ │                 │
+│ Talk to staff   │ │ Send a message  │ │ Schedule a      │
+│ directly        │ │ anytime         │ │ visit           │
+│                 │ │                 │ │                 │
+│ [Call Now]      │ │ [Send Message]  │ │ [Request Tour]  │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+
+---
+
+## MESSAGE MODAL
+
+When user clicks "Send Message":
+
+**Header:** "Message Sunshine Adult Family Home"
+
+**Form Fields:**
+- Your Name (required)
+- Email (required)
+- Phone (optional)
+- Relationship to person needing care:
+  [Dropdown: I am the person needing care, Spouse/Partner, Adult Child, Other Family Member, Friend, Case Manager/Social Worker]
+- Tell us about your situation: (textarea, required)
+  Placeholder: "What type of care is needed? Any specific questions?"
+- ☐ I'd like to receive updates about similar facilities
+
+**Buttons:** [Cancel] [Send Message]
+
+**After Submit:**
+"✅ Message sent! Sunshine Adult Family Home typically responds within 24 hours. Check your email for confirmation."
+
+---
+
+## TOUR REQUEST MODAL
+
+When user clicks "Request Tour":
+
+**Header:** "Schedule a Tour at Sunshine Adult Family Home"
+
+**Form Fields:**
+- Your Name (required)
+- Email (required)
+- Phone (required)
+- Preferred Date(s): (date picker - allow selecting up to 3 dates)
+- Preferred Time:
+  [Morning 9am-12pm] [Afternoon 12pm-4pm] [Evening 4pm-7pm]
+- Number of people attending: [1] [2] [3] [4+]
+- Anything we should know? (textarea, optional)
+
+**Buttons:** [Cancel] [Request Tour]
+
+**After Submit:**
+"✅ Tour request sent! The facility will confirm your tour within 48 hours. Check your email for details."
+
+---
+
+## MOBILE CONSIDERATIONS
+
+1. Photo gallery is swipeable
+2. Action buttons (Call/Message/Tour) stick to bottom of screen
+3. Sections are collapsible for easier scanning
+4. Phone number is tap-to-call
+5. Address is tap-to-open-maps
+6. All text readable without zooming
+7. Forms are mobile-friendly with appropriate keyboards
+
+---
+
+## DATA MODEL FOR DETAIL PAGE
+
+Each facility needs this data:
+
+```javascript
+{
+  id: "sunshine-afh",
+  slug: "sunshine-adult-family-home",
+  name: "Sunshine Adult Family Home",
+  
+  // Status
+  claimed: true,
+  okapiCertified: true,
+  
+  // Location
+  address: "1234 Sunrise Way",
+  city: "Bellevue",
+  state: "WA",
+  zip: "98004",
+  county: "King",
+  latitude: 47.6101,
+  longitude: -122.2015,
+  
+  // Availability
+  bedsAvailable: 2,
+  roomTypes: ["private", "shared"],
+  waitlist: false,
+  availabilityUpdatedAt: "2025-12-01T18:00:00Z",
+  
+  // Pricing
+  priceMin: 4500,
+  priceMax: 6000,
+  priceIncludes: ["Room", "Meals", "Basic care", "Housekeeping"],
+  priceExtras: ["Higher care levels", "Specialized supplies"],
+  paymentTypes: ["privatePay", "medicaid", "ltcInsurance", "vaBenefits"],
+  
+  // Photos
+  photos: [
+    { url: "...", alt: "Front exterior", order: 1 },
+    { url: "...", alt: "Living room", order: 2 },
+    { url: "...", alt: "Bedroom", order: 3 },
+    { url: "...", alt: "Garden", order: 4 }
+  ],
+  
+  // Description
+  description: "Sunshine Adult Family Home has been serving families...",
+  
+  // Care Capabilities
+  specialties: ["memoryCare", "dementia", "hospice"],
+  services: [
+    "24/7 Supervision",
+    "Medication Management",
+    "3 Meals + Snacks Daily",
+    "Bathing & Personal Care",
+    "Transportation",
+    "Activities Program"
+  ],
+  equipment: ["hoyerLift", "hospitalBeds", "wheelchairAccessible"],
+  careLevel: "high", // low, moderate, high
+  acceptsBedbound: true,
+  
+  // Additional Info
+  languages: ["English", "Tagalog", "Spanish"],
+  visitingHours: "8am - 8pm daily",
+  petsAllowed: true,
+  religiousAffiliation: "Non-denominational",
+  
+  // Staff
+  staffCount: 4,
+  staffToResidentRatioDay: "1:3",
+  staffToResidentRatioNight: "1:6",
+  nurseOnStaff: false,
+  nurseOnCall: true,
+  nurseVisitFrequency: "Weekly",
+  
+  // DSHS Data (official, not editable)
+  dshs: {
+    licenseNumber: "AFH-12345678",
+    licenseStatus: "active",
+    licensedSince: "2018-03-15",
+    expirationDate: "2026-03-15",
+    administrator: "Sarah Johnson",
+    capacity: 6,
+    inspections: [
+      {
+        date: "2025-10-15",
+        type: "routine",
+        result: "pass",
+        violations: []
+      },
+      {
+        date: "2024-10-12",
+        type: "routine",
+        result: "pass",
+        violations: []
+      },
+      {
+        date: "2023-10-10",
+        type: "routine",
+        result: "violations",
+        violations: [
+          {
+            severity: "minor",
+            description: "Medication log documentation incomplete",
+            corrected: true,
+            correctedDate: "2023-11-05"
+          }
+        ]
+      }
+    ],
+    enforcementActions: [],
+    suspensions: []
+  },
+  
+  // Staff Credentials (from Okapi Academy)
+  staffCredentials: {
+    totalStaff: 4,
+    allCurrentOnRequired: true,
+    credentials: {
+      cprFirstAid: { current: 4, total: 4 },
+      foodWorker: { current: 4, total: 4 },
+      bloodbornePathogens: { current: 4, total: 4 },
+      backgroundCheck: { current: 4, total: 4 },
+      dementiaCare: { current: 3, total: 4 },
+      mentalHealth: { current: 2, total: 4 }
+    },
+    lastVerified: "2025-11-28"
+  },
+  
+  // Contact
+  phone: "425-555-1234",
+  email: "info@sunshineafh.com",
+  responseTime: "24 hours"
+}
+```
+
+---
+
+## CREATE 5 MOCK FACILITIES
+
+Build detail pages for these facilities with varied data:
+
+**1. Sunshine Adult Family Home** (Bellevue)
+- Memory Care, Dementia, Hospice
+- Okapi Certified, Claimed
+- 2 beds available
+- $4,500-$6,000/mo
+- Clean inspection history
+- All staff credentials current
+
+**2. Evergreen Senior Living** (Redmond)
+- Hospice, High Acuity
+- Okapi Certified, Claimed
+- 2 beds available
+- $5,000-$7,500/mo
+- Clean inspection history
+
+**3. Comfort Care Home** (Tacoma)
+- General care (no specialties)
+- NOT Okapi Certified, NOT Claimed
+- 1 bed available
+- $3,800-$5,000/mo
+- Has 1 minor violation from 2023 (corrected)
+- Show how unclaimed/uncertified facility looks different
+
+**4. Harbor View AFH** (Seattle)
+- Mental Health specialty
+- Claimed but NOT Okapi Certified
+- Waitlist only (0 beds)
+- $5,500-$7,000/mo
+- Clean history
+
+**5. Mountain View Adult Family Home** (Spokane)
+- Developmental Disabilities
+- Okapi Certified, Claimed
+- 3 beds available
+- $4,000-$5,500/mo
+- Clean history
+
+---
+
+## IMPORTANT STYLING NOTES
+
+1. **DSHS section must look official/governmental** - Use different background color, official styling
+2. **Clear visual distinction** between:
+   - Official DSHS data (not editable) 
+   - Owner-provided content (editable)
+3. **Trust badges should be prominent** - First thing families notice
+4. **Mobile-first** - Most families browse on phones
+5. **Fast loading** - Families are stressed and impatient
+6. **Accessibility** - Many users may be older adults
+
+---
+
+## UPDATE BRANDING
+
+Change all instances of "Okapi Portal" to "Okapi Care Network" in:
+- Header/navigation
+- Page titles
+- Footer
+- Any other references
+
+---
+
+Build this now. Focus on making families feel INFORMED and SAFE.
+```
+
+---
+
+Go paste it. This will give families everything they need to make a confident decision.

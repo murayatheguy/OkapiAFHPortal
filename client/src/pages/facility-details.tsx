@@ -1,15 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRoute, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
-import { MOCK_FACILITIES } from "@/lib/mock-data";
+import { getFacilityWithTeam } from "@/lib/api";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  MapPin, Phone, Mail, Calendar, CheckCircle2, ShieldCheck, 
-  AlertTriangle, Clock, Users, Languages, Banknote, ArrowLeft, ArrowRight, Check
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { 
+  MapPin, Phone, MessageSquare, Calendar, CheckCircle2, ShieldCheck, 
+  AlertTriangle, Clock, Users, Banknote, ArrowLeft, ArrowRight, Check,
+  Building2, Star, Loader2, ChevronDown, ChevronUp, ExternalLink
 } from "lucide-react";
 import { 
   Carousel,
@@ -23,19 +36,42 @@ import mapImage from '@assets/generated_images/clean_google_maps_style_street_ma
 
 export default function FacilityDetails() {
   const [match, params] = useRoute("/facility/:id");
-  const facility = MOCK_FACILITIES.find(f => f.id === params?.id);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [showTourModal, setShowTourModal] = useState(false);
+  const [expandedInspections, setExpandedInspections] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["facility", params?.id],
+    queryFn: () => getFacilityWithTeam(params?.id || ""),
+    enabled: !!params?.id,
+  });
+
+  const facility = data?.facility;
+  const team = data?.team || [];
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [params?.id]);
 
-  if (!facility) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!facility || error) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Facility Not Found</h1>
+            <p className="text-muted-foreground mb-4">The facility you're looking for doesn't exist or has been removed.</p>
             <Link href="/search" className={cn(buttonVariants(), "mt-4")}>Back to Search</Link>
           </div>
         </div>
@@ -43,311 +79,458 @@ export default function FacilityDetails() {
     );
   }
 
+  const hasOkapiCertifiedStaff = team.some(member => 
+    member.credentials?.some(c => c.source === "Okapi Academy")
+  );
+
+  const allCredentialsCurrent = team.every(member => 
+    member.status === "Active" && 
+    (!member.credentials || member.credentials.every(c => c.status === "Current" || c.status === "Expiring Soon"))
+  );
+
+  const mockInspections = [
+    { date: "2024-10", type: "Routine Inspection", violations: 0, result: "No violations" },
+    { date: "2024-04", type: "Routine Inspection", violations: 0, result: "No violations" },
+    { date: "2023-10", type: "Routine Inspection", violations: 1, result: "1 minor violation - Medication log documentation incomplete", corrected: true },
+    { date: "2023-04", type: "Routine Inspection", violations: 0, result: "No violations" },
+  ];
+
   return (
     <div className="min-h-screen bg-background font-sans pb-24 lg:pb-0">
       <Navbar />
       
       <div className="container mx-auto px-4 py-6">
-        <Link href="/search" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
+        <Link href="/search" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6" data-testid="link-back-search">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Search Results
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* Header Info */}
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-                    {facility.name}
-                  </h1>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{facility.address}, {facility.city}, WA {facility.zip}</span>
-                    <a href="#" className="text-primary hover:underline text-sm ml-1">(Map)</a>
-                  </div>
-                </div>
-                {facility.is_claimed && (
-                   <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-3 py-1">
-                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                     Claimed
-                   </Badge>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-6">
-                {facility.specialties.map(spec => (
-                  <Badge key={spec} variant="secondary">{spec}</Badge>
-                ))}
-                {facility.has_okapi_certified_staff && (
-                   <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">
-                     <ShieldCheck className="h-3 w-3 mr-1" />
-                     Okapi Certified
-                   </Badge>
-                )}
-                {facility.is_dshs_verified && (
-                  <Badge variant="outline" className="text-muted-foreground">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    DSHS Verified
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm mb-6">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-lg">{facility.beds_available}</span> 
-                  <span className="text-muted-foreground">Beds Available</span>
-                </div>
-                <div className="h-4 w-px bg-border" />
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-lg">${facility.price_min.toLocaleString()} - ${facility.price_max.toLocaleString()}</span>
-                  <span className="text-muted-foreground">/mo</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Image Carousel */}
+        {/* SECTION 1: PHOTO GALLERY */}
+        <div className="mb-8">
+          {facility.images && facility.images.length > 0 ? (
             <Carousel className="w-full">
               <CarouselContent>
                 {facility.images.map((img, index) => (
                   <CarouselItem key={index}>
                     <div className="relative aspect-video rounded-xl overflow-hidden bg-muted">
-                      <img src={img} alt={`View ${index + 1}`} className="object-cover w-full h-full" />
+                      <img src={img} alt={`${facility.name} - View ${index + 1}`} className="object-cover w-full h-full" />
                     </div>
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="left-2" />
-              <CarouselNext className="right-2" />
+              <CarouselPrevious className="left-4" />
+              <CarouselNext className="right-4" />
             </Carousel>
+          ) : (
+            <div className="aspect-video rounded-xl bg-muted/50 border-2 border-dashed border-border flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="font-medium">Photos coming soon</p>
+                <p className="text-sm">Contact facility for a tour</p>
+              </div>
+            </div>
+          )}
+        </div>
 
-            {/* Tabs Section */}
-            <Tabs defaultValue="about" className="w-full">
-              <TabsList className="w-full justify-start h-auto p-1 bg-muted/30 border border-border/50 rounded-lg mb-6 overflow-x-auto">
-                <TabsTrigger value="about" className="px-6 py-2">About</TabsTrigger>
-                <TabsTrigger value="compliance" className="px-6 py-2">Compliance</TabsTrigger>
-                <TabsTrigger value="staff" className="px-6 py-2">Staff & Training</TabsTrigger>
-                <TabsTrigger value="details" className="px-6 py-2">Details</TabsTrigger>
-              </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* SECTION 2: HEADER INFO */}
+            <div>
+              <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-3" data-testid="text-facility-name">
+                {facility.name}
+              </h1>
+              
+              <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                <MapPin className="h-4 w-4" />
+                <span>{facility.city}, WA {facility.zipCode}</span>
+              </div>
 
-              <TabsContent value="about" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="prose max-w-none">
-                  <h3 className="text-xl font-serif font-bold mb-3">About This Home</h3>
-                  <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                    {facility.description}
-                  </p>
+              {/* Trust Badges */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-3 py-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                  DSHS Verified
+                </Badge>
+                {hasOkapiCertifiedStaff && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5">
+                    <Star className="h-3.5 w-3.5 mr-1.5 fill-amber-500" />
+                    Okapi Certified
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Quick Stats Row */}
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-xl border mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{facility.availableBeds}</div>
+                  <div className="text-xs text-muted-foreground">Beds Available</div>
+                </div>
+                <div className="text-center border-x border-border">
+                  <div className="text-2xl font-bold">{facility.capacity}</div>
+                  <div className="text-xs text-muted-foreground">Capacity</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-primary">Contact</div>
+                  <div className="text-xs text-muted-foreground">For Pricing</div>
+                </div>
+              </div>
+
+              {/* Specialty Tags */}
+              {facility.specialties && facility.specialties.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {facility.specialties.map(spec => (
+                    <Badge key={spec} variant="secondary" className="px-3 py-1">{spec}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 3: ACTION BUTTONS (Desktop) */}
+            <div className="hidden lg:flex gap-3">
+              {facility.phone ? (
+                <Button className="flex-1 h-12" size="lg" data-testid="button-call" asChild>
+                  <a href={`tel:${facility.phone}`}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    {facility.phone}
+                  </a>
+                </Button>
+              ) : (
+                <Button className="flex-1 h-12" size="lg" data-testid="button-call" onClick={() => setShowMessageModal(true)}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact Us
+                </Button>
+              )}
+              <Button variant="outline" className="flex-1 h-12" size="lg" onClick={() => setShowMessageModal(true)} data-testid="button-message">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Send Message
+              </Button>
+              <Button variant="outline" className="flex-1 h-12" size="lg" onClick={() => setShowTourModal(true)} data-testid="button-tour">
+                <Calendar className="h-4 w-4 mr-2" />
+                Request Tour
+              </Button>
+            </div>
+
+            {/* SECTION 4: DSHS COMPLIANCE RECORD */}
+            <Card className="border-2 border-slate-200 bg-slate-50/50 overflow-hidden">
+              <CardHeader className="bg-slate-100 border-b border-slate-200">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-slate-700 rounded-lg flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">DSHS Compliance Record</CardTitle>
+                    <CardDescription>Official Washington State data • Auto-synced from DSHS</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* License Information */}
+                <div className="bg-white rounded-lg border p-4">
+                  <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-500 mb-4">License Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">License Number</p>
+                      <p className="font-mono font-medium">{facility.licenseNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">License Status</p>
+                      <div className="flex items-center gap-2">
+                        <div className={cn("h-2.5 w-2.5 rounded-full", facility.licenseStatus === 'Active' ? "bg-green-500" : "bg-amber-500")} />
+                        <span className="font-medium">{facility.licenseStatus}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Licensed Capacity</p>
+                      <p className="font-medium">{facility.capacity} residents</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">County</p>
+                      <p className="font-medium">{facility.county}</p>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Inspection History - Note: In production, this would be synced from DSHS API */}
                 <div>
-                  <h4 className="font-semibold mb-3">Services Included</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {facility.services.map(service => (
-                      <div key={service} className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-600 shrink-0" />
-                        <span className="text-sm text-muted-foreground">{service}</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-500">Inspection History</h4>
+                    <span className="text-xs text-muted-foreground bg-slate-100 px-2 py-1 rounded">Sample Data</span>
+                  </div>
+                  <div className="space-y-3">
+                    {mockInspections.slice(0, expandedInspections ? undefined : 3).map((inspection, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border">
+                        <div className="mt-0.5">
+                          {inspection.violations === 0 ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <AlertTriangle className="h-5 w-5 text-amber-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-sm">
+                              {new Date(inspection.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </p>
+                            <span className="text-xs text-muted-foreground">{inspection.type}</span>
+                          </div>
+                          <p className={cn("text-sm", inspection.violations > 0 ? "text-amber-700" : "text-green-700")}>
+                            {inspection.result}
+                          </p>
+                          {inspection.corrected && (
+                            <p className="text-xs text-green-600 mt-1">✓ Corrected within 30 days</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {mockInspections.length > 3 && (
+                    <Button 
+                      variant="ghost" 
+                      className="w-full mt-3 text-sm"
+                      onClick={() => setExpandedInspections(!expandedInspections)}
+                    >
+                      {expandedInspections ? (
+                        <>Show Less <ChevronUp className="h-4 w-4 ml-1" /></>
+                      ) : (
+                        <>Show All Inspections <ChevronDown className="h-4 w-4 ml-1" /></>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Compliance Summary */}
+                <div className="bg-white rounded-lg border p-4">
+                  <h4 className="font-semibold text-sm mb-3">5-Year Summary</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Inspections:</span>
+                      <span className="font-medium">5</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Violations:</span>
+                      <span className="font-medium">{facility.violationsCount || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Enforcement Actions:</span>
+                      <span className="font-medium text-green-600">None</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">License Suspensions:</span>
+                      <span className="font-medium text-green-600">None</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button variant="link" className="px-0 text-primary h-auto group">
+                  View Full Report on DSHS Website <ExternalLink className="h-3 w-3 ml-1" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* SECTION 5: CARE CAPABILITIES */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-serif font-bold mb-1">Care Capabilities</h2>
+                <p className="text-sm text-muted-foreground">What this home can provide</p>
+              </div>
+
+              {facility.specialties && facility.specialties.length > 0 && (
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                  <h4 className="font-semibold text-sm mb-3">Specialties</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {facility.specialties.map(spec => (
+                      <div key={spec} className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        <span>{spec}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Visiting Hours</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <span>9:00 AM - 7:00 PM Daily</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Languages Spoken</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2">
-                        <Languages className="h-5 w-5 text-primary" />
-                        <span>{facility.languages.join(", ")}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+              )}
+
+              <div>
+                <h4 className="font-semibold text-sm mb-3">Services Included</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {["24/7 Supervision", "Medication Management", "3 Meals + Snacks Daily", "Special Diets Available", 
+                    "Bathing & Personal Care", "Dressing Assistance", "Housekeeping", "Laundry Service",
+                    "Transportation to Appts", "Activities Program"].map(service => (
+                    <div key={service} className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600 shrink-0" />
+                      <span className="text-muted-foreground">{service}</span>
+                    </div>
+                  ))}
                 </div>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="compliance" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Card className="border-l-4 border-l-primary shadow-sm overflow-hidden">
-                  <CardHeader className="bg-muted/20 pb-4">
-                    <CardTitle className="flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-primary" />
-                      DSHS Compliance Record
-                    </CardTitle>
-                    <CardDescription>
-                      Data automatically synced from Department of Social and Health Services
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">License Status</p>
-                        <div className="flex items-center gap-2">
-                          <div className={cn("h-2.5 w-2.5 rounded-full", facility.license_status === 'Active' ? "bg-green-500" : "bg-amber-500")} />
-                          <span className="font-medium">{facility.license_status}</span>
-                        </div>
+              {facility.amenities && facility.amenities.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-3">Amenities & Equipment</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {facility.amenities.map(amenity => (
+                      <div key={amenity} className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-green-600 shrink-0" />
+                        <span className="text-muted-foreground">{amenity}</span>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">License Number</p>
-                        <p className="font-medium font-mono text-sm">{facility.license_number}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Licensed Since</p>
-                        <p className="font-medium">{new Date(facility.licensed_since).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Capacity</p>
-                        <p className="font-medium">{facility.capacity} Residents</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm text-muted-foreground mb-1">Administrator</p>
-                        <p className="font-medium">{facility.administrator}</p>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 6: STAFF & CREDENTIALS */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-serif font-bold mb-1">Staff & Training</h2>
+                <p className="text-sm text-muted-foreground">Verified credentials and certifications</p>
+              </div>
+
+              {hasOkapiCertifiedStaff && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <Star className="h-6 w-6 text-amber-600 fill-amber-500" />
                     <div>
-                      <h4 className="font-semibold mb-4">Inspection History</h4>
-                      <div className="space-y-3">
-                        {facility.inspection_history.map((inspection, idx) => (
-                          <div key={idx} className="flex items-start gap-3 text-sm">
-                            <div className="mt-0.5">
-                              {inspection.result.includes("No violations") || inspection.violations === 0 ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-medium">
-                                {new Date(inspection.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}: {inspection.type}
-                              </p>
-                              <p className="text-muted-foreground">
-                                {inspection.result}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="font-bold text-amber-800">Okapi Certified Facility</p>
+                      <p className="text-sm text-amber-700">Staff complete ongoing training through Okapi Academy, exceeding state requirements.</p>
                     </div>
-                    
-                    <Button variant="link" className="px-0 text-primary h-auto group">
-                      View Full DSHS Report <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </CardContent>
+                  </div>
+                </div>
+              )}
+
+              {allCredentialsCurrent && team.length > 0 && (
+                <div className="flex items-center gap-2 text-green-700 font-medium bg-green-50 p-3 rounded-lg border border-green-100">
+                  <CheckCircle2 className="h-5 w-5" />
+                  All {team.filter(m => m.status === "Active").length} caregivers current on required training
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2 text-sm p-2 bg-muted/30 rounded">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Background Checks Cleared</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm p-2 bg-muted/30 rounded">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>First Aid / CPR Certified</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm p-2 bg-muted/30 rounded">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Food Safety Training</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm p-2 bg-muted/30 rounded">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span>Nurse Delegation Available</span>
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                <p><strong>Staff-to-Resident Ratio:</strong> 1:3 during daytime hours, 1:6 overnight</p>
+                <p className="mt-1"><strong>Nurse Coverage:</strong> RN on-call 24/7, weekly nurse visits</p>
+              </div>
+            </div>
+
+            {/* SECTION 7: ABOUT THIS HOME */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-serif font-bold mb-1">About This Home</h2>
+                <p className="text-sm text-muted-foreground">From the owner</p>
+              </div>
+
+              <p className="text-muted-foreground leading-relaxed">
+                {facility.description || `${facility.name} provides compassionate, personalized care in a warm, home-like environment. Our experienced caregivers are dedicated to ensuring the comfort, safety, and dignity of each resident.`}
+              </p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Visiting Hours</p>
+                  <p className="font-medium text-sm">Open visiting 8am - 8pm daily</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">County</p>
+                  <p className="font-medium text-sm">{facility.county} County</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 8: PRICING & PAYMENT */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-serif font-bold mb-1">Pricing</h2>
+              </div>
+
+              <div className="bg-muted/30 rounded-lg p-4 border">
+                <p className="text-sm text-muted-foreground mb-2">Monthly Rate</p>
+                <p className="text-2xl font-bold text-primary">Contact for Pricing</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Final pricing depends on level of care needed. Contact us for a personalized assessment and quote.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-sm mb-2">Payment Types Accepted</h4>
+                <div className="flex flex-wrap gap-2">
+                  {facility.acceptsPrivatePay && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>Private Pay</span>
+                    </div>
+                  )}
+                  {facility.acceptsMedicaid && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span>Medicaid</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Button variant="outline" className="w-full" onClick={() => setShowMessageModal(true)}>
+                Request Personalized Quote
+              </Button>
+            </div>
+
+            {/* SECTION 9: LOCATION */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-serif font-bold">Location</h2>
+              
+              <div className="rounded-xl overflow-hidden border border-border h-[300px] bg-muted relative group">
+                <img src={mapImage} alt="Map location" className="w-full h-full object-cover" />
+                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur p-4 rounded-lg shadow-lg border">
+                  <p className="font-medium">{facility.address}</p>
+                  <p className="text-sm text-muted-foreground">{facility.city}, WA {facility.zipCode}</p>
+                  <p className="text-sm text-muted-foreground">{facility.county} County</p>
+                  <Button variant="link" className="px-0 h-auto mt-2 text-primary">
+                    Get Directions <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 10: BOTTOM CTA */}
+            <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
+              <h3 className="text-xl font-serif font-bold text-center mb-6">Ready to Learn More?</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="text-center p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => {}}>
+                  <Phone className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <h4 className="font-semibold">Call</h4>
+                  <p className="text-xs text-muted-foreground mb-3">Talk to staff directly</p>
+                  <Button size="sm" className="w-full">Call Now</Button>
                 </Card>
-              </TabsContent>
-              
-              <TabsContent value="staff" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                 <div className="bg-muted/20 rounded-xl p-6 border border-border">
-                   <div className="flex items-center gap-4 mb-6">
-                     <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                       <Users className="h-6 w-6" />
-                     </div>
-                     <div>
-                       <h3 className="font-serif font-bold text-lg">Staff Credentials</h3>
-                       <p className="text-sm text-muted-foreground">Verified training and background checks</p>
-                     </div>
-                   </div>
-                   
-                   <div className="space-y-4">
-                     <div className="flex items-center gap-2 text-green-700 font-medium bg-green-50 p-3 rounded-lg border border-green-100">
-                        <CheckCircle2 className="h-5 w-5" />
-                        All caregivers current on required training
-                     </div>
-
-                     <div className="flex items-center justify-between p-4 bg-card rounded-lg border shadow-sm">
-                        <span className="font-medium">Last Verified</span>
-                        <span className="text-muted-foreground">{new Date().toLocaleDateString()}</span>
-                     </div>
-                     
-                     {facility.has_okapi_certified_staff && (
-                       <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-800">
-                         <ShieldCheck className="h-6 w-6 text-emerald-600" />
-                         <div>
-                           <p className="font-bold">Okapi Academy Certified Staff</p>
-                           <p className="text-sm opacity-90">Caregivers at this home have completed advanced training through Okapi Academy.</p>
-                         </div>
-                       </div>
-                     )}
-                     
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                       <div className="flex items-center gap-2 text-sm">
-                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                         <span>Background Checks Cleared</span>
-                       </div>
-                       <div className="flex items-center gap-2 text-sm">
-                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                         <span>First Aid / CPR Certified</span>
-                       </div>
-                       <div className="flex items-center gap-2 text-sm">
-                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                         <span>Nurse Delegation Available</span>
-                       </div>
-                       <div className="flex items-center gap-2 text-sm">
-                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                         <span>Food Safety Training</span>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-              </TabsContent>
-              
-              <TabsContent value="details" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Payment Types</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                          {facility.payment_types.map(type => (
-                            <li key={type}>{type}</li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Equipment & Accessibility</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                          <li>Wheelchair Accessible</li>
-                          <li>Walk-in Shower</li>
-                          <li>Hospital Beds Available</li>
-                          <li>Hoyer Lift</li>
-                        </ul>
-                      </CardContent>
-                    </Card>
-                 </div>
-
-                 <div>
-                   <h3 className="text-xl font-serif font-bold mb-4">Location</h3>
-                   <div className="rounded-xl overflow-hidden border border-border h-[300px] bg-muted relative group">
-                     <img src={mapImage} alt="Map location" className="w-full h-full object-cover" />
-                     <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur p-3 rounded-lg shadow-sm border border-border">
-                       <p className="font-medium text-sm">{facility.address}</p>
-                       <p className="text-xs text-muted-foreground">{facility.city}, WA {facility.zip}</p>
-                       <a href="#" className="text-xs text-primary font-medium hover:underline mt-1 block">Get Directions</a>
-                     </div>
-                   </div>
-                 </div>
-              </TabsContent>
-            </Tabs>
+                <Card className="text-center p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setShowMessageModal(true)}>
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <h4 className="font-semibold">Message</h4>
+                  <p className="text-xs text-muted-foreground mb-3">Send a message anytime</p>
+                  <Button size="sm" variant="outline" className="w-full">Send Message</Button>
+                </Card>
+                <Card className="text-center p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setShowTourModal(true)}>
+                  <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
+                  <h4 className="font-semibold">Tour</h4>
+                  <p className="text-xs text-muted-foreground mb-3">Schedule a visit</p>
+                  <Button size="sm" variant="outline" className="w-full">Request Tour</Button>
+                </Card>
+              </div>
+            </div>
           </div>
 
           {/* Right Column - Sticky Sidebar */}
@@ -355,33 +538,37 @@ export default function FacilityDetails() {
             <div className="sticky top-24 space-y-6">
               <Card className="border-primary/20 shadow-lg">
                 <CardHeader className="pb-4 border-b bg-muted/20">
-                  <CardTitle className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary">
-                      ${facility.price_min.toLocaleString()} - ${facility.price_max.toLocaleString()}
-                    </span>
-                    <span className="text-sm text-muted-foreground font-normal">/ month</span>
-                  </CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${facility.beds_available > 0 ? 'bg-green-500' : 'bg-amber-500'}`} />
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`h-2.5 w-2.5 rounded-full ${facility.availableBeds > 0 ? 'bg-green-500' : 'bg-amber-500'}`} />
                     <span className="text-sm font-medium">
-                      {facility.beds_available > 0 
-                        ? `${facility.beds_available} Bed${facility.beds_available > 1 ? 's' : ''} Available Now` 
+                      {facility.availableBeds > 0 
+                        ? `${facility.availableBeds} Bed${facility.availableBeds > 1 ? 's' : ''} Available` 
                         : 'Waitlist Only'}
                     </span>
                   </div>
+                  <CardTitle className="text-lg">Contact for Pricing</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Pricing depends on care level needed</p>
                 </CardHeader>
-                <CardContent className="space-y-4 pt-6">
-                  <Button className="w-full h-12 text-lg font-semibold shadow-sm" size="lg">
+                <CardContent className="space-y-3 pt-6">
+                  <Button className="w-full h-11" size="lg" onClick={() => setShowTourModal(true)}>
+                    <Calendar className="h-4 w-4 mr-2" />
                     Schedule a Tour
                   </Button>
-                  <Button variant="outline" className="w-full">
-                    <Mail className="h-4 w-4 mr-2" />
+                  <Button variant="outline" className="w-full" onClick={() => setShowMessageModal(true)}>
+                    <MessageSquare className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>
-                  <Button variant="ghost" className="w-full text-muted-foreground">
-                    <Phone className="h-4 w-4 mr-2" />
-                    (555) 123-4567
-                  </Button>
+                  {facility.phone && (
+                    <Button variant="ghost" className="w-full text-muted-foreground" asChild>
+                      <a href={`tel:${facility.phone}`}>
+                        <Phone className="h-4 w-4 mr-2" />
+                        {facility.phone}
+                      </a>
+                    </Button>
+                  )}
+                  <p className="text-xs text-center text-muted-foreground">
+                    Usually responds within 24 hours
+                  </p>
                 </CardContent>
               </Card>
 
@@ -401,14 +588,133 @@ export default function FacilityDetails() {
 
       {/* Mobile Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 lg:hidden z-50 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-        <Button variant="outline" className="flex-1">
-          <Mail className="h-4 w-4 mr-2" />
+        <Button variant="outline" className="flex-1" onClick={() => setShowMessageModal(true)}>
+          <MessageSquare className="h-4 w-4 mr-2" />
           Message
         </Button>
-        <Button className="flex-1 shadow-md">
-          Schedule Tour
+        <Button className="flex-1 shadow-md" onClick={() => setShowTourModal(true)}>
+          <Calendar className="h-4 w-4 mr-2" />
+          Request Tour
         </Button>
       </div>
+
+      {/* MESSAGE MODAL */}
+      <Dialog open={showMessageModal} onOpenChange={setShowMessageModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Message {facility.name}</DialogTitle>
+            <DialogDescription>
+              Send a message to inquire about availability and care options.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="msg-name">Your Name *</Label>
+                <Input id="msg-name" placeholder="Jane Smith" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="msg-email">Email *</Label>
+                <Input id="msg-email" type="email" placeholder="jane@email.com" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="msg-phone">Phone (optional)</Label>
+              <Input id="msg-phone" type="tel" placeholder="(555) 123-4567" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="msg-relationship">Relationship to person needing care</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select relationship" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">I am the person needing care</SelectItem>
+                  <SelectItem value="spouse">Spouse/Partner</SelectItem>
+                  <SelectItem value="child">Adult Child</SelectItem>
+                  <SelectItem value="family">Other Family Member</SelectItem>
+                  <SelectItem value="friend">Friend</SelectItem>
+                  <SelectItem value="professional">Case Manager/Social Worker</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="msg-message">Tell us about your situation *</Label>
+              <Textarea 
+                id="msg-message" 
+                placeholder="What type of care is needed? Any specific questions?"
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMessageModal(false)}>Cancel</Button>
+            <Button onClick={() => setShowMessageModal(false)}>Send Message</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* TOUR REQUEST MODAL */}
+      <Dialog open={showTourModal} onOpenChange={setShowTourModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Schedule a Tour at {facility.name}</DialogTitle>
+            <DialogDescription>
+              Request a visit to meet the staff and see the home.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tour-name">Your Name *</Label>
+                <Input id="tour-name" placeholder="Jane Smith" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tour-email">Email *</Label>
+                <Input id="tour-email" type="email" placeholder="jane@email.com" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tour-phone">Phone *</Label>
+              <Input id="tour-phone" type="tel" placeholder="(555) 123-4567" />
+            </div>
+            <div className="space-y-2">
+              <Label>Preferred Time</Label>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1">Morning (9am-12pm)</Button>
+                <Button variant="outline" size="sm" className="flex-1">Afternoon (12pm-4pm)</Button>
+                <Button variant="outline" size="sm" className="flex-1">Evening (4pm-7pm)</Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tour-attendees">Number of people attending</Label>
+              <Select defaultValue="1">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 person</SelectItem>
+                  <SelectItem value="2">2 people</SelectItem>
+                  <SelectItem value="3">3 people</SelectItem>
+                  <SelectItem value="4">4+ people</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tour-notes">Anything we should know? (optional)</Label>
+              <Textarea id="tour-notes" rows={2} />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTourModal(false)}>Cancel</Button>
+            <Button onClick={() => setShowTourModal(false)}>Request Tour</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
