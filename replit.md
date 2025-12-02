@@ -1,8 +1,8 @@
-# Okapi AFH Portal
+# Okapi Care Network
 
 ## Overview
 
-Okapi AFH Portal is a two-sided marketplace platform connecting Adult Family Home (AFH) owners in Washington State with families seeking care. The application integrates DSHS compliance data, facility management tools, and a training/certification platform (Okapi Academy). 
+Okapi Care Network is a two-sided marketplace platform connecting Adult Family Home (AFH) owners in Washington State with families seeking care. The application integrates DSHS compliance data, facility management tools, and a training/certification platform (Okapi Academy). 
 
 Built as a full-stack web application with a React frontend and Express backend, the platform enables families to search for verified care facilities, view detailed compliance information, and contact providers. AFH owners can manage their facility listings, staff credentials, and maintain regulatory compliance visibility.
 
