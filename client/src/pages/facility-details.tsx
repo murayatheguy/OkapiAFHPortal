@@ -154,8 +154,8 @@ export default function FacilityDetails() {
                   DSHS Verified
                 </Badge>
                 {hasOkapiCertifiedStaff && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5">
-                    <Star className="h-3.5 w-3.5 mr-1.5 fill-amber-500" />
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5">
+                    <Star className="h-3.5 w-3.5 mr-1.5 fill-blue-500" />
                     Okapi Certified
                   </Badge>
                 )}
@@ -387,12 +387,12 @@ export default function FacilityDetails() {
               </div>
 
               {hasOkapiCertifiedStaff && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <Star className="h-6 w-6 text-amber-600 fill-amber-500" />
+                    <Star className="h-6 w-6 text-blue-600 fill-blue-500" />
                     <div>
-                      <p className="font-bold text-amber-800">Okapi Certified Facility</p>
-                      <p className="text-sm text-amber-700">Staff complete ongoing training through Okapi Academy, exceeding state requirements.</p>
+                      <p className="font-bold text-blue-800">Okapi Certified Facility</p>
+                      <p className="text-sm text-blue-700">Staff complete ongoing training through Okapi Academy, exceeding state requirements.</p>
                     </div>
                   </div>
                 </div>
