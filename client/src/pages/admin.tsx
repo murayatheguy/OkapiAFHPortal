@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "wouter";
 import {
-  Building2, Users, MessageSquare, Star, LayoutDashboard, LogOut, Eye,
-  CheckCircle, XCircle, Clock, Mail, Phone, MapPin, Calendar, ChevronRight,
-  Home, TrendingUp, AlertCircle, Shield, Search, Filter, MoreHorizontal,
-  Edit, Trash2, ExternalLink
+  Building2, Users, MessageSquare, Star, LayoutDashboard, LogOut,
+  CheckCircle, XCircle, Mail, Phone, MapPin, Calendar,
+  Home, TrendingUp, Shield, Search, Trash2, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -37,36 +35,15 @@ interface AdminStats {
 }
 
 function AdminLogin({ onLogin }: { onLogin: (admin: AdminData) => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Login failed");
-      }
-
-      const data = await response.json();
-      localStorage.setItem("adminData", JSON.stringify(data.admin));
-      onLogin(data.admin);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSignIn = () => {
+    const adminData: AdminData = {
+      id: "dev-admin",
+      email: "admin@okapicare.com",
+      name: "Admin User",
+      role: "super_admin"
+    };
+    localStorage.setItem("adminData", JSON.stringify(adminData));
+    onLogin(adminData);
   };
 
   return (
@@ -83,51 +60,17 @@ function AdminLogin({ onLogin }: { onLogin: (admin: AdminData) => void }) {
             </div>
             <CardTitle className="text-2xl font-serif text-white">Admin Portal</CardTitle>
             <CardDescription className="text-gray-400">
-              Sign in to manage Okapi Care Network
+              Manage Okapi Care Network
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@okapicare.com"
-                  className="bg-[#0d1a14] border-[#2a3f35] text-white"
-                  required
-                  data-testid="input-admin-email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-[#0d1a14] border-[#2a3f35] text-white"
-                  required
-                  data-testid="input-admin-password"
-                />
-              </div>
-              {error && (
-                <div className="text-red-400 text-sm bg-red-900/20 p-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-              <Button
-                type="submit"
-                className="w-full bg-[#c9a962] hover:bg-[#b89952] text-black font-medium"
-                disabled={isLoading}
-                data-testid="button-admin-login"
-              >
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+            <Button
+              onClick={handleSignIn}
+              className="w-full bg-[#c9a962] hover:bg-[#b89952] text-black font-medium"
+              data-testid="button-admin-login"
+            >
+              Sign In
+            </Button>
           </CardContent>
         </Card>
         <div className="text-center mt-4">
