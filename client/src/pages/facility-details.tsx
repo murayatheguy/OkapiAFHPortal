@@ -323,9 +323,17 @@ export default function FacilityDetails() {
                   </div>
                 </div>
 
-                <Button variant="link" className="px-0 text-primary h-auto group">
-                  View Full Report on DSHS Website <ExternalLink className="h-3 w-3 ml-1" />
-                </Button>
+                {facility.dshsReportUrl && (
+                  <a 
+                    href={facility.dshsReportUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-primary hover:underline font-medium text-sm"
+                    data-testid="link-dshs-report"
+                  >
+                    View Full Report on DSHS Website <ExternalLink className="h-3 w-3 ml-1" />
+                  </a>
+                )}
               </CardContent>
             </Card>
 

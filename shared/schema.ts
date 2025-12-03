@@ -98,6 +98,7 @@ export const facilities = pgTable("facilities", {
   licenseStatus: text("license_status").notNull(), // Active, Provisional, Suspended
   lastInspectionDate: date("last_inspection_date"),
   violationsCount: integer("violations_count").default(0),
+  dshsReportUrl: text("dshs_report_url"), // Link to DSHS inspection reports
   
   // Features & Specialties
   acceptsMedicaid: boolean("accepts_medicaid").default(false),

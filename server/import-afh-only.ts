@@ -176,6 +176,7 @@ async function importAFHOnly() {
       const phone = cols[colIndex['TelephoneNmbr']]?.trim();
       const capacity = parseInt(cols[colIndex['LicensedBedCount']]?.trim()) || 6;
       const specialtyStr = cols[colIndex['Speciality']]?.trim();
+      const reportsLocation = cols[colIndex['Reports Location']]?.trim();
       
       // Skip if missing required fields
       if (!licenseNumber || !facilityName || !address || !city) {
@@ -229,6 +230,7 @@ async function importAFHOnly() {
         licenseStatus: "Active",
         lastInspectionDate: "2024-10-15",
         violationsCount: 0,
+        dshsReportUrl: reportsLocation || null,
         acceptsMedicaid: true,
         acceptsPrivatePay: true,
         specialties: specialties,
