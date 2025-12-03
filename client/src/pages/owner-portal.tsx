@@ -22,7 +22,7 @@ export default function OwnerDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   
-  const FACILITY_ID = "e1a955ed-ba41-435a-a48a-1f36acee40b7";
+  const FACILITY_ID = "d66a7b70-4972-4ff0-85c5-ae9799b8c76a";
   
   const { data: facility, isLoading: facilityLoading } = useQuery({
     queryKey: ["facility", FACILITY_ID],
