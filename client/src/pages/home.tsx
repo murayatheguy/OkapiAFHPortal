@@ -9,37 +9,36 @@ export default function Home() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const filters = [
+    { id: 'all', label: 'All Homes', specialty: null },
+    { id: 'mental-health', label: 'Mental Health', specialty: 'Mental Health' },
+    { id: 'dementia', label: 'Dementia', specialty: 'Dementia' },
+    { id: 'developmental', label: 'Developmental Disabilities', specialty: 'Developmental Disabilities' }
+  ];
+
+  const currentFilter = filters.find(f => f.id === activeFilter);
+  const specialtyParam = currentFilter?.specialty ? [currentFilter.specialty] : undefined;
+
   const { data: featuredFacilities = [] } = useQuery({
     queryKey: ["featured-facilities"],
     queryFn: () => getFeaturedFacilities(9),
+    enabled: activeFilter === 'all',
   });
 
-  const { data: allFacilities = [] } = useQuery({
-    queryKey: ["facilities"],
-    queryFn: () => searchFacilities(),
+  const { data: filteredBySpecialty = [] } = useQuery({
+    queryKey: ["facilities-by-specialty", activeFilter],
+    queryFn: () => searchFacilities({ specialties: specialtyParam }),
+    enabled: activeFilter !== 'all',
   });
-
-  const facilities = activeFilter === 'all' ? featuredFacilities : allFacilities;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setLocation(`/search?q=${encodeURIComponent(searchValue)}`);
   };
 
-  const filters = [
-    { id: 'all', label: 'All Homes' },
-    { id: 'memory', label: 'Memory Care' },
-    { id: 'assisted', label: 'Assisted Living' },
-    { id: 'respite', label: 'Respite Care' }
-  ];
-
-  const filteredFacilities = facilities.filter(facility => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'memory') return facility.specialties?.some(s => s.toLowerCase().includes('memory') || s.toLowerCase().includes('dementia'));
-    if (activeFilter === 'assisted') return facility.specialties?.some(s => s.toLowerCase().includes('assisted'));
-    if (activeFilter === 'respite') return facility.specialties?.some(s => s.toLowerCase().includes('respite'));
-    return true;
-  }).slice(0, 6);
+  const filteredFacilities = activeFilter === 'all' 
+    ? featuredFacilities.slice(0, 6) 
+    : filteredBySpecialty.slice(0, 6);
 
   return (
     <div className="min-h-screen" style={{ 
