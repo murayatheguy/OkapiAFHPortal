@@ -1,4 +1,4 @@
-import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2 } from "lucide-react";
+import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,19 +7,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTeamMembers, getFacility, createTeamMember } from "@/lib/api";
+import { getTeamMembers, getFacility, createTeamMember, getInquiries, updateInquiry } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
+import type { Inquiry, Review } from "@shared/schema";
 import caregiver1 from '@assets/generated_images/generic_portrait_of_a_friendly_male_caregiver.png';
 import caregiver2 from '@assets/generated_images/generic_portrait_of_a_friendly_female_caregiver.png';
 
 export default function OwnerDashboard() {
-  const [activeTab, setActiveTab] = useState("team");
+  const [activeSection, setActiveSection] = useState("team");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [responseDialogOpen, setResponseDialogOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [responseText, setResponseText] = useState("");
   const queryClient = useQueryClient();
   
   const FACILITY_ID = "d66a7b70-4972-4ff0-85c5-ae9799b8c76a";
@@ -42,6 +48,22 @@ export default function OwnerDashboard() {
     retry: false,
   });
 
+  const { data: inquiries = [] } = useQuery<Inquiry[]>({
+    queryKey: ["inquiries", FACILITY_ID],
+    queryFn: () => getInquiries(FACILITY_ID),
+    retry: false,
+  });
+
+  const { data: reviews = [] } = useQuery<Review[]>({
+    queryKey: ["facility-reviews", FACILITY_ID],
+    queryFn: async () => {
+      const response = await fetch(`/api/facilities/${FACILITY_ID}/reviews`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    retry: false,
+  });
+
   const createMemberMutation = useMutation({
     mutationFn: createTeamMember,
     onSuccess: () => {
@@ -49,8 +71,34 @@ export default function OwnerDashboard() {
       setShowInviteDialog(false);
     },
   });
+
+  const updateInquiryMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Inquiry> }) => updateInquiry(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inquiries", FACILITY_ID] });
+    },
+  });
+
+  const respondToReviewMutation = useMutation({
+    mutationFn: async ({ id, response }: { id: string; response: string }) => {
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerResponse: response, ownerRespondedAt: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error("Failed to respond");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["facility-reviews", FACILITY_ID] });
+      setResponseDialogOpen(false);
+      setSelectedReview(null);
+      setResponseText("");
+    },
+  });
   
   const isLoading = facilityLoading || teamLoading;
+  const newInquiries = inquiries.filter(i => i.status === "new").length;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
@@ -146,11 +194,33 @@ export default function OwnerDashboard() {
                     <p className="text-xs text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif" }}>Owner Portal</p>
                   </div>
                 </div>
-                <Button className="w-full justify-start" variant="ghost">Dashboard</Button>
-                <Button className="w-full justify-start" variant="ghost">My Facility</Button>
-                <Button className="w-full justify-start" variant="secondary">Team & Credentials</Button>
-                <Button className="w-full justify-start" variant="ghost">Inquiries</Button>
-                <Button className="w-full justify-start" variant="ghost">Settings</Button>
+                <Button 
+                  className="w-full justify-start" 
+                  variant={activeSection === "team" ? "secondary" : "ghost"}
+                  onClick={() => setActiveSection("team")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Team & Credentials
+                </Button>
+                <Button 
+                  className="w-full justify-start relative" 
+                  variant={activeSection === "inquiries" ? "secondary" : "ghost"}
+                  onClick={() => setActiveSection("inquiries")}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Inquiries
+                  {newInquiries > 0 && (
+                    <Badge className="ml-auto bg-red-500 text-white text-xs h-5 w-5 p-0 flex items-center justify-center">{newInquiries}</Badge>
+                  )}
+                </Button>
+                <Button 
+                  className="w-full justify-start" 
+                  variant={activeSection === "reviews" ? "secondary" : "ghost"}
+                  onClick={() => setActiveSection("reviews")}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Reviews
+                </Button>
               </div>
 
               <Card className="bg-primary/5 border-primary/20">
@@ -176,6 +246,9 @@ export default function OwnerDashboard() {
 
             {/* Main Content */}
             <div className="lg:col-span-9 space-y-6">
+              {/* TEAM SECTION */}
+              {activeSection === "team" && (
+              <>
               <div className="flex justify-between items-center">
                 <div>
                   <h1 className="text-2xl font-bold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Team & Credentials</h1>
@@ -430,6 +503,242 @@ export default function OwnerDashboard() {
                   })}
                 </div>
               </div>
+              </>
+              )}
+
+              {/* INQUIRIES SECTION */}
+              {activeSection === "inquiries" && (
+              <>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-bold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Family Inquiries</h1>
+                  <p className="text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem' }}>Manage inquiries from families interested in your facility.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">New</p>
+                        <h3 className="text-2xl font-bold mt-1 text-red-600">{inquiries.filter(i => i.status === "new").length}</h3>
+                      </div>
+                      <div className="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
+                        <MessageSquare className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Contacted</p>
+                        <h3 className="text-2xl font-bold mt-1 text-blue-600">{inquiries.filter(i => i.status === "contacted").length}</h3>
+                      </div>
+                      <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                        <Phone className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Toured</p>
+                        <h3 className="text-2xl font-bold mt-1 text-green-600">{inquiries.filter(i => i.status === "toured").length}</h3>
+                      </div>
+                      <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-4 border-b bg-muted/20">
+                  <h3 className="font-semibold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>All Inquiries</h3>
+                </div>
+                <div className="divide-y">
+                  {inquiries.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p>No inquiries yet</p>
+                    </div>
+                  ) : (
+                    inquiries.map((inquiry) => (
+                      <div key={inquiry.id} className="p-4 hover:bg-muted/5">
+                        <div className="flex flex-col md:flex-row gap-4 justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold">{inquiry.name}</h4>
+                              <Badge variant={inquiry.status === "new" ? "destructive" : inquiry.status === "contacted" ? "default" : "secondary"}>
+                                {inquiry.status}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {inquiry.email}</p>
+                              {inquiry.phone && <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {inquiry.phone}</p>}
+                              {inquiry.careType && <p>Care Type: {inquiry.careType}</p>}
+                              {inquiry.moveInTimeline && <p>Timeline: {inquiry.moveInTimeline}</p>}
+                            </div>
+                            {inquiry.message && (
+                              <p className="mt-2 text-sm bg-muted/30 p-2 rounded">{inquiry.message}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={inquiry.status} 
+                              onValueChange={(value) => updateInquiryMutation.mutate({ id: inquiry.id, data: { status: value } })}
+                            >
+                              <SelectTrigger className="w-[130px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Contacted</SelectItem>
+                                <SelectItem value="toured">Toured</SelectItem>
+                                <SelectItem value="admitted">Admitted</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              </>
+              )}
+
+              {/* REVIEWS SECTION */}
+              {activeSection === "reviews" && (
+              <>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-bold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Reviews & Ratings</h1>
+                  <p className="text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem' }}>View and respond to family reviews.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Average Rating</p>
+                        <h3 className="text-2xl font-bold mt-1 flex items-center gap-2">
+                          {facility?.rating || "N/A"}
+                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                        </h3>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Reviews</p>
+                        <h3 className="text-2xl font-bold mt-1">{reviews.length}</h3>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-4 border-b bg-muted/20">
+                  <h3 className="font-semibold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>All Reviews</h3>
+                </div>
+                <div className="divide-y">
+                  {reviews.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      <Star className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p>No reviews yet</p>
+                    </div>
+                  ) : (
+                    reviews.map((review) => (
+                      <div key={review.id} className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-semibold">{review.authorName}</h4>
+                            <div className="flex items-center gap-1 mt-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={cn("h-4 w-4", i < review.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300")} />
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
+                          </span>
+                        </div>
+                        {review.title && <h5 className="font-medium mt-2">{review.title}</h5>}
+                        <p className="text-sm text-muted-foreground mt-1">{review.content}</p>
+                        
+                        {review.ownerResponse ? (
+                          <div className="mt-3 bg-primary/5 p-3 rounded-lg border-l-2 border-primary">
+                            <p className="text-xs font-medium text-primary mb-1">Your Response:</p>
+                            <p className="text-sm">{review.ownerResponse}</p>
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-3 gap-1"
+                            onClick={() => {
+                              setSelectedReview(review);
+                              setResponseDialogOpen(true);
+                            }}
+                          >
+                            <Send className="h-3 w-3" /> Respond
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Response Dialog */}
+              <Dialog open={responseDialogOpen} onOpenChange={setResponseDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Respond to Review</DialogTitle>
+                    <DialogDescription>
+                      Your response will be visible to all visitors.
+                    </DialogDescription>
+                  </DialogHeader>
+                  {selectedReview && (
+                    <div className="bg-muted/30 p-3 rounded-lg text-sm mb-4">
+                      <p className="font-medium">{selectedReview.authorName}</p>
+                      <p className="text-muted-foreground mt-1">{selectedReview.content}</p>
+                    </div>
+                  )}
+                  <Textarea 
+                    placeholder="Write your response..."
+                    value={responseText}
+                    onChange={(e) => setResponseText(e.target.value)}
+                    rows={4}
+                  />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setResponseDialogOpen(false)}>Cancel</Button>
+                    <Button 
+                      onClick={() => selectedReview && respondToReviewMutation.mutate({ id: selectedReview.id, response: responseText })}
+                      disabled={!responseText.trim() || respondToReviewMutation.isPending}
+                      style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                    >
+                      {respondToReviewMutation.isPending ? "Sending..." : "Send Response"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              </>
+              )}
             </div>
           </div>
         </div>
