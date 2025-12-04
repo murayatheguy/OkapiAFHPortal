@@ -1,13 +1,75 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { getFeaturedFacilities, searchFacilities } from "@/lib/api";
+import { getFeaturedFacilities, searchFacilities, autocompleteFacilities, type AutocompleteResult } from "@/lib/api";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [searchValue, setSearchValue] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [autocompleteResults, setAutocompleteResults] = useState<AutocompleteResult[]>([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Debounced autocomplete effect
+  useEffect(() => {
+    if (searchValue.length < 2) {
+      setAutocompleteResults([]);
+      setShowAutocomplete(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await autocompleteFacilities(searchValue, 8);
+        setAutocompleteResults(results);
+        setShowAutocomplete(results.length > 0);
+        setSelectedIndex(-1);
+      } catch (error) {
+        console.error("Autocomplete error:", error);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowAutocomplete(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showAutocomplete) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.min(prev + 1, autocompleteResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      const selected = autocompleteResults[selectedIndex];
+      setLocation(`/facility/${selected.id}`);
+      setShowAutocomplete(false);
+    } else if (e.key === "Escape") {
+      setShowAutocomplete(false);
+    }
+  };
+
+  const handleSelectFacility = (facility: AutocompleteResult) => {
+    setLocation(`/facility/${facility.id}`);
+    setShowAutocomplete(false);
+  };
 
   const filters = [
     { id: 'all', label: 'All Homes', specialty: null },
@@ -147,7 +209,7 @@ export default function Home() {
           </p>
 
           {/* Search Box - Compact */}
-          <div className="max-w-lg mx-auto mb-6">
+          <div className="max-w-lg mx-auto mb-6 relative" ref={searchContainerRef}>
             <form onSubmit={handleSearch}>
               <div 
                 className="p-0.5 rounded"
@@ -156,17 +218,19 @@ export default function Home() {
                 <div className="flex bg-[#0d1a14] rounded overflow-hidden">
                   <div className="relative flex-1">
                     <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#c9a962' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
                       type="text"
-                      placeholder="City, ZIP code, or county..."
+                      placeholder="Search by home name, city, or ZIP..."
                       value={searchValue}
                       onChange={(e) => setSearchValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => autocompleteResults.length > 0 && setShowAutocomplete(true)}
                       className="w-full pl-10 pr-3 py-3 bg-transparent text-stone-200 placeholder-stone-600 focus:outline-none text-sm"
                       style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, letterSpacing: '0.03em' }}
                       data-testid="input-search"
+                      autoComplete="off"
                     />
                   </div>
                   <button 
@@ -180,6 +244,49 @@ export default function Home() {
                 </div>
               </div>
             </form>
+
+            {/* Autocomplete Dropdown */}
+            {showAutocomplete && autocompleteResults.length > 0 && (
+              <div 
+                className="absolute left-0 right-0 mt-1 bg-[#1a2f25] border border-amber-900/30 rounded-lg shadow-xl z-50 overflow-hidden"
+                style={{ maxHeight: '320px', overflowY: 'auto' }}
+              >
+                {autocompleteResults.map((facility, index) => (
+                  <button
+                    key={facility.id}
+                    type="button"
+                    onClick={() => handleSelectFacility(facility)}
+                    className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 ${
+                      index === selectedIndex 
+                        ? 'bg-amber-900/30' 
+                        : 'hover:bg-amber-900/20'
+                    }`}
+                    data-testid={`autocomplete-item-${facility.id}`}
+                  >
+                    <svg className="w-4 h-4 shrink-0" style={{ color: '#c9a962' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <div className="flex-1 min-w-0">
+                      <p 
+                        className="text-stone-200 text-sm truncate"
+                        style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400 }}
+                      >
+                        {facility.name}
+                      </p>
+                      <p 
+                        className="text-stone-500 text-xs"
+                        style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300 }}
+                      >
+                        {facility.city}{facility.zipCode ? `, ${facility.zipCode}` : ''}
+                      </p>
+                    </div>
+                    <svg className="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Stats - Inline on mobile */}
