@@ -25,6 +25,24 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to get featured facilities" });
     }
   });
+
+  // Autocomplete search for facilities by name (must be before :id route)
+  app.get("/api/facilities/autocomplete", async (req, res) => {
+    try {
+      const query = String(req.query.q || "");
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : 10;
+      
+      if (query.length < 2) {
+        return res.json([]);
+      }
+      
+      const results = await storage.autocompleteFacilities(query, limit);
+      res.json(results);
+    } catch (error) {
+      console.error("Error in autocomplete search:", error);
+      res.status(500).json({ error: "Failed to search facilities" });
+    }
+  });
   
   // Get all facilities (for search page)
   app.get("/api/facilities", async (req, res) => {

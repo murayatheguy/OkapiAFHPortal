@@ -9,6 +9,16 @@ export async function getFeaturedFacilities(limit: number = 6): Promise<Facility
   return response.json();
 }
 
+// Autocomplete API for searching facilities by name
+export type AutocompleteResult = Pick<Facility, 'id' | 'name' | 'city' | 'zipCode'>;
+
+export async function autocompleteFacilities(query: string, limit: number = 10): Promise<AutocompleteResult[]> {
+  if (query.length < 2) return [];
+  const response = await fetch(`${API_BASE}/facilities/autocomplete?q=${encodeURIComponent(query)}&limit=${limit}`);
+  if (!response.ok) throw new Error("Failed to search facilities");
+  return response.json();
+}
+
 // Facilities API
 export async function searchFacilities(params?: {
   city?: string;

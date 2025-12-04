@@ -71,6 +71,9 @@ export interface IStorage {
   // Featured Facilities
   getFeaturedFacilities(limit?: number): Promise<Facility[]>;
 
+  // Autocomplete search
+  autocompleteFacilities(query: string, limit?: number): Promise<Pick<Facility, 'id' | 'name' | 'city' | 'zipCode'>[]>;
+
   // Admins
   getAdminByEmail(email: string): Promise<Admin | undefined>;
   getAdmin(id: string): Promise<Admin | undefined>;
@@ -298,6 +301,24 @@ export class DatabaseStorage implements IStorage {
         eq(facilities.status, "active")
       ))
       .orderBy(desc(facilities.rating))
+      .limit(limit);
+  }
+
+  // Autocomplete search - returns facilities matching query prefix
+  async autocompleteFacilities(query: string, limit: number = 10): Promise<Pick<Facility, 'id' | 'name' | 'city' | 'zipCode'>[]> {
+    if (!query || query.length < 2) return [];
+    
+    const searchPattern = `%${query}%`;
+    return await db
+      .select({
+        id: facilities.id,
+        name: facilities.name,
+        city: facilities.city,
+        zipCode: facilities.zipCode,
+      })
+      .from(facilities)
+      .where(ilike(facilities.name, searchPattern))
+      .orderBy(facilities.name)
       .limit(limit);
   }
 
