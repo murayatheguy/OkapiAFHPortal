@@ -19,9 +19,9 @@ export function Navbar() {
           <Link href="/search" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/search" ? "text-primary" : "text-muted-foreground")}>
             Find Care
           </Link>
-          <Link href="/academy" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+          <a href="https://okapi-health-ai-info10705.replit.app/academy" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Okapi Academy
-          </Link>
+          </a>
         </div>
 
         <div className="flex items-center gap-4">

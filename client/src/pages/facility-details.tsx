@@ -395,15 +395,17 @@ export default function FacilityDetails() {
               </div>
 
               {hasOkapiCertifiedStaff && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Star className="h-6 w-6 text-blue-600 fill-blue-500" />
-                    <div>
-                      <p className="font-bold text-blue-800">Okapi Certified Facility</p>
-                      <p className="text-sm text-blue-700">Staff complete ongoing training through Okapi Academy, exceeding state requirements.</p>
+                <a href="https://okapi-health-ai-info10705.replit.app/academy" target="_blank" rel="noopener noreferrer" className="block">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Star className="h-6 w-6 text-blue-600 fill-blue-500" />
+                      <div>
+                        <p className="font-bold text-blue-800">Okapi Certified Facility</p>
+                        <p className="text-sm text-blue-700">Staff complete ongoing training through <span className="underline">Okapi Academy</span>, exceeding state requirements.</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </a>
               )}
 
               {allCredentialsCurrent && team.length > 0 && (
