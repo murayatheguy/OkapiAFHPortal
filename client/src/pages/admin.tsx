@@ -1049,13 +1049,13 @@ function ReviewsTab() {
 
 interface DshsSyncLog {
   id: string;
-  county: string | null;
   syncType: string;
   status: string;
-  homesScraped: number;
+  homesChecked: number;
+  homesAdded: number;
   homesUpdated: number;
-  homesCreated: number;
-  errors: string[];
+  inspectionsAdded: number;
+  errorMessage: string | null;
   startedAt: Date;
   completedAt: Date | null;
   createdAt: Date;
@@ -1263,32 +1263,36 @@ function DshsSyncTab() {
                     <div className="flex items-center gap-3">
                       {getStatusBadge(log.status)}
                       <span className="text-white font-medium">
-                        {log.syncType === "full" ? "Full Sync" : `${log.county} County`}
+                        {log.syncType === "full" ? "Full Sync" : "Single County Sync"}
                       </span>
                     </div>
                     <span className="text-gray-500 text-sm">
                       {log.startedAt ? new Date(log.startedAt).toLocaleString() : "N/A"}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-400">Scraped:</span>{" "}
-                      <span className="text-white">{log.homesScraped}</span>
+                      <span className="text-gray-400">Checked:</span>{" "}
+                      <span className="text-white">{log.homesChecked}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Added:</span>{" "}
+                      <span className="text-green-400">{log.homesAdded}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">Updated:</span>{" "}
                       <span className="text-[#c9a962]">{log.homesUpdated}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Created:</span>{" "}
-                      <span className="text-green-400">{log.homesCreated}</span>
+                      <span className="text-gray-400">Inspections:</span>{" "}
+                      <span className="text-blue-400">{log.inspectionsAdded}</span>
                     </div>
                   </div>
-                  {log.errors && log.errors.length > 0 && (
+                  {log.errorMessage && (
                     <div className="mt-2 p-2 bg-red-900/20 rounded border border-red-800">
                       <div className="flex items-center gap-2 text-red-400 text-sm">
                         <AlertCircle className="h-4 w-4" />
-                        {log.errors.length} error(s)
+                        {log.errorMessage}
                       </div>
                     </div>
                   )}
