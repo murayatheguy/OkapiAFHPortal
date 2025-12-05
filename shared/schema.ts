@@ -38,14 +38,20 @@ export type Admin = typeof admins.$inferSelect;
 export const owners = pgTable("owners", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
-  password: text("password"),
+  passwordHash: text("password_hash"),
   name: text("name").notNull(),
   phone: text("phone"),
+  status: text("status").notNull().default("pending_verification"), // pending_verification, active, suspended
+  emailVerified: boolean("email_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+  lastLoginAt: timestamp("last_login_at"),
+}, (table) => ({
+  emailIdx: index("owners_email_idx").on(table.email),
+  statusIdx: index("owners_status_idx").on(table.status),
+}));
 
-export const insertOwnerSchema = createInsertSchema(owners).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOwnerSchema = createInsertSchema(owners).omit({ id: true, createdAt: true, updatedAt: true, lastLoginAt: true });
 export type InsertOwner = z.infer<typeof insertOwnerSchema>;
 export type Owner = typeof owners.$inferSelect;
 
@@ -66,6 +72,86 @@ export const ownerInvites = pgTable("owner_invites", {
 export const insertOwnerInviteSchema = createInsertSchema(ownerInvites).omit({ id: true, createdAt: true });
 export type InsertOwnerInvite = z.infer<typeof insertOwnerInviteSchema>;
 export type OwnerInvite = typeof ownerInvites.$inferSelect;
+
+// Claim Requests table for facility ownership claims
+export const claimRequests = pgTable("claim_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").notNull(),
+  ownerId: varchar("owner_id"), // Set when claim is approved
+  
+  // Requester Info
+  requesterEmail: text("requester_email").notNull(),
+  requesterName: text("requester_name").notNull(),
+  requesterPhone: text("requester_phone"),
+  relationship: text("relationship"), // owner, operator, manager, authorized_rep
+  
+  // Verification
+  verificationMethod: text("verification_method"), // dshs_email_match, dshs_phone_match, document, manual
+  verificationDocumentUrl: text("verification_document_url"),
+  verificationCode: text("verification_code"),
+  verificationCodeExpiresAt: timestamp("verification_code_expires_at"),
+  verificationAttempts: integer("verification_attempts").default(0),
+  
+  // Status & Review
+  status: text("status").notNull().default("pending"), // pending, verified, approved, rejected, expired
+  adminNotes: text("admin_notes"),
+  rejectionReason: text("rejection_reason"),
+  reviewedBy: varchar("reviewed_by"), // admin ID
+  reviewedAt: timestamp("reviewed_at"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("claim_requests_facility_idx").on(table.facilityId),
+  ownerIdx: index("claim_requests_owner_idx").on(table.ownerId),
+  statusIdx: index("claim_requests_status_idx").on(table.status),
+}));
+
+export const insertClaimRequestSchema = createInsertSchema(claimRequests).omit({ 
+  id: true, createdAt: true, updatedAt: true, reviewedAt: true 
+});
+export type InsertClaimRequest = z.infer<typeof insertClaimRequestSchema>;
+export type ClaimRequest = typeof claimRequests.$inferSelect;
+
+// Password Reset Tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ownerId: varchar("owner_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  tokenIdx: index("password_reset_tokens_token_idx").on(table.token),
+  ownerIdx: index("password_reset_tokens_owner_idx").on(table.ownerId),
+}));
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({ 
+  id: true, createdAt: true, usedAt: true 
+});
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+// Activity Log table for audit trail
+export const activityLog = pgTable("activity_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  entityType: text("entity_type"), // home, owner, claim, admin
+  entityId: varchar("entity_id"),
+  action: text("action").notNull(), // ownership_claimed, ownership_revoked, claim_approved, etc.
+  performedByType: text("performed_by_type"), // admin, owner, system
+  performedById: varchar("performed_by_id"),
+  details: json("details"), // Additional context as JSON
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  entityIdx: index("activity_log_entity_idx").on(table.entityType, table.entityId),
+  actionIdx: index("activity_log_action_idx").on(table.action),
+  createdIdx: index("activity_log_created_idx").on(table.createdAt),
+}));
+
+export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, createdAt: true });
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type ActivityLog = typeof activityLog.$inferSelect;
 
 // Facilities table (Adult Family Homes)
 export const facilities = pgTable("facilities", {
@@ -116,6 +202,10 @@ export const facilities = pgTable("facilities", {
   yearEstablished: integer("year_established"),
   ownerId: varchar("owner_id"),
   
+  // Claim Status
+  claimStatus: text("claim_status").notNull().default("unclaimed"), // unclaimed, pending, claimed
+  claimedAt: timestamp("claimed_at"),
+  
   // Status
   status: text("status").notNull().default("active"), // active, pending, inactive
   featured: boolean("featured").default(false),
@@ -130,6 +220,7 @@ export const facilities = pgTable("facilities", {
   statusIdx: index("facilities_status_idx").on(table.status),
   featuredIdx: index("facilities_featured_idx").on(table.featured),
   ownerIdx: index("facilities_owner_idx").on(table.ownerId),
+  claimStatusIdx: index("facilities_claim_status_idx").on(table.claimStatus),
 }));
 
 export const insertFacilitySchema = createInsertSchema(facilities).omit({ id: true, createdAt: true, updatedAt: true });
@@ -271,6 +362,26 @@ export const facilitiesRelations = relations(facilities, ({ many, one }) => ({
 
 export const ownersRelations = relations(owners, ({ many }) => ({
   facilities: many(facilities),
+  claimRequests: many(claimRequests),
+  passwordResetTokens: many(passwordResetTokens),
+}));
+
+export const claimRequestsRelations = relations(claimRequests, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [claimRequests.facilityId],
+    references: [facilities.id],
+  }),
+  owner: one(owners, {
+    fields: [claimRequests.ownerId],
+    references: [owners.id],
+  }),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  owner: one(owners, {
+    fields: [passwordResetTokens.ownerId],
+    references: [owners.id],
+  }),
 }));
 
 export const ownerInvitesRelations = relations(ownerInvites, ({ one }) => ({
