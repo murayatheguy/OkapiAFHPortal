@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema, insertClaimRequestSchema, insertActivityLogSchema } from "@shared/schema";
+import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema, insertClaimRequestSchema, insertActivityLogSchema, insertTransportProviderSchema, insertTransportBookingSchema, insertProviderReviewSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -1148,6 +1148,392 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting counties:", error);
       res.status(500).json({ error: "Failed to get counties" });
+    }
+  });
+
+  // ============================================
+  // TRANSPORT MARKETPLACE API
+  // ============================================
+
+  // Get active transport providers (public for owners)
+  app.get("/api/transport/providers", async (req, res) => {
+    try {
+      const { county, vehicleType, acceptsMedicaid } = req.query;
+      const filters: any = {};
+      if (county) filters.county = String(county);
+      if (vehicleType) filters.vehicleType = String(vehicleType);
+      if (acceptsMedicaid === 'true') filters.acceptsMedicaid = true;
+      
+      const providers = await storage.getActiveTransportProviders(filters);
+      res.json(providers);
+    } catch (error) {
+      console.error("Error getting transport providers:", error);
+      res.status(500).json({ error: "Failed to get providers" });
+    }
+  });
+
+  // Get provider by slug
+  app.get("/api/transport/providers/:slug", async (req, res) => {
+    try {
+      const provider = await storage.getTransportProviderBySlug(req.params.slug);
+      if (!provider) {
+        return res.status(404).json({ error: "Provider not found" });
+      }
+      res.json(provider);
+    } catch (error) {
+      console.error("Error getting transport provider:", error);
+      res.status(500).json({ error: "Failed to get provider" });
+    }
+  });
+
+  // Get provider reviews (approved only for public)
+  app.get("/api/transport/providers/:id/reviews", async (req, res) => {
+    try {
+      const reviews = await storage.getProviderReviewsByProvider(req.params.id, 'approved');
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error getting provider reviews:", error);
+      res.status(500).json({ error: "Failed to get reviews" });
+    }
+  });
+
+  // ============================================
+  // OWNER TRANSPORT API (requires owner auth)
+  // ============================================
+
+  // Get owner's bookings
+  app.get("/api/owner/transport/bookings", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const bookings = await storage.getTransportBookingsByOwner(owner.id);
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error getting owner bookings:", error);
+      res.status(500).json({ error: "Failed to get bookings" });
+    }
+  });
+
+  // Create booking
+  app.post("/api/owner/transport/bookings", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Generate booking number
+      const year = new Date().getFullYear();
+      const random = Math.floor(10000 + Math.random() * 90000);
+      const bookingNumber = `TRN-${year}-${random}`;
+      
+      const bookingData = {
+        ...req.body,
+        ownerId: owner.id,
+        bookingNumber,
+      };
+      
+      const result = insertTransportBookingSchema.safeParse(bookingData);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+      
+      const booking = await storage.createTransportBooking(result.data);
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      res.status(500).json({ error: "Failed to create booking" });
+    }
+  });
+
+  // Get booking by ID
+  app.get("/api/owner/transport/bookings/:id", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const booking = await storage.getTransportBooking(req.params.id);
+      if (!booking || booking.ownerId !== owner.id) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+      res.json(booking);
+    } catch (error) {
+      console.error("Error getting booking:", error);
+      res.status(500).json({ error: "Failed to get booking" });
+    }
+  });
+
+  // Cancel booking
+  app.put("/api/owner/transport/bookings/:id/cancel", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const booking = await storage.getTransportBooking(req.params.id);
+      if (!booking || booking.ownerId !== owner.id) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+      
+      const updated = await storage.updateTransportBooking(req.params.id, {
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        cancelledBy: 'owner',
+        cancellationReason: req.body.reason || 'Cancelled by owner'
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ error: "Failed to cancel booking" });
+    }
+  });
+
+  // Get saved providers
+  app.get("/api/owner/transport/saved", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const saved = await storage.getSavedProvidersByOwner(owner.id);
+      res.json(saved);
+    } catch (error) {
+      console.error("Error getting saved providers:", error);
+      res.status(500).json({ error: "Failed to get saved providers" });
+    }
+  });
+
+  // Save provider
+  app.post("/api/owner/transport/providers/:id/save", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const saved = await storage.saveProvider(owner.id, req.params.id, req.body.notes);
+      res.status(201).json(saved);
+    } catch (error) {
+      console.error("Error saving provider:", error);
+      res.status(500).json({ error: "Failed to save provider" });
+    }
+  });
+
+  // Unsave provider
+  app.delete("/api/owner/transport/providers/:id/save", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      await storage.unsaveProvider(owner.id, req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error unsaving provider:", error);
+      res.status(500).json({ error: "Failed to unsave provider" });
+    }
+  });
+
+  // Check if provider is saved
+  app.get("/api/owner/transport/providers/:id/saved", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const isSaved = await storage.isProviderSaved(owner.id, req.params.id);
+      res.json({ saved: isSaved });
+    } catch (error) {
+      console.error("Error checking saved status:", error);
+      res.status(500).json({ error: "Failed to check saved status" });
+    }
+  });
+
+  // Submit provider review
+  app.post("/api/owner/transport/reviews", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const reviewData = {
+        ...req.body,
+        ownerId: owner.id,
+        status: 'pending'
+      };
+      
+      const result = insertProviderReviewSchema.safeParse(reviewData);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+      
+      const review = await storage.createProviderReview(result.data);
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ error: "Failed to create review" });
+    }
+  });
+
+  // Get owner's reviews
+  app.get("/api/owner/transport/reviews", async (req, res) => {
+    try {
+      const owner = (req as any).owner;
+      if (!owner) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const reviews = await storage.getProviderReviewsByOwner(owner.id);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error getting owner reviews:", error);
+      res.status(500).json({ error: "Failed to get reviews" });
+    }
+  });
+
+  // ============================================
+  // ADMIN TRANSPORT API
+  // ============================================
+
+  // Get all transport providers (admin)
+  app.get("/api/admin/transport/providers", async (req, res) => {
+    try {
+      const providers = await storage.getAllTransportProviders();
+      res.json(providers);
+    } catch (error) {
+      console.error("Error getting all providers:", error);
+      res.status(500).json({ error: "Failed to get providers" });
+    }
+  });
+
+  // Create transport provider (admin)
+  app.post("/api/admin/transport/providers", async (req, res) => {
+    try {
+      const result = insertTransportProviderSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+      
+      const provider = await storage.createTransportProvider(result.data);
+      res.status(201).json(provider);
+    } catch (error) {
+      console.error("Error creating provider:", error);
+      res.status(500).json({ error: "Failed to create provider" });
+    }
+  });
+
+  // Update transport provider (admin)
+  app.put("/api/admin/transport/providers/:id", async (req, res) => {
+    try {
+      const provider = await storage.updateTransportProvider(req.params.id, req.body);
+      if (!provider) {
+        return res.status(404).json({ error: "Provider not found" });
+      }
+      res.json(provider);
+    } catch (error) {
+      console.error("Error updating provider:", error);
+      res.status(500).json({ error: "Failed to update provider" });
+    }
+  });
+
+  // Delete transport provider (admin)
+  app.delete("/api/admin/transport/providers/:id", async (req, res) => {
+    try {
+      await storage.deleteTransportProvider(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting provider:", error);
+      res.status(500).json({ error: "Failed to delete provider" });
+    }
+  });
+
+  // Get all bookings (admin)
+  app.get("/api/admin/transport/bookings", async (req, res) => {
+    try {
+      const { status } = req.query;
+      const filters = status ? { status: String(status) } : undefined;
+      const bookings = await storage.getAllTransportBookings(filters);
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error getting all bookings:", error);
+      res.status(500).json({ error: "Failed to get bookings" });
+    }
+  });
+
+  // Update booking (admin)
+  app.put("/api/admin/transport/bookings/:id", async (req, res) => {
+    try {
+      const booking = await storage.updateTransportBooking(req.params.id, req.body);
+      if (!booking) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+      res.json(booking);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      res.status(500).json({ error: "Failed to update booking" });
+    }
+  });
+
+  // Get all reviews (admin)
+  app.get("/api/admin/transport/reviews", async (req, res) => {
+    try {
+      const { status } = req.query;
+      const reviews = await storage.getAllProviderReviews(status ? String(status) : undefined);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error getting all reviews:", error);
+      res.status(500).json({ error: "Failed to get reviews" });
+    }
+  });
+
+  // Update review status (admin)
+  app.put("/api/admin/transport/reviews/:id", async (req, res) => {
+    try {
+      const review = await storage.updateProviderReview(req.params.id, req.body);
+      if (!review) {
+        return res.status(404).json({ error: "Review not found" });
+      }
+      res.json(review);
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ error: "Failed to update review" });
+    }
+  });
+
+  // Transport stats (admin)
+  app.get("/api/admin/transport/stats", async (req, res) => {
+    try {
+      const providers = await storage.getAllTransportProviders();
+      const bookings = await storage.getAllTransportBookings();
+      const reviews = await storage.getAllProviderReviews();
+      
+      const activeProviders = providers.filter(p => p.status === 'active').length;
+      const pendingBookings = bookings.filter(b => b.status === 'pending').length;
+      const completedBookings = bookings.filter(b => b.status === 'completed').length;
+      const pendingReviews = reviews.filter(r => r.status === 'pending').length;
+      
+      res.json({
+        totalProviders: providers.length,
+        activeProviders,
+        totalBookings: bookings.length,
+        pendingBookings,
+        completedBookings,
+        totalReviews: reviews.length,
+        pendingReviews
+      });
+    } catch (error) {
+      console.error("Error getting transport stats:", error);
+      res.status(500).json({ error: "Failed to get stats" });
     }
   });
 

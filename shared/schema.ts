@@ -349,6 +349,223 @@ export const insertCredentialSchema = createInsertSchema(credentials).omit({ id:
 export type InsertCredential = z.infer<typeof insertCredentialSchema>;
 export type Credential = typeof credentials.$inferSelect;
 
+// Transport Providers table - NEMT marketplace providers
+export const transportProviders = pgTable("transport_providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  
+  // Contact
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  
+  // Branding
+  logoUrl: text("logo_url"),
+  description: text("description"),
+  
+  // Service details (JSONB arrays)
+  serviceCounties: json("service_counties").$type<string[]>().default([]),
+  vehicleTypes: json("vehicle_types").$type<string[]>().default([]),
+  services: json("services").$type<string[]>().default([]),
+  
+  // Hours
+  operatingHours: text("operating_hours"),
+  
+  // Payment options
+  acceptsMedicaid: boolean("accepts_medicaid").default(false),
+  acceptsMedicare: boolean("accepts_medicare").default(false),
+  acceptsPrivatePay: boolean("accepts_private_pay").default(true),
+  acceptsInsurance: boolean("accepts_insurance").default(false),
+  acceptedInsuranceList: text("accepted_insurance_list"),
+  
+  // Pricing
+  baseRateCents: integer("base_rate_cents"),
+  pricePerMileCents: integer("price_per_mile_cents"),
+  pricingNotes: text("pricing_notes"),
+  
+  // Ratings & Stats
+  rating: decimal("rating", { precision: 2, scale: 1 }).default("0"),
+  reviewCount: integer("review_count").default(0),
+  totalBookings: integer("total_bookings").default(0),
+  onTimePercentage: integer("on_time_percentage"),
+  
+  // Verification
+  isVerified: boolean("is_verified").default(false),
+  licenseNumber: text("license_number"),
+  insuranceVerified: boolean("insurance_verified").default(false),
+  
+  // Status & Display
+  isFeatured: boolean("is_featured").default(false),
+  displayOrder: integer("display_order").default(100),
+  status: text("status").notNull().default("active"), // active, pending, suspended, inactive
+  
+  // Provider self-management (future)
+  providerUserId: varchar("provider_user_id"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  statusIdx: index("transport_providers_status_idx").on(table.status),
+  featuredIdx: index("transport_providers_featured_idx").on(table.isFeatured),
+  slugIdx: index("transport_providers_slug_idx").on(table.slug),
+}));
+
+export const insertTransportProviderSchema = createInsertSchema(transportProviders).omit({ 
+  id: true, createdAt: true, updatedAt: true 
+});
+export type InsertTransportProvider = z.infer<typeof insertTransportProviderSchema>;
+export type TransportProvider = typeof transportProviders.$inferSelect;
+
+// Transport Bookings table
+export const transportBookings = pgTable("transport_bookings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingNumber: text("booking_number").notNull().unique(),
+  
+  // Who's booking
+  ownerId: varchar("owner_id").references(() => owners.id, { onDelete: "set null" }),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "set null" }),
+  providerId: varchar("provider_id").references(() => transportProviders.id, { onDelete: "set null" }),
+  
+  // Resident info
+  residentInitials: text("resident_initials"),
+  residentMobility: text("resident_mobility"), // wheelchair, gurney, ambulatory, bariatric
+  specialNeeds: text("special_needs"),
+  
+  // Trip details
+  tripType: text("trip_type"), // one_way, round_trip, wait_and_return
+  
+  // Pickup
+  pickupDate: date("pickup_date").notNull(),
+  pickupTime: text("pickup_time").notNull(),
+  pickupLocation: text("pickup_location").notNull(),
+  pickupAddress: text("pickup_address"),
+  pickupCity: text("pickup_city"),
+  pickupZip: text("pickup_zip"),
+  pickupNotes: text("pickup_notes"),
+  
+  // Dropoff
+  dropoffLocation: text("dropoff_location").notNull(),
+  dropoffAddress: text("dropoff_address"),
+  dropoffCity: text("dropoff_city"),
+  dropoffZip: text("dropoff_zip"),
+  dropoffNotes: text("dropoff_notes"),
+  
+  // Return (if round trip)
+  returnDate: date("return_date"),
+  returnTime: text("return_time"),
+  returnPickupTimeFlexible: boolean("return_pickup_time_flexible").default(false),
+  returnNotes: text("return_notes"),
+  
+  // Appointment info
+  appointmentTime: text("appointment_time"),
+  appointmentType: text("appointment_type"),
+  
+  // Payment
+  paymentMethod: text("payment_method"),
+  medicaidId: text("medicaid_id"),
+  insuranceInfo: text("insurance_info"),
+  quotedPriceCents: integer("quoted_price_cents"),
+  finalPriceCents: integer("final_price_cents"),
+  
+  // Status tracking
+  status: text("status").notNull().default("pending"),
+  // pending, confirmed, dispatched, picked_up, in_transit, dropped_off, 
+  // return_pending, completed, cancelled, no_show
+  
+  // Provider response
+  providerConfirmation: text("provider_confirmation"),
+  driverName: text("driver_name"),
+  driverPhone: text("driver_phone"),
+  vehicleInfo: text("vehicle_info"),
+  estimatedArrival: text("estimated_arrival"),
+  
+  // Timestamps
+  confirmedAt: timestamp("confirmed_at"),
+  pickedUpAt: timestamp("picked_up_at"),
+  droppedOffAt: timestamp("dropped_off_at"),
+  completedAt: timestamp("completed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancellationReason: text("cancellation_reason"),
+  cancelledBy: text("cancelled_by"), // owner, provider, admin
+  
+  // Notes
+  ownerNotes: text("owner_notes"),
+  providerNotes: text("provider_notes"),
+  adminNotes: text("admin_notes"),
+  
+  // Review prompt
+  reviewRequested: boolean("review_requested").default(false),
+  reviewId: varchar("review_id"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  ownerIdx: index("transport_bookings_owner_idx").on(table.ownerId),
+  providerIdx: index("transport_bookings_provider_idx").on(table.providerId),
+  statusIdx: index("transport_bookings_status_idx").on(table.status),
+  dateIdx: index("transport_bookings_date_idx").on(table.pickupDate),
+}));
+
+export const insertTransportBookingSchema = createInsertSchema(transportBookings).omit({ 
+  id: true, createdAt: true, updatedAt: true, confirmedAt: true, pickedUpAt: true,
+  droppedOffAt: true, completedAt: true, cancelledAt: true
+});
+export type InsertTransportBooking = z.infer<typeof insertTransportBookingSchema>;
+export type TransportBooking = typeof transportBookings.$inferSelect;
+
+// Provider Reviews table
+export const providerReviews = pgTable("provider_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  providerId: varchar("provider_id").references(() => transportProviders.id, { onDelete: "cascade" }).notNull(),
+  ownerId: varchar("owner_id").references(() => owners.id, { onDelete: "set null" }),
+  bookingId: varchar("booking_id").references(() => transportBookings.id, { onDelete: "set null" }),
+  
+  rating: integer("rating").notNull(),
+  title: text("title"),
+  reviewText: text("review_text"),
+  
+  // Specific ratings
+  punctualityRating: integer("punctuality_rating"),
+  driverRating: integer("driver_rating"),
+  vehicleRating: integer("vehicle_rating"),
+  
+  // Moderation
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  
+  // Provider response
+  providerResponse: text("provider_response"),
+  providerRespondedAt: timestamp("provider_responded_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  providerIdx: index("provider_reviews_provider_idx").on(table.providerId),
+  statusIdx: index("provider_reviews_status_idx").on(table.status),
+}));
+
+export const insertProviderReviewSchema = createInsertSchema(providerReviews).omit({ 
+  id: true, createdAt: true, providerRespondedAt: true 
+});
+export type InsertProviderReview = z.infer<typeof insertProviderReviewSchema>;
+export type ProviderReview = typeof providerReviews.$inferSelect;
+
+// Owner Saved Providers table
+export const ownerSavedProviders = pgTable("owner_saved_providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ownerId: varchar("owner_id").references(() => owners.id, { onDelete: "cascade" }).notNull(),
+  providerId: varchar("provider_id").references(() => transportProviders.id, { onDelete: "cascade" }).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  ownerProviderIdx: index("owner_saved_providers_owner_provider_idx").on(table.ownerId, table.providerId),
+}));
+
+export const insertOwnerSavedProviderSchema = createInsertSchema(ownerSavedProviders).omit({ 
+  id: true, createdAt: true 
+});
+export type InsertOwnerSavedProvider = z.infer<typeof insertOwnerSavedProviderSchema>;
+export type OwnerSavedProvider = typeof ownerSavedProviders.$inferSelect;
+
 // Relations
 export const facilitiesRelations = relations(facilities, ({ many, one }) => ({
   teamMembers: many(teamMembers),
@@ -475,5 +692,53 @@ export const usersRelations = relations(users, ({ one }) => ({
   facility: one(facilities, {
     fields: [users.facilityId],
     references: [facilities.id],
+  }),
+}));
+
+// Transport marketplace relations
+export const transportProvidersRelations = relations(transportProviders, ({ many }) => ({
+  bookings: many(transportBookings),
+  reviews: many(providerReviews),
+  savedBy: many(ownerSavedProviders),
+}));
+
+export const transportBookingsRelations = relations(transportBookings, ({ one }) => ({
+  owner: one(owners, {
+    fields: [transportBookings.ownerId],
+    references: [owners.id],
+  }),
+  facility: one(facilities, {
+    fields: [transportBookings.facilityId],
+    references: [facilities.id],
+  }),
+  provider: one(transportProviders, {
+    fields: [transportBookings.providerId],
+    references: [transportProviders.id],
+  }),
+}));
+
+export const providerReviewsRelations = relations(providerReviews, ({ one }) => ({
+  provider: one(transportProviders, {
+    fields: [providerReviews.providerId],
+    references: [transportProviders.id],
+  }),
+  owner: one(owners, {
+    fields: [providerReviews.ownerId],
+    references: [owners.id],
+  }),
+  booking: one(transportBookings, {
+    fields: [providerReviews.bookingId],
+    references: [transportBookings.id],
+  }),
+}));
+
+export const ownerSavedProvidersRelations = relations(ownerSavedProviders, ({ one }) => ({
+  owner: one(owners, {
+    fields: [ownerSavedProviders.ownerId],
+    references: [owners.id],
+  }),
+  provider: one(transportProviders, {
+    fields: [ownerSavedProviders.providerId],
+    references: [transportProviders.id],
   }),
 }));

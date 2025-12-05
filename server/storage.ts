@@ -12,6 +12,10 @@ import {
   activityLog,
   dshsSyncLogs,
   dshsHomeSync,
+  transportProviders,
+  transportBookings,
+  providerReviews,
+  ownerSavedProviders,
   type User, 
   type InsertUser,
   type Facility,
@@ -34,7 +38,15 @@ import {
   type InsertPasswordResetToken,
   type ActivityLog,
   type InsertActivityLog,
-  type DshsSyncLog
+  type DshsSyncLog,
+  type TransportProvider,
+  type InsertTransportProvider,
+  type TransportBooking,
+  type InsertTransportBooking,
+  type ProviderReview,
+  type InsertProviderReview,
+  type OwnerSavedProvider,
+  type InsertOwnerSavedProvider
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
@@ -158,6 +170,42 @@ export interface IStorage {
   getDshsSyncLogs(limit?: number): Promise<DshsSyncLog[]>;
   getFacilityCount(): Promise<number>;
   getSyncedHomesCount(): Promise<number>;
+
+  // Transport Providers
+  getTransportProvider(id: string): Promise<TransportProvider | undefined>;
+  getTransportProviderBySlug(slug: string): Promise<TransportProvider | undefined>;
+  getActiveTransportProviders(filters?: {
+    county?: string;
+    vehicleType?: string;
+    acceptsMedicaid?: boolean;
+  }): Promise<TransportProvider[]>;
+  getAllTransportProviders(): Promise<TransportProvider[]>;
+  createTransportProvider(provider: InsertTransportProvider): Promise<TransportProvider>;
+  updateTransportProvider(id: string, data: Partial<InsertTransportProvider>): Promise<TransportProvider | undefined>;
+  deleteTransportProvider(id: string): Promise<void>;
+
+  // Transport Bookings
+  getTransportBooking(id: string): Promise<TransportBooking | undefined>;
+  getTransportBookingsByOwner(ownerId: string): Promise<TransportBooking[]>;
+  getTransportBookingsByProvider(providerId: string): Promise<TransportBooking[]>;
+  getAllTransportBookings(filters?: { status?: string }): Promise<TransportBooking[]>;
+  createTransportBooking(booking: InsertTransportBooking): Promise<TransportBooking>;
+  updateTransportBooking(id: string, data: Partial<TransportBooking>): Promise<TransportBooking | undefined>;
+
+  // Provider Reviews
+  getProviderReview(id: string): Promise<ProviderReview | undefined>;
+  getProviderReviewsByProvider(providerId: string, status?: string): Promise<ProviderReview[]>;
+  getProviderReviewsByOwner(ownerId: string): Promise<ProviderReview[]>;
+  getAllProviderReviews(status?: string): Promise<ProviderReview[]>;
+  createProviderReview(review: InsertProviderReview): Promise<ProviderReview>;
+  updateProviderReview(id: string, data: Partial<ProviderReview>): Promise<ProviderReview | undefined>;
+
+  // Owner Saved Providers
+  getSavedProvidersByOwner(ownerId: string): Promise<(OwnerSavedProvider & { provider: TransportProvider })[]>;
+  saveProvider(ownerId: string, providerId: string, notes?: string): Promise<OwnerSavedProvider>;
+  unsaveProvider(ownerId: string, providerId: string): Promise<void>;
+  isProviderSaved(ownerId: string, providerId: string): Promise<boolean>;
+  updateSavedProviderNotes(ownerId: string, providerId: string, notes: string): Promise<OwnerSavedProvider | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -701,6 +749,284 @@ export class DatabaseStorage implements IStorage {
       .from(dshsHomeSync)
       .where(eq(dshsHomeSync.syncStatus, 'synced'));
     return result?.count || 0;
+  }
+
+  // Transport Providers
+  async getTransportProvider(id: string): Promise<TransportProvider | undefined> {
+    const [provider] = await db.select().from(transportProviders).where(eq(transportProviders.id, id));
+    return provider || undefined;
+  }
+
+  async getTransportProviderBySlug(slug: string): Promise<TransportProvider | undefined> {
+    const [provider] = await db.select().from(transportProviders).where(eq(transportProviders.slug, slug));
+    return provider || undefined;
+  }
+
+  async getActiveTransportProviders(filters?: {
+    county?: string;
+    vehicleType?: string;
+    acceptsMedicaid?: boolean;
+  }): Promise<TransportProvider[]> {
+    const conditions = [eq(transportProviders.status, 'active')];
+    
+    if (filters?.acceptsMedicaid) {
+      conditions.push(eq(transportProviders.acceptsMedicaid, true));
+    }
+    
+    let results = await db
+      .select()
+      .from(transportProviders)
+      .where(and(...conditions))
+      .orderBy(desc(transportProviders.isFeatured), transportProviders.displayOrder, desc(transportProviders.rating));
+    
+    if (filters?.county) {
+      results = results.filter(p => {
+        const counties = p.serviceCounties as string[] || [];
+        return counties.some(c => c.toLowerCase() === filters.county!.toLowerCase());
+      });
+    }
+    
+    if (filters?.vehicleType) {
+      results = results.filter(p => {
+        const types = p.vehicleTypes as string[] || [];
+        return types.includes(filters.vehicleType!);
+      });
+    }
+    
+    return results;
+  }
+
+  async getAllTransportProviders(): Promise<TransportProvider[]> {
+    return await db
+      .select()
+      .from(transportProviders)
+      .orderBy(transportProviders.displayOrder, transportProviders.name);
+  }
+
+  async createTransportProvider(provider: InsertTransportProvider): Promise<TransportProvider> {
+    const [newProvider] = await db.insert(transportProviders).values(provider as any).returning();
+    return newProvider;
+  }
+
+  async updateTransportProvider(id: string, data: Partial<InsertTransportProvider>): Promise<TransportProvider | undefined> {
+    const updateData = { ...data, updatedAt: new Date() };
+    const [updated] = await db
+      .update(transportProviders)
+      .set(updateData as any)
+      .where(eq(transportProviders.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteTransportProvider(id: string): Promise<void> {
+    await db.delete(transportProviders).where(eq(transportProviders.id, id));
+  }
+
+  // Transport Bookings
+  async getTransportBooking(id: string): Promise<TransportBooking | undefined> {
+    const [booking] = await db.select().from(transportBookings).where(eq(transportBookings.id, id));
+    return booking || undefined;
+  }
+
+  async getTransportBookingsByOwner(ownerId: string): Promise<TransportBooking[]> {
+    return await db
+      .select()
+      .from(transportBookings)
+      .where(eq(transportBookings.ownerId, ownerId))
+      .orderBy(desc(transportBookings.createdAt));
+  }
+
+  async getTransportBookingsByProvider(providerId: string): Promise<TransportBooking[]> {
+    return await db
+      .select()
+      .from(transportBookings)
+      .where(eq(transportBookings.providerId, providerId))
+      .orderBy(desc(transportBookings.createdAt));
+  }
+
+  async getAllTransportBookings(filters?: { status?: string }): Promise<TransportBooking[]> {
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(transportBookings.status, filters.status));
+    }
+    
+    if (conditions.length === 0) {
+      return await db.select().from(transportBookings).orderBy(desc(transportBookings.createdAt));
+    }
+    
+    return await db
+      .select()
+      .from(transportBookings)
+      .where(and(...conditions))
+      .orderBy(desc(transportBookings.createdAt));
+  }
+
+  async createTransportBooking(booking: InsertTransportBooking): Promise<TransportBooking> {
+    const [newBooking] = await db.insert(transportBookings).values(booking).returning();
+    return newBooking;
+  }
+
+  async updateTransportBooking(id: string, data: Partial<TransportBooking>): Promise<TransportBooking | undefined> {
+    const [updated] = await db
+      .update(transportBookings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(transportBookings.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Provider Reviews
+  async getProviderReview(id: string): Promise<ProviderReview | undefined> {
+    const [review] = await db.select().from(providerReviews).where(eq(providerReviews.id, id));
+    return review || undefined;
+  }
+
+  async getProviderReviewsByProvider(providerId: string, status?: string): Promise<ProviderReview[]> {
+    const conditions = [eq(providerReviews.providerId, providerId)];
+    if (status) {
+      conditions.push(eq(providerReviews.status, status));
+    }
+    
+    return await db
+      .select()
+      .from(providerReviews)
+      .where(and(...conditions))
+      .orderBy(desc(providerReviews.createdAt));
+  }
+
+  async getProviderReviewsByOwner(ownerId: string): Promise<ProviderReview[]> {
+    return await db
+      .select()
+      .from(providerReviews)
+      .where(eq(providerReviews.ownerId, ownerId))
+      .orderBy(desc(providerReviews.createdAt));
+  }
+
+  async getAllProviderReviews(status?: string): Promise<ProviderReview[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(providerReviews)
+        .where(eq(providerReviews.status, status))
+        .orderBy(desc(providerReviews.createdAt));
+    }
+    return await db.select().from(providerReviews).orderBy(desc(providerReviews.createdAt));
+  }
+
+  async createProviderReview(review: InsertProviderReview): Promise<ProviderReview> {
+    const [newReview] = await db.insert(providerReviews).values(review).returning();
+    
+    // Update provider's review count and rating
+    const allReviews = await this.getProviderReviewsByProvider(review.providerId, 'approved');
+    const avgRating = allReviews.length > 0 
+      ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1)
+      : '0';
+    
+    await db
+      .update(transportProviders)
+      .set({ 
+        reviewCount: allReviews.length,
+        rating: avgRating
+      })
+      .where(eq(transportProviders.id, review.providerId));
+    
+    return newReview;
+  }
+
+  async updateProviderReview(id: string, data: Partial<ProviderReview>): Promise<ProviderReview | undefined> {
+    const [updated] = await db
+      .update(providerReviews)
+      .set(data)
+      .where(eq(providerReviews.id, id))
+      .returning();
+    
+    // Recalculate provider rating if review was approved
+    if (updated && data.status === 'approved') {
+      const allReviews = await this.getProviderReviewsByProvider(updated.providerId, 'approved');
+      const avgRating = allReviews.length > 0 
+        ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1)
+        : '0';
+      
+      await db
+        .update(transportProviders)
+        .set({ 
+          reviewCount: allReviews.length,
+          rating: avgRating
+        })
+        .where(eq(transportProviders.id, updated.providerId));
+    }
+    
+    return updated || undefined;
+  }
+
+  // Owner Saved Providers
+  async getSavedProvidersByOwner(ownerId: string): Promise<(OwnerSavedProvider & { provider: TransportProvider })[]> {
+    const saved = await db
+      .select()
+      .from(ownerSavedProviders)
+      .where(eq(ownerSavedProviders.ownerId, ownerId))
+      .orderBy(desc(ownerSavedProviders.createdAt));
+    
+    const results: (OwnerSavedProvider & { provider: TransportProvider })[] = [];
+    for (const s of saved) {
+      const provider = await this.getTransportProvider(s.providerId);
+      if (provider) {
+        results.push({ ...s, provider });
+      }
+    }
+    return results;
+  }
+
+  async saveProvider(ownerId: string, providerId: string, notes?: string): Promise<OwnerSavedProvider> {
+    const [saved] = await db
+      .insert(ownerSavedProviders)
+      .values({ ownerId, providerId, notes })
+      .onConflictDoNothing()
+      .returning();
+    
+    if (!saved) {
+      const [existing] = await db
+        .select()
+        .from(ownerSavedProviders)
+        .where(and(
+          eq(ownerSavedProviders.ownerId, ownerId),
+          eq(ownerSavedProviders.providerId, providerId)
+        ));
+      return existing;
+    }
+    return saved;
+  }
+
+  async unsaveProvider(ownerId: string, providerId: string): Promise<void> {
+    await db
+      .delete(ownerSavedProviders)
+      .where(and(
+        eq(ownerSavedProviders.ownerId, ownerId),
+        eq(ownerSavedProviders.providerId, providerId)
+      ));
+  }
+
+  async isProviderSaved(ownerId: string, providerId: string): Promise<boolean> {
+    const [result] = await db
+      .select()
+      .from(ownerSavedProviders)
+      .where(and(
+        eq(ownerSavedProviders.ownerId, ownerId),
+        eq(ownerSavedProviders.providerId, providerId)
+      ));
+    return !!result;
+  }
+
+  async updateSavedProviderNotes(ownerId: string, providerId: string, notes: string): Promise<OwnerSavedProvider | undefined> {
+    const [updated] = await db
+      .update(ownerSavedProviders)
+      .set({ notes })
+      .where(and(
+        eq(ownerSavedProviders.ownerId, ownerId),
+        eq(ownerSavedProviders.providerId, providerId)
+      ))
+      .returning();
+    return updated || undefined;
   }
 }
 

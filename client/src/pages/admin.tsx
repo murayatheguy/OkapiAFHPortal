@@ -6,7 +6,7 @@ import {
   Building2, Users, MessageSquare, Star, LayoutDashboard, LogOut,
   CheckCircle, XCircle, Mail, Phone, MapPin, Calendar,
   Home, TrendingUp, Shield, Search, Trash2, ExternalLink, UserCheck, Clock,
-  RefreshCw, Database, AlertCircle, Play, Loader2
+  RefreshCw, Database, AlertCircle, Play, Loader2, Car, Plus, Edit, Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Facility, Inquiry, Review, Owner, ClaimRequest } from "@shared/schema";
+import type { Facility, Inquiry, Review, Owner, ClaimRequest, TransportProvider, TransportBooking, ProviderReview } from "@shared/schema";
 import { Textarea } from "@/components/ui/textarea";
 
 interface AdminData {
@@ -1310,6 +1310,668 @@ function DshsSyncTab() {
   );
 }
 
+interface TransportStats {
+  totalProviders: number;
+  activeProviders: number;
+  totalBookings: number;
+  pendingBookings: number;
+  completedBookings: number;
+  totalReviews: number;
+  pendingReviews: number;
+}
+
+function TransportTab() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [subTab, setSubTab] = useState("providers");
+  const [editingProvider, setEditingProvider] = useState<TransportProvider | null>(null);
+  const [showProviderForm, setShowProviderForm] = useState(false);
+
+  const { data: stats } = useQuery<TransportStats>({
+    queryKey: ["/api/admin/transport/stats"],
+  });
+
+  const { data: providers = [], isLoading: loadingProviders } = useQuery<TransportProvider[]>({
+    queryKey: ["/api/admin/transport/providers"],
+  });
+
+  const { data: bookings = [], isLoading: loadingBookings } = useQuery<TransportBooking[]>({
+    queryKey: ["/api/admin/transport/bookings"],
+  });
+
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery<ProviderReview[]>({
+    queryKey: ["/api/admin/transport/reviews"],
+  });
+
+  const createProviderMutation = useMutation({
+    mutationFn: async (data: Partial<TransportProvider>) => {
+      const res = await fetch("/api/admin/transport/providers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to create provider");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/providers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/stats"] });
+      setShowProviderForm(false);
+      toast({ title: "Provider created" });
+    },
+  });
+
+  const updateProviderMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<TransportProvider> }) => {
+      const res = await fetch(`/api/admin/transport/providers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update provider");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/providers"] });
+      setEditingProvider(null);
+      toast({ title: "Provider updated" });
+    },
+  });
+
+  const deleteProviderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/transport/providers/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete provider");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/providers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/stats"] });
+      toast({ title: "Provider deleted" });
+    },
+  });
+
+  const updateBookingMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<TransportBooking> }) => {
+      const res = await fetch(`/api/admin/transport/bookings/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update booking");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/stats"] });
+      toast({ title: "Booking updated" });
+    },
+  });
+
+  const updateReviewMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ProviderReview> }) => {
+      const res = await fetch(`/api/admin/transport/reviews/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to update review");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transport/stats"] });
+      toast({ title: "Review updated" });
+    },
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-600/20 text-green-400">Active</Badge>;
+      case "inactive":
+        return <Badge className="bg-gray-600/20 text-gray-400">Inactive</Badge>;
+      case "pending":
+        return <Badge className="bg-yellow-600/20 text-yellow-400">Pending</Badge>;
+      case "confirmed":
+        return <Badge className="bg-blue-600/20 text-blue-400">Confirmed</Badge>;
+      case "completed":
+        return <Badge className="bg-green-600/20 text-green-400">Completed</Badge>;
+      case "cancelled":
+        return <Badge className="bg-red-600/20 text-red-400">Cancelled</Badge>;
+      case "approved":
+        return <Badge className="bg-green-600/20 text-green-400">Approved</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-600/20 text-red-400">Rejected</Badge>;
+      default:
+        return <Badge className="bg-gray-600/20 text-gray-400">{status}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Active Providers</p>
+                <p className="text-3xl font-semibold text-white mt-1">
+                  {stats?.activeProviders ?? 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-[#c9a962]/10 rounded-lg flex items-center justify-center">
+                <Car className="h-6 w-6 text-[#c9a962]" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Bookings</p>
+                <p className="text-3xl font-semibold text-white mt-1">
+                  {stats?.totalBookings ?? 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Pending Bookings</p>
+                <p className="text-3xl font-semibold text-white mt-1">
+                  {stats?.pendingBookings ?? 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-yellow-900/20 rounded-lg flex items-center justify-center">
+                <Clock className="h-6 w-6 text-yellow-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Pending Reviews</p>
+                <p className="text-3xl font-semibold text-white mt-1">
+                  {stats?.pendingReviews ?? 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-purple-900/20 rounded-lg flex items-center justify-center">
+                <Star className="h-6 w-6 text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs value={subTab} onValueChange={setSubTab}>
+        <TabsList className="bg-[#1a2f25] border border-[#2a3f35]">
+          <TabsTrigger value="providers" className="data-[state=active]:bg-[#c9a962] data-[state=active]:text-black">
+            Providers ({providers.length})
+          </TabsTrigger>
+          <TabsTrigger value="bookings" className="data-[state=active]:bg-[#c9a962] data-[state=active]:text-black">
+            Bookings ({bookings.length})
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="data-[state=active]:bg-[#c9a962] data-[state=active]:text-black">
+            Reviews ({reviews.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="providers" className="mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-white text-lg font-medium">Transport Providers</h3>
+            <Button
+              onClick={() => setShowProviderForm(true)}
+              className="bg-[#c9a962] hover:bg-[#b89952] text-black"
+              data-testid="button-add-provider"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Provider
+            </Button>
+          </div>
+
+          {loadingProviders ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#c9a962]" />
+            </div>
+          ) : providers.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              No transport providers yet. Add your first provider to get started.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {providers.map((provider) => (
+                <Card key={provider.id} className="bg-[#1a2f25] border-[#2a3f35]">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-lg bg-[#c9a962]/10 flex items-center justify-center">
+                          <Car className="h-6 w-6 text-[#c9a962]" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-white font-medium">{provider.name}</h4>
+                            {getStatusBadge(provider.status)}
+                            {provider.isFeatured && (
+                              <Badge className="bg-[#c9a962]/20 text-[#c9a962]">Featured</Badge>
+                            )}
+                          </div>
+                          <div className="text-gray-400 text-sm">{provider.email} • {provider.phone}</div>
+                          <div className="flex items-center gap-4 mt-1 text-sm">
+                            <span className="text-gray-500">
+                              Rating: {provider.rating || "N/A"} ({provider.reviewCount || 0} reviews)
+                            </span>
+                            {provider.website && (
+                              <a href={provider.website} target="_blank" rel="noopener noreferrer" className="text-[#c9a962] hover:underline flex items-center gap-1">
+                                <Globe className="h-3 w-3" /> Website
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-[#2a3f35] text-gray-300 hover:bg-[#2a3f35]"
+                          onClick={() => setEditingProvider(provider)}
+                          data-testid={`button-edit-provider-${provider.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-800 text-red-400 hover:bg-red-900/20"
+                          onClick={() => {
+                            if (confirm("Are you sure you want to delete this provider?")) {
+                              deleteProviderMutation.mutate(provider.id);
+                            }
+                          }}
+                          data-testid={`button-delete-provider-${provider.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="bookings" className="mt-6">
+          <h3 className="text-white text-lg font-medium mb-4">Transport Bookings</h3>
+          
+          {loadingBookings ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#c9a962]" />
+            </div>
+          ) : bookings.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              No transport bookings yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {bookings.map((booking) => (
+                <Card key={booking.id} className="bg-[#1a2f25] border-[#2a3f35]">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-white font-medium">#{booking.bookingNumber}</span>
+                          {getStatusBadge(booking.status)}
+                        </div>
+                        <div className="text-gray-400 text-sm space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {new Date(booking.pickupDate).toLocaleDateString()} at {booking.pickupTime}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {booking.pickupLocation}
+                          </div>
+                          <div>Resident: {booking.residentInitials || "N/A"}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {booking.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-500"
+                              onClick={() => updateBookingMutation.mutate({ id: booking.id, data: { status: "confirmed" } })}
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-800 text-red-400 hover:bg-red-900/20"
+                              onClick={() => updateBookingMutation.mutate({ id: booking.id, data: { status: "cancelled" } })}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {booking.status === "confirmed" && (
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-500"
+                            onClick={() => updateBookingMutation.mutate({ id: booking.id, data: { status: "completed" } })}
+                          >
+                            Mark Complete
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="reviews" className="mt-6">
+          <h3 className="text-white text-lg font-medium mb-4">Provider Reviews</h3>
+          
+          {loadingReviews ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#c9a962]" />
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              No provider reviews yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <Card key={review.id} className="bg-[#1a2f25] border-[#2a3f35]">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${i <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`}
+                              />
+                            ))}
+                          </div>
+                          {getStatusBadge(review.status)}
+                        </div>
+                        <p className="text-gray-300 mb-2">{review.reviewText || review.title || "No review text"}</p>
+                        <div className="text-gray-500 text-sm">
+                          {new Date(review.createdAt || "").toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {review.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-500"
+                              onClick={() => updateReviewMutation.mutate({ id: review.id, data: { status: "approved" } })}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-800 text-red-400 hover:bg-red-900/20"
+                              onClick={() => updateReviewMutation.mutate({ id: review.id, data: { status: "rejected" } })}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={showProviderForm || !!editingProvider} onOpenChange={(open) => {
+        if (!open) {
+          setShowProviderForm(false);
+          setEditingProvider(null);
+        }
+      }}>
+        <DialogContent className="bg-[#1a2f25] border-[#2a3f35] max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              {editingProvider ? "Edit Provider" : "Add New Provider"}
+            </DialogTitle>
+          </DialogHeader>
+          <ProviderForm
+            provider={editingProvider}
+            onSubmit={(data) => {
+              if (editingProvider) {
+                updateProviderMutation.mutate({ id: editingProvider.id, data });
+              } else {
+                createProviderMutation.mutate(data);
+              }
+            }}
+            onCancel={() => {
+              setShowProviderForm(false);
+              setEditingProvider(null);
+            }}
+            isLoading={createProviderMutation.isPending || updateProviderMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function ProviderForm({ 
+  provider, 
+  onSubmit, 
+  onCancel, 
+  isLoading 
+}: { 
+  provider: TransportProvider | null;
+  onSubmit: (data: Partial<TransportProvider>) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}) {
+  const [formData, setFormData] = useState({
+    name: provider?.name || "",
+    slug: provider?.slug || "",
+    email: provider?.email || "",
+    phone: provider?.phone || "",
+    website: provider?.website || "",
+    description: provider?.description || "",
+    status: provider?.status || "active",
+    acceptsMedicaid: provider?.acceptsMedicaid || false,
+    acceptsMedicare: provider?.acceptsMedicare || false,
+    acceptsPrivatePay: provider?.acceptsPrivatePay ?? true,
+    isFeatured: provider?.isFeatured || false,
+    baseRateCents: provider?.baseRateCents || 0,
+    pricePerMileCents: provider?.pricePerMileCents || 0,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const slug = formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    onSubmit({ ...formData, slug });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-gray-300">Provider Name *</Label>
+          <Input
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="bg-[#0d1a14] border-[#2a3f35] text-white"
+            data-testid="input-provider-name"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-gray-300">Status</Label>
+          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+            <SelectTrigger className="bg-[#0d1a14] border-[#2a3f35] text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1a2f25] border-[#2a3f35]">
+              <SelectItem value="active" className="text-white">Active</SelectItem>
+              <SelectItem value="inactive" className="text-white">Inactive</SelectItem>
+              <SelectItem value="pending" className="text-white">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-gray-300">Email</Label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="bg-[#0d1a14] border-[#2a3f35] text-white"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-gray-300">Phone</Label>
+          <Input
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            className="bg-[#0d1a14] border-[#2a3f35] text-white"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-gray-300">Website</Label>
+        <Input
+          type="url"
+          value={formData.website}
+          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+          className="bg-[#0d1a14] border-[#2a3f35] text-white"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-gray-300">Description</Label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="bg-[#0d1a14] border-[#2a3f35] text-white min-h-[100px]"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-gray-300">Base Rate (cents)</Label>
+          <Input
+            type="number"
+            value={formData.baseRateCents}
+            onChange={(e) => setFormData({ ...formData, baseRateCents: parseInt(e.target.value) || 0 })}
+            className="bg-[#0d1a14] border-[#2a3f35] text-white"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-gray-300">Price per Mile (cents)</Label>
+          <Input
+            type="number"
+            value={formData.pricePerMileCents}
+            onChange={(e) => setFormData({ ...formData, pricePerMileCents: parseInt(e.target.value) || 0 })}
+            className="bg-[#0d1a14] border-[#2a3f35] text-white"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4">
+        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.acceptsMedicaid}
+            onChange={(e) => setFormData({ ...formData, acceptsMedicaid: e.target.checked })}
+            className="rounded"
+          />
+          Accepts Medicaid
+        </label>
+        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.acceptsMedicare}
+            onChange={(e) => setFormData({ ...formData, acceptsMedicare: e.target.checked })}
+            className="rounded"
+          />
+          Accepts Medicare
+        </label>
+        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.acceptsPrivatePay}
+            onChange={(e) => setFormData({ ...formData, acceptsPrivatePay: e.target.checked })}
+            className="rounded"
+          />
+          Accepts Private Pay
+        </label>
+        <label className="flex items-center gap-2 text-[#c9a962] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.isFeatured}
+            onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+            className="rounded"
+          />
+          Featured Provider
+        </label>
+      </div>
+
+      <DialogFooter className="gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="border-[#2a3f35] text-gray-300"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="bg-[#c9a962] hover:bg-[#b89952] text-black"
+          data-testid="button-submit-provider"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            provider ? "Update Provider" : "Create Provider"
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
 function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -1409,6 +2071,14 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
               <RefreshCw className="h-4 w-4 mr-2" />
               DSHS Sync
             </TabsTrigger>
+            <TabsTrigger
+              value="transport"
+              className="data-[state=active]:bg-[#c9a962] data-[state=active]:text-black"
+              data-testid="tab-transport"
+            >
+              <Car className="h-4 w-4 mr-2" />
+              Transport
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -1437,6 +2107,10 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
 
           <TabsContent value="dshs-sync">
             <DshsSyncTab />
+          </TabsContent>
+
+          <TabsContent value="transport">
+            <TransportTab />
           </TabsContent>
         </Tabs>
       </main>

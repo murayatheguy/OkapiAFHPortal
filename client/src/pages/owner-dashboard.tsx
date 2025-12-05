@@ -8,12 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getInquiries, updateInquiry } from "@/lib/api";
-import type { Facility, Inquiry, Review, TeamMember } from "@shared/schema";
+import type { Facility, Inquiry, Review, TeamMember, TransportProvider, TransportBooking } from "@shared/schema";
 import { 
   Home, Users, MessageSquare, Star, Settings, LogOut, Building2, 
-  Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone
+  Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
+  Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
+  Bookmark, BookmarkCheck, Globe, Shield
 } from "lucide-react";
 
 export default function OwnerDashboardPage() {
@@ -52,6 +57,64 @@ export default function OwnerDashboardPage() {
       return response.json();
     },
     enabled: !!selectedFacilityId,
+  });
+
+  const { data: transportProviders = [], isLoading: loadingProviders } = useQuery<TransportProvider[]>({
+    queryKey: ["transport-providers"],
+    queryFn: async () => {
+      const response = await fetch("/api/transport/providers");
+      if (!response.ok) return [];
+      return response.json();
+    },
+  });
+
+  const { data: transportBookings = [], refetch: refetchBookings } = useQuery<TransportBooking[]>({
+    queryKey: ["owner-transport-bookings", owner?.id],
+    queryFn: async () => {
+      const response = await fetch("/api/owner/transport/bookings");
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!owner?.id,
+  });
+
+  const { data: savedProviders = [], refetch: refetchSaved } = useQuery<any[]>({
+    queryKey: ["owner-saved-providers", owner?.id],
+    queryFn: async () => {
+      const response = await fetch("/api/owner/transport/saved");
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!owner?.id,
+  });
+
+  const [selectedProvider, setSelectedProvider] = useState<TransportProvider | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [transportTab, setTransportTab] = useState("browse");
+  const [countyFilter, setCountyFilter] = useState("");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState("");
+
+  const saveProviderMutation = useMutation({
+    mutationFn: async (providerId: string) => {
+      const response = await fetch(`/api/owner/transport/providers/${providerId}/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) throw new Error("Failed to save");
+      return response.json();
+    },
+    onSuccess: () => refetchSaved(),
+  });
+
+  const unsaveProviderMutation = useMutation({
+    mutationFn: async (providerId: string) => {
+      const response = await fetch(`/api/owner/transport/providers/${providerId}/save`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to unsave");
+    },
+    onSuccess: () => refetchSaved(),
   });
 
   const updateInquiryMutation = useMutation({
@@ -131,6 +194,7 @@ export default function OwnerDashboardPage() {
           <nav className="space-y-1 flex-1">
             {[
               { id: "overview", label: "Overview", icon: Home },
+              { id: "transport", label: "Transport", icon: Car },
               { id: "team", label: "Team", icon: Users },
               { id: "inquiries", label: "Inquiries", icon: MessageSquare, badge: newInquiries },
               { id: "reviews", label: "Reviews", icon: Star },
@@ -415,6 +479,271 @@ export default function OwnerDashboardPage() {
                 </div>
               )}
 
+              {activeSection === "transport" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
+                      Transport Marketplace
+                    </h1>
+                  </div>
+
+                  <Tabs value={transportTab} onValueChange={setTransportTab} className="w-full">
+                    <TabsList className="bg-stone-900/50 border border-amber-900/20">
+                      <TabsTrigger value="browse" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200">
+                        Browse Providers
+                      </TabsTrigger>
+                      <TabsTrigger value="saved" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200">
+                        Saved ({savedProviders.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="bookings" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200">
+                        My Bookings ({transportBookings.length})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="browse" className="mt-6">
+                      <div className="mb-6 p-4 bg-stone-900/30 border border-amber-900/20 rounded-lg">
+                        <p className="text-stone-300 text-sm">
+                          Browse trusted non-emergency medical transport (NEMT) providers serving Washington State. 
+                          Compare services, pricing, and reviews to find the best option for your residents.
+                        </p>
+                      </div>
+
+                      {loadingProviders ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+                        </div>
+                      ) : transportProviders.length === 0 ? (
+                        <Card className="border-amber-900/20 bg-stone-900/30">
+                          <CardContent className="p-8 text-center">
+                            <Car className="h-12 w-12 text-stone-600 mx-auto mb-3" />
+                            <p className="text-stone-400">No transport providers available yet.</p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {transportProviders.map(provider => {
+                            const isSaved = savedProviders.some((s: any) => s.providerId === provider.id);
+                            return (
+                              <Card key={provider.id} className="border-amber-900/20 bg-stone-900/30 hover:border-amber-600/40 transition-colors">
+                                <CardHeader className="pb-3">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-3">
+                                      {provider.logoUrl ? (
+                                        <img src={provider.logoUrl} alt={provider.name} className="h-12 w-12 rounded-lg object-cover" />
+                                      ) : (
+                                        <div className="h-12 w-12 rounded-lg bg-amber-900/30 flex items-center justify-center">
+                                          <Car className="h-6 w-6 text-amber-400" />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <CardTitle className="text-stone-200 text-lg flex items-center gap-2">
+                                          {provider.name}
+                                          {provider.isFeatured && (
+                                            <Badge className="bg-amber-600 text-xs">Featured</Badge>
+                                          )}
+                                        </CardTitle>
+                                        {provider.rating && parseFloat(provider.rating) > 0 && (
+                                          <div className="flex items-center gap-1 mt-1">
+                                            <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+                                            <span className="text-amber-200 text-sm">{provider.rating}</span>
+                                            <span className="text-stone-500 text-xs">({provider.reviewCount} reviews)</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className={isSaved ? "text-amber-400" : "text-stone-500 hover:text-amber-400"}
+                                      onClick={() => isSaved 
+                                        ? unsaveProviderMutation.mutate(provider.id)
+                                        : saveProviderMutation.mutate(provider.id)
+                                      }
+                                      data-testid={`button-save-provider-${provider.id}`}
+                                    >
+                                      {isSaved ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+                                    </Button>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                  {provider.description && (
+                                    <p className="text-stone-400 text-sm line-clamp-2">{provider.description}</p>
+                                  )}
+                                  
+                                  <div className="flex flex-wrap gap-2">
+                                    {(provider.vehicleTypes as string[] || []).slice(0, 3).map((type, i) => (
+                                      <Badge key={i} variant="outline" className="border-stone-700 text-stone-400 text-xs">
+                                        {type}
+                                      </Badge>
+                                    ))}
+                                  </div>
+
+                                  <div className="flex items-center gap-4 text-sm text-stone-500">
+                                    {provider.acceptsMedicaid && (
+                                      <span className="flex items-center gap-1 text-green-400">
+                                        <Shield className="h-3.5 w-3.5" />
+                                        Medicaid
+                                      </span>
+                                    )}
+                                    {provider.baseRateCents && (
+                                      <span className="flex items-center gap-1">
+                                        <DollarSign className="h-3.5 w-3.5" />
+                                        From ${(provider.baseRateCents / 100).toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex gap-2 pt-2">
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 bg-amber-600 hover:bg-amber-500"
+                                      onClick={() => {
+                                        setSelectedProvider(provider);
+                                        setBookingModalOpen(true);
+                                      }}
+                                      data-testid={`button-book-provider-${provider.id}`}
+                                    >
+                                      <Calendar className="h-4 w-4 mr-1" />
+                                      Request Booking
+                                    </Button>
+                                    {provider.website && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-amber-900/30 text-stone-300"
+                                        asChild
+                                      >
+                                        <a href={provider.website} target="_blank" rel="noopener noreferrer">
+                                          <Globe className="h-4 w-4" />
+                                        </a>
+                                      </Button>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="saved" className="mt-6">
+                      {savedProviders.length === 0 ? (
+                        <Card className="border-amber-900/20 bg-stone-900/30">
+                          <CardContent className="p-8 text-center">
+                            <Bookmark className="h-12 w-12 text-stone-600 mx-auto mb-3" />
+                            <p className="text-stone-400">No saved providers yet.</p>
+                            <p className="text-stone-500 text-sm mt-1">Browse providers and save your favorites for quick access.</p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {savedProviders.map((saved: any) => (
+                            <Card key={saved.id} className="border-amber-900/20 bg-stone-900/30">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-lg bg-amber-900/30 flex items-center justify-center">
+                                      <Car className="h-5 w-5 text-amber-400" />
+                                    </div>
+                                    <div>
+                                      <div className="text-stone-200 font-medium">{saved.provider?.name}</div>
+                                      <div className="text-stone-500 text-xs">Saved provider</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      className="bg-amber-600 hover:bg-amber-500"
+                                      onClick={() => {
+                                        setSelectedProvider(saved.provider);
+                                        setBookingModalOpen(true);
+                                      }}
+                                    >
+                                      Book
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-stone-500 hover:text-red-400"
+                                      onClick={() => unsaveProviderMutation.mutate(saved.providerId)}
+                                    >
+                                      <Bookmark className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="bookings" className="mt-6">
+                      {transportBookings.length === 0 ? (
+                        <Card className="border-amber-900/20 bg-stone-900/30">
+                          <CardContent className="p-8 text-center">
+                            <Calendar className="h-12 w-12 text-stone-600 mx-auto mb-3" />
+                            <p className="text-stone-400">No bookings yet.</p>
+                            <p className="text-stone-500 text-sm mt-1">Browse transport providers and schedule rides for your residents.</p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <div className="space-y-4">
+                          {transportBookings.map(booking => (
+                            <Card key={booking.id} className="border-amber-900/20 bg-stone-900/30">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-stone-200 font-medium">#{booking.bookingNumber}</span>
+                                      <Badge 
+                                        className={
+                                          booking.status === 'confirmed' ? 'bg-green-600' :
+                                          booking.status === 'pending' ? 'bg-amber-600' :
+                                          booking.status === 'completed' ? 'bg-blue-600' :
+                                          booking.status === 'cancelled' ? 'bg-red-600' :
+                                          'bg-stone-600'
+                                        }
+                                      >
+                                        {booking.status}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-stone-400 text-sm space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="h-3.5 w-3.5" />
+                                        {new Date(booking.pickupDate).toLocaleDateString()} at {booking.pickupTime}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        {booking.pickupAddress}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                        {booking.dropoffAddress}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {booking.status === 'pending' && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-red-900/30 text-red-400 hover:bg-red-900/20"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              )}
+
               {activeSection === "settings" && (
                 <div className="space-y-6">
                   <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
@@ -448,6 +777,234 @@ export default function OwnerDashboardPage() {
           )}
         </main>
       </div>
+
+      <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
+        <DialogContent className="bg-stone-900 border-amber-900/30 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
+              Request Transport
+            </DialogTitle>
+            <DialogDescription className="text-stone-400">
+              {selectedProvider?.name ? `Schedule a ride with ${selectedProvider.name}` : "Schedule transport for your resident"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <BookingForm 
+            provider={selectedProvider}
+            facilityId={selectedFacilityId}
+            onSuccess={() => {
+              setBookingModalOpen(false);
+              setSelectedProvider(null);
+              refetchBookings();
+            }}
+            onCancel={() => {
+              setBookingModalOpen(false);
+              setSelectedProvider(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function BookingForm({ 
+  provider, 
+  facilityId,
+  onSuccess, 
+  onCancel 
+}: { 
+  provider: TransportProvider | null;
+  facilityId: string | null;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    residentInitials: "",
+    residentMobility: "ambulatory",
+    pickupDate: "",
+    pickupTime: "",
+    pickupLocation: "",
+    pickupAddress: "",
+    dropoffLocation: "",
+    dropoffAddress: "",
+    appointmentTime: "",
+    tripType: "one_way",
+    specialNeeds: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!provider) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/owner/transport/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerId: provider.id,
+          facilityId,
+          ...formData,
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create booking");
+      }
+      
+      onSuccess();
+    } catch (error) {
+      console.error("Error creating booking:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-stone-400 text-sm">Resident Initials *</label>
+          <Input
+            required
+            value={formData.residentInitials}
+            onChange={(e) => setFormData({ ...formData, residentInitials: e.target.value })}
+            placeholder="e.g. JD"
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
+            data-testid="input-resident-initials"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-stone-400 text-sm">Mobility Type *</label>
+          <Select value={formData.residentMobility} onValueChange={(value) => setFormData({ ...formData, residentMobility: value })}>
+            <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ambulatory">Ambulatory (can walk)</SelectItem>
+              <SelectItem value="wheelchair">Wheelchair</SelectItem>
+              <SelectItem value="gurney">Gurney/Stretcher</SelectItem>
+              <SelectItem value="bariatric">Bariatric</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-stone-400 text-sm">Pickup Date *</label>
+          <Input
+            required
+            type="date"
+            value={formData.pickupDate}
+            onChange={(e) => setFormData({ ...formData, pickupDate: e.target.value })}
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
+            data-testid="input-pickup-date"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-stone-400 text-sm">Pickup Time *</label>
+          <Input
+            required
+            type="time"
+            value={formData.pickupTime}
+            onChange={(e) => setFormData({ ...formData, pickupTime: e.target.value })}
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
+            data-testid="input-pickup-time"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-stone-400 text-sm">Pickup Location *</label>
+        <Input
+          required
+          value={formData.pickupLocation}
+          onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
+          placeholder="e.g. Sunny Care Home, 123 Main St, Seattle"
+          className="bg-stone-800 border-amber-900/30 text-stone-200"
+          data-testid="input-pickup-location"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-stone-400 text-sm">Dropoff Location *</label>
+        <Input
+          required
+          value={formData.dropoffLocation}
+          onChange={(e) => setFormData({ ...formData, dropoffLocation: e.target.value })}
+          placeholder="e.g. Dr. Smith's Office, 456 Medical Center Dr"
+          className="bg-stone-800 border-amber-900/30 text-stone-200"
+          data-testid="input-dropoff-location"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-stone-400 text-sm">Trip Type</label>
+          <Select value={formData.tripType} onValueChange={(value) => setFormData({ ...formData, tripType: value })}>
+            <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="one_way">One Way</SelectItem>
+              <SelectItem value="round_trip">Round Trip</SelectItem>
+              <SelectItem value="wait_and_return">Wait and Return</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-stone-400 text-sm">Appointment Time</label>
+          <Input
+            type="time"
+            value={formData.appointmentTime}
+            onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
+            data-testid="input-appointment-time"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-stone-400 text-sm">Special Needs</label>
+        <Textarea
+          value={formData.specialNeeds}
+          onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
+          placeholder="Any mobility needs, assistance requirements, oxygen, or other notes..."
+          className="bg-stone-800 border-amber-900/30 text-stone-200 min-h-[80px]"
+          data-testid="input-special-needs"
+        />
+      </div>
+
+      <DialogFooter className="gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="border-amber-900/30 text-stone-300"
+          data-testid="button-cancel-booking"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-amber-600 hover:bg-amber-500"
+          data-testid="button-submit-booking"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            "Submit Request"
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
