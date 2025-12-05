@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useRoute, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
-import { getFacilityWithTeam } from "@/lib/api";
+import { getFacilityWithTeam, submitClaimRequest } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -40,6 +41,76 @@ export default function FacilityDetails() {
   const [showTourModal, setShowTourModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [expandedInspections, setExpandedInspections] = useState(false);
+  const [claimForm, setClaimForm] = useState({
+    requesterName: "",
+    requesterEmail: "",
+    requesterPhone: "",
+    relationship: ""
+  });
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const claimMutation = useMutation({
+    mutationFn: (data: {
+      facilityId: string;
+      requesterName: string;
+      requesterEmail: string;
+      requesterPhone?: string;
+      relationship: string;
+    }) => submitClaimRequest(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["facility", params?.id] });
+      setShowClaimModal(false);
+      setClaimForm({ requesterName: "", requesterEmail: "", requesterPhone: "", relationship: "" });
+      toast({
+        title: "Claim Submitted",
+        description: "Your ownership claim has been submitted for review. We'll contact you within 2-3 business days.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit claim. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleClaimSubmit = () => {
+    if (!claimForm.requesterName || !claimForm.requesterEmail || !claimForm.relationship) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(claimForm.requesterEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!params?.id) {
+      toast({
+        title: "Error",
+        description: "Facility information is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    claimMutation.mutate({
+      facilityId: params.id,
+      requesterName: claimForm.requesterName,
+      requesterEmail: claimForm.requesterEmail,
+      requesterPhone: claimForm.requesterPhone || undefined,
+      relationship: claimForm.relationship,
+    });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["facility", params?.id],
@@ -791,19 +862,42 @@ export default function FacilityDetails() {
             <div className="grid gap-4">
               <div className="space-y-2">
                 <Label htmlFor="claim-name">Your Name *</Label>
-                <Input id="claim-name" placeholder="John Smith" data-testid="input-claim-name" />
+                <Input 
+                  id="claim-name" 
+                  placeholder="John Smith" 
+                  value={claimForm.requesterName}
+                  onChange={(e) => setClaimForm({ ...claimForm, requesterName: e.target.value })}
+                  data-testid="input-claim-name" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="claim-email">Email Address *</Label>
-                <Input id="claim-email" type="email" placeholder="owner@example.com" data-testid="input-claim-email" />
+                <Input 
+                  id="claim-email" 
+                  type="email" 
+                  placeholder="owner@example.com" 
+                  value={claimForm.requesterEmail}
+                  onChange={(e) => setClaimForm({ ...claimForm, requesterEmail: e.target.value })}
+                  data-testid="input-claim-email" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="claim-phone">Phone Number</Label>
-                <Input id="claim-phone" type="tel" placeholder="(555) 123-4567" data-testid="input-claim-phone" />
+                <Input 
+                  id="claim-phone" 
+                  type="tel" 
+                  placeholder="(555) 123-4567" 
+                  value={claimForm.requesterPhone}
+                  onChange={(e) => setClaimForm({ ...claimForm, requesterPhone: e.target.value })}
+                  data-testid="input-claim-phone" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="claim-relationship">Your Relationship to This Home *</Label>
-                <Select>
+                <Select 
+                  value={claimForm.relationship}
+                  onValueChange={(value) => setClaimForm({ ...claimForm, relationship: value })}
+                >
                   <SelectTrigger id="claim-relationship" data-testid="select-claim-relationship">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
@@ -822,9 +916,26 @@ export default function FacilityDetails() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowClaimModal(false)}>Cancel</Button>
-            <Button onClick={() => setShowClaimModal(false)} data-testid="button-submit-claim">
-              Submit Claim Request
+            <Button 
+              variant="outline" 
+              onClick={() => setShowClaimModal(false)}
+              disabled={claimMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleClaimSubmit}
+              disabled={claimMutation.isPending}
+              data-testid="button-submit-claim"
+            >
+              {claimMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Claim Request"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
