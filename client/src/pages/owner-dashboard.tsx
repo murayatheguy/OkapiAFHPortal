@@ -137,10 +137,11 @@ export default function OwnerDashboardPage() {
     );
   }
 
-  if (!isAuthenticated) {
-    setLocation("/owner/login");
-    return null;
-  }
+  // Login temporarily disabled for testing
+  // if (!isAuthenticated) {
+  //   setLocation("/owner/login");
+  //   return null;
+  // }
 
   const newInquiries = inquiries.filter(i => i.status === "new").length;
   const pendingClaims = claims.filter(c => c.status === "pending" || c.status === "verified").length;
