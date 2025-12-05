@@ -997,7 +997,7 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Invalid token" });
       }
 
-      if (tokenRecord.used || new Date(tokenRecord.expiresAt) < new Date()) {
+      if (tokenRecord.usedAt || new Date(tokenRecord.expiresAt) < new Date()) {
         return res.status(400).json({ error: "Token expired or already used" });
       }
 
@@ -1030,7 +1030,7 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Invalid token" });
       }
 
-      if (tokenRecord.used || new Date(tokenRecord.expiresAt) < new Date()) {
+      if (tokenRecord.usedAt || new Date(tokenRecord.expiresAt) < new Date()) {
         return res.status(400).json({ error: "Token expired or already used" });
       }
 
