@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 
 const DSHS_SEARCH_URL = 'https://fortress.wa.gov/dshs/adsaapps/lookup/AFHAdvLookup.aspx';
-const DSHS_DETAIL_URL = 'https://fortress.wa.gov/dshs/adsaapps/lookup/AFHDetail.aspx';
+const DSHS_RESULTS_URL = 'https://fortress.wa.gov/dshs/adsaapps/lookup/AFHAdvResults.aspx';
 
 export interface ScrapedHome {
   licenseNumber: string;
@@ -33,6 +33,48 @@ export interface ScrapedHomeDetail {
   dataHash: string;
 }
 
+const COUNTY_IDS: Record<string, string> = {
+  'Adams': 'county_1',
+  'Asotin': 'county_2',
+  'Benton': 'county_3',
+  'Chelan': 'county_4',
+  'Clallam': 'county_5',
+  'Clark': 'county_6',
+  'Columbia': 'county_7',
+  'Cowlitz': 'county_8',
+  'Douglas': 'county_9',
+  'Ferry': 'county_10',
+  'Franklin': 'county_11',
+  'Garfield': 'county_12',
+  'Grant': 'county_13',
+  'Grays Harbor': 'county_14',
+  'Island': 'county_15',
+  'Jefferson': 'county_16',
+  'King': 'county_17',
+  'Kitsap': 'county_18',
+  'Kittitas': 'county_19',
+  'Klickitat': 'county_20',
+  'Lewis': 'county_21',
+  'Lincoln': 'county_22',
+  'Mason': 'county_23',
+  'Okanogan': 'county_24',
+  'Pacific': 'county_25',
+  'Pend Oreille': 'county_26',
+  'Pierce': 'county_27',
+  'San Juan': 'county_28',
+  'Skagit': 'county_29',
+  'Skamania': 'county_30',
+  'Stevens': 'county_31',
+  'Snohomish': 'county_32',
+  'Spokane': 'county_33',
+  'Thurston': 'county_34',
+  'Wahkiakum': 'county_35',
+  'Walla Walla': 'county_36',
+  'Whatcom': 'county_37',
+  'Whitman': 'county_38',
+  'Yakima': 'county_39'
+};
+
 export class DSHSScraper {
   private browser: Browser | null = null;
 
@@ -58,27 +100,85 @@ export class DSHSScraper {
     }
   }
 
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async scrapeCounty(county: string): Promise<ScrapedHome[]> {
     if (!this.browser) {
       throw new Error('Browser not initialized. Call init() first.');
     }
 
     const page = await this.browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
     try {
       console.log(`[DSHS Scraper] Navigating to search page for ${county}...`);
       await page.goto(DSHS_SEARCH_URL, { waitUntil: 'networkidle2', timeout: 60000 });
 
-      await page.select('#ddlCounty', county);
+      const countyCheckboxId = COUNTY_IDS[county];
+      if (!countyCheckboxId) {
+        console.error(`[DSHS Scraper] Unknown county: ${county}`);
+        return [];
+      }
 
-      await Promise.all([
-        page.click('#btnSearch'),
-        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 })
+      await page.waitForSelector(`#${countyCheckboxId}`, { timeout: 10000 });
+      await page.click(`#${countyCheckboxId}`);
+      
+      console.log(`[DSHS Scraper] Checked ${county} county checkbox, submitting form...`);
+
+      const [response] = await Promise.all([
+        page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => null),
+        page.click('#submit1')
       ]);
-
+      
+      console.log(`[DSHS Scraper] Postback completed, waiting for network idle...`);
+      
+      await page.waitForNetworkIdle({ idleTime: 2000, timeout: 30000 }).catch(() => {
+        console.log(`[DSHS Scraper] Network idle wait timed out`);
+      });
+      
+      console.log(`[DSHS Scraper] Getting page content, URL: ${page.url()}`);
       const html = await page.content();
-      return this.parseSearchResults(html);
+      
+      const isErrorPage = html.includes('error') && html.includes('occurred') && html.length < 5000;
+      if (isErrorPage) {
+        console.log(`[DSHS Scraper] Error page detected, retrying...`);
+        return [];
+      }
+      
+      const homes = this.parseSearchResults(html);
+      console.log(`[DSHS Scraper] Parsed ${homes.length} homes from results`);
+      
+      if (homes.length === 0) {
+        console.log(`[DSHS Scraper] Page HTML length: ${html.length}`);
+        
+        const tableMatch = html.match(/<table[^>]*>/gi);
+        if (tableMatch) {
+          console.log(`[DSHS Scraper] Found ${tableMatch.length} tables`);
+        }
+        
+        const allLinks = html.match(/<a[^>]*href="[^"]*"[^>]*>/gi);
+        if (allLinks) {
+          console.log(`[DSHS Scraper] Found ${allLinks.length} total links`);
+          const relevantLinks = allLinks.filter(l => l.toLowerCase().includes('afh') || l.toLowerCase().includes('detail') || l.toLowerCase().includes('lic'));
+          console.log(`[DSHS Scraper] Found ${relevantLinks.length} relevant links`);
+          relevantLinks.slice(0, 5).forEach((l, i) => console.log(`  Link ${i}: ${l}`));
+        }
+        
+        const tableStart = html.indexOf('<table class="striped">');
+        if (tableStart > 0) {
+          const tableSection = html.substring(tableStart, tableStart + 3000);
+          console.log(`[DSHS Scraper] Table structure: ${tableSection.replace(/\s+/g, ' ').substring(0, 800)}...`);
+        }
+        
+        const rowSample = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi);
+        if (rowSample && rowSample.length > 1) {
+          console.log(`[DSHS Scraper] Sample row (2nd): ${rowSample[1].replace(/\s+/g, ' ').substring(0, 500)}`);
+        }
+      }
+      
+      return homes;
 
     } catch (error) {
       console.error(`[DSHS Scraper] Error scraping ${county}:`, error);
@@ -92,26 +192,73 @@ export class DSHSScraper {
     const $ = cheerio.load(html);
     const homes: ScrapedHome[] = [];
 
-    $('table.gridview tr, #gvSearchResults tr').each((i, row) => {
-      if (i === 0) return;
-
+    $('table.striped tr').each((i, row) => {
       const cols = $(row).find('td');
       if (cols.length < 4) return;
 
-      const licenseLink = $(cols[0]).find('a');
-      const href = licenseLink.attr('href') || '';
-      const licenseMatch = href.match(/id=(\d+)/i) || href.match(/(\d{6})/);
+      const firstCell = $(cols[0]);
+      const cellText = firstCell.text();
+      
+      const licenseMatch = cellText.match(/License#:\s*(\d+)/i);
+      if (!licenseMatch) return;
+      
+      const licenseNumber = licenseMatch[1];
+      
+      const nameMatch = firstCell.find('strong').first().text().replace(/^["']|["']$/g, '').trim();
+      const name = nameMatch || 'Unknown';
+      
+      const phoneMatch = cellText.match(/\((\d{3})\)\s*(\d{3})-(\d{4})/);
+      const phone = phoneMatch ? `(${phoneMatch[1]}) ${phoneMatch[2]}-${phoneMatch[3]}` : '';
+      
+      const lines = cellText.split('\n').map(l => l.trim()).filter(l => l);
+      let address = '';
+      let city = '';
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.includes(',') && /WA\s+\d{5}/.test(line)) {
+          const parts = line.split(',');
+          city = parts[0].trim();
+          if (i > 0) {
+            const prevLine = lines[i - 1];
+            if (!prevLine.includes('License#') && !prevLine.includes('Contact') && !prevLine.includes('Region')) {
+              address = prevLine;
+            }
+          }
+          break;
+        }
+      }
 
-      if (licenseMatch) {
+      if (licenseNumber && licenseNumber.length >= 5) {
         homes.push({
-          licenseNumber: licenseMatch[1],
-          name: $(cols[1]).text().trim() || $(cols[0]).text().trim(),
-          address: $(cols[2]).text().trim(),
-          city: $(cols[3]).text().trim(),
-          phone: cols.length > 4 ? $(cols[4]).text().trim() : ''
+          licenseNumber,
+          name,
+          address,
+          city,
+          phone
         });
       }
     });
+
+    if (homes.length === 0) {
+      $('a[href*="AFHServices.aspx?ref=adv&Lic="], a[href*="AFHForms.aspx?Lic="]').each((_, link) => {
+        const href = $(link).attr('href') || '';
+        const licenseMatch = href.match(/Lic=(\d+)/i);
+        if (licenseMatch) {
+          const licenseNumber = licenseMatch[1];
+          
+          if (!homes.find(h => h.licenseNumber === licenseNumber)) {
+            homes.push({
+              licenseNumber,
+              name: 'Unknown',
+              address: '',
+              city: '',
+              phone: ''
+            });
+          }
+        }
+      });
+    }
 
     return homes;
   }
@@ -122,10 +269,11 @@ export class DSHSScraper {
     }
 
     const page = await this.browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
     try {
-      const url = `${DSHS_DETAIL_URL}?id=${licenseNumber}`;
+      const url = `https://fortress.wa.gov/dshs/adsaapps/lookup/AFHDetail.aspx?id=${licenseNumber}`;
+      console.log(`[DSHS Scraper] Fetching detail page for license ${licenseNumber}...`);
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
       const html = await page.content();
@@ -150,46 +298,106 @@ export class DSHSScraper {
       return '';
     };
 
-    const getTableValue = (label: string): string => {
+    const getFieldValue = (labelText: string): string => {
       let value = '';
-      $('table tr, .detail-row').each((_, row) => {
-        const rowText = $(row).text();
-        if (rowText.toLowerCase().includes(label.toLowerCase())) {
-          const cells = $(row).find('td');
-          if (cells.length >= 2) {
-            value = $(cells[1]).text().trim();
+      
+      $('dt, th, td, label, strong, b').each((_, el) => {
+        const text = $(el).text().toLowerCase();
+        if (text.includes(labelText.toLowerCase())) {
+          const next = $(el).next('dd, td');
+          if (next.length > 0) {
+            value = next.text().trim();
+            return false;
+          }
+          
+          const parent = $(el).parent();
+          const siblings = parent.find('td, dd, span').not(el);
+          if (siblings.length > 0) {
+            value = siblings.first().text().trim();
+            return false;
           }
         }
       });
+      
+      if (!value) {
+        $('tr').each((_, row) => {
+          const rowText = $(row).text();
+          if (rowText.toLowerCase().includes(labelText.toLowerCase())) {
+            const cells = $(row).find('td');
+            if (cells.length >= 2) {
+              value = $(cells[1]).text().trim();
+              return false;
+            }
+          }
+        });
+      }
+      
       return value;
     };
 
+    const extractAddress = (): { address: string; city: string; state: string; zipCode: string } => {
+      const fullAddress = getFieldValue('address') || getFieldValue('location');
+      
+      if (fullAddress) {
+        const parts = fullAddress.split(',').map(p => p.trim());
+        if (parts.length >= 2) {
+          const lastPart = parts[parts.length - 1];
+          const stateZipMatch = lastPart.match(/([A-Z]{2})\s*(\d{5}(-\d{4})?)?/);
+          
+          return {
+            address: parts.slice(0, -1).join(', '),
+            city: parts.length >= 3 ? parts[parts.length - 2] : '',
+            state: stateZipMatch ? stateZipMatch[1] : 'WA',
+            zipCode: stateZipMatch && stateZipMatch[2] ? stateZipMatch[2] : ''
+          };
+        }
+      }
+      
+      return {
+        address: getFieldValue('street') || fullAddress,
+        city: getFieldValue('city'),
+        state: 'WA',
+        zipCode: getFieldValue('zip') || getFieldValue('postal')
+      };
+    };
+
+    const addressInfo = extractAddress();
+
     const data: Omit<ScrapedHomeDetail, 'dataHash'> = {
       licenseNumber,
-      name: getText(['#lblFacilityName', '.facility-name', '#ContentPlaceHolder1_lblName']) || 
-            getTableValue('facility name') || getTableValue('name'),
-      licenseStatus: getText(['#lblStatus', '#ContentPlaceHolder1_lblStatus']) || 
-                     getTableValue('status') || 'Active',
-      licensedCapacity: parseInt(getText(['#lblCapacity', '#ContentPlaceHolder1_lblCapacity']) || 
-                                 getTableValue('capacity')) || 6,
-      address: getText(['#lblAddress', '#ContentPlaceHolder1_lblAddress']) || getTableValue('address'),
-      city: getText(['#lblCity', '#ContentPlaceHolder1_lblCity']) || getTableValue('city'),
-      state: 'WA',
-      zipCode: getText(['#lblZip', '#ContentPlaceHolder1_lblZip']) || getTableValue('zip'),
-      county: getText(['#lblCounty', '#ContentPlaceHolder1_lblCounty']) || getTableValue('county'),
-      phone: getText(['#lblPhone', '#ContentPlaceHolder1_lblPhone']) || getTableValue('phone'),
+      name: getText(['h1', 'h2', '.facility-name']) || 
+            getFieldValue('facility name') || 
+            getFieldValue('name') ||
+            `AFH ${licenseNumber}`,
+      licenseStatus: getFieldValue('status') || getFieldValue('license status') || 'Active',
+      licensedCapacity: parseInt(getFieldValue('capacity') || getFieldValue('beds')) || 6,
+      address: addressInfo.address,
+      city: addressInfo.city,
+      state: addressInfo.state,
+      zipCode: addressInfo.zipCode,
+      county: getFieldValue('county'),
+      phone: getFieldValue('phone') || getFieldValue('telephone'),
       inspections: [],
       scrapedAt: new Date().toISOString()
     };
 
-    $('#tblInspections tr, .inspection-row, #gvInspections tr').each((i, row) => {
-      if (i === 0) return;
-      const cols = $(row).find('td');
-      if (cols.length >= 2) {
-        data.inspections.push({
-          date: $(cols[0]).text().trim(),
-          type: $(cols[1]).text().trim(),
-          violations: parseInt($(cols[2]).text().trim()) || 0
+    $('table').each((_, table) => {
+      const headerText = $(table).find('th, thead').text().toLowerCase();
+      if (headerText.includes('inspection') || headerText.includes('visit') || headerText.includes('date')) {
+        $(table).find('tbody tr, tr').each((i, row) => {
+          if (i === 0 && $(row).find('th').length > 0) return;
+          
+          const cols = $(row).find('td');
+          if (cols.length >= 2) {
+            const dateText = $(cols[0]).text().trim();
+            if (dateText && /\d/.test(dateText)) {
+              data.inspections.push({
+                date: dateText,
+                type: $(cols[1]).text().trim() || 'Inspection',
+                violations: parseInt($(cols[2]).text().trim()) || 0
+              });
+            }
+          }
         });
       }
     });
