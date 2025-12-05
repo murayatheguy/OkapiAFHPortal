@@ -1,10 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema, insertClaimRequestSchema, insertActivityLogSchema, insertTransportProviderSchema, insertTransportBookingSchema, insertProviderReviewSchema } from "@shared/schema";
+import { db } from "./db";
+import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema, insertClaimRequestSchema, insertActivityLogSchema, insertTransportProviderSchema, insertTransportBookingSchema, insertProviderReviewSchema, owners } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -513,6 +515,46 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error during owner login:", error);
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Dev login - quick access for testing (uses first available owner or creates test owner)
+  app.post("/api/owners/dev-login", async (req, res) => {
+    try {
+      // Find any existing active owner
+      const allOwners = await db.select().from(owners).where(eq(owners.status, "active")).limit(1);
+      let owner = allOwners[0];
+      
+      if (!owner) {
+        // Find any owner regardless of status
+        const anyOwner = await db.select().from(owners).limit(1);
+        owner = anyOwner[0];
+      }
+      
+      if (!owner) {
+        // Create a test owner if none exist
+        const testOwner = await storage.createOwner({
+          email: "test@okapi.care",
+          name: "Test Owner",
+          phone: "555-555-5555",
+          status: "active",
+          emailVerified: true,
+        });
+        owner = testOwner;
+      }
+      
+      // Update status to active if not already
+      if (owner.status !== "active") {
+        await storage.updateOwner(owner.id, { status: "active", emailVerified: true });
+      }
+      
+      (req.session as any).ownerId = owner.id;
+      
+      const { passwordHash: _, ...ownerData } = owner;
+      res.json({ owner: ownerData, message: "Dev login successful" });
+    } catch (error) {
+      console.error("Error during dev login:", error);
+      res.status(500).json({ error: "Dev login failed" });
     }
   });
 
