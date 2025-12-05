@@ -5,7 +5,8 @@ import { Link } from "wouter";
 import {
   Building2, Users, MessageSquare, Star, LayoutDashboard, LogOut,
   CheckCircle, XCircle, Mail, Phone, MapPin, Calendar,
-  Home, TrendingUp, Shield, Search, Trash2, ExternalLink, UserCheck, Clock
+  Home, TrendingUp, Shield, Search, Trash2, ExternalLink, UserCheck, Clock,
+  RefreshCw, Database, AlertCircle, Play, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1046,6 +1047,265 @@ function ReviewsTab() {
   );
 }
 
+interface DshsSyncLog {
+  id: string;
+  county: string | null;
+  syncType: string;
+  status: string;
+  homesScraped: number;
+  homesUpdated: number;
+  homesCreated: number;
+  errors: string[];
+  startedAt: Date;
+  completedAt: Date | null;
+  createdAt: Date;
+}
+
+interface DshsSyncStatus {
+  logs: DshsSyncLog[];
+  totalHomes: number;
+  syncedHomes: number;
+}
+
+function DshsSyncTab() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [selectedCounty, setSelectedCounty] = useState<string | undefined>();
+
+  const { data: syncStatus, isLoading } = useQuery<DshsSyncStatus>({
+    queryKey: ["/api/admin/dshs-sync"],
+    refetchInterval: 10000,
+  });
+
+  const { data: counties } = useQuery<{ counties: string[] }>({
+    queryKey: ["/api/admin/dshs-sync/counties"],
+  });
+
+  const triggerSyncMutation = useMutation({
+    mutationFn: async ({ type, county }: { type: string; county?: string }) => {
+      const res = await fetch("/api/admin/dshs-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, county }),
+      });
+      if (!res.ok) throw new Error("Failed to start sync");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sync Started",
+        description: "The DSHS sync has been initiated. This may take several hours.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/dshs-sync"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to start sync",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <Badge className="bg-green-900/20 text-green-400 border-green-800">Completed</Badge>;
+      case "in_progress":
+        return <Badge className="bg-blue-900/20 text-blue-400 border-blue-800">In Progress</Badge>;
+      case "failed":
+        return <Badge className="bg-red-900/20 text-red-400 border-red-800">Failed</Badge>;
+      default:
+        return <Badge className="bg-gray-900/20 text-gray-400 border-gray-800">{status}</Badge>;
+    }
+  };
+
+  const isAnyInProgress = syncStatus?.logs?.some(log => log.status === "in_progress");
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Facilities</p>
+                <p className="text-3xl font-semibold text-white mt-1">
+                  {isLoading ? "-" : syncStatus?.totalHomes || 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-[#c9a962]/10 rounded-lg flex items-center justify-center">
+                <Building2 className="h-6 w-6 text-[#c9a962]" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Synced with DSHS</p>
+                <p className="text-3xl font-semibold text-white mt-1">
+                  {isLoading ? "-" : syncStatus?.syncedHomes || 0}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-green-900/20 rounded-lg flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a2f25] border-[#2a3f35]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Sync Status</p>
+                <p className="text-xl font-semibold text-white mt-1">
+                  {isAnyInProgress ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+                      Running
+                    </span>
+                  ) : (
+                    "Idle"
+                  )}
+                </p>
+              </div>
+              <div className="h-12 w-12 bg-blue-900/20 rounded-lg flex items-center justify-center">
+                <Database className="h-6 w-6 text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="bg-[#1a2f25] border-[#2a3f35]">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <RefreshCw className="h-5 w-5 text-[#c9a962]" />
+            Manual Sync Controls
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Trigger a sync with the Washington State DSHS database. Full sync takes 2-4 hours.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-4">
+            <Button
+              onClick={() => triggerSyncMutation.mutate({ type: "full" })}
+              disabled={triggerSyncMutation.isPending || isAnyInProgress}
+              className="bg-[#c9a962] hover:bg-[#b89952] text-black"
+              data-testid="button-full-sync"
+            >
+              {triggerSyncMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
+              Start Full Sync
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Select value={selectedCounty} onValueChange={setSelectedCounty}>
+                <SelectTrigger className="w-[200px] bg-[#0d1a14] border-[#2a3f35] text-white">
+                  <SelectValue placeholder="Select county..." />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1a2f25] border-[#2a3f35]">
+                  {counties?.counties?.map((county) => (
+                    <SelectItem key={county} value={county} className="text-white hover:bg-[#2a3f35]">
+                      {county}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={() => selectedCounty && triggerSyncMutation.mutate({ type: "single", county: selectedCounty })}
+                disabled={!selectedCounty || triggerSyncMutation.isPending || isAnyInProgress}
+                variant="outline"
+                className="border-[#c9a962] text-[#c9a962] hover:bg-[#c9a962]/10"
+                data-testid="button-county-sync"
+              >
+                Sync County
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-gray-500 text-sm">
+            Auto-sync runs daily at 3 AM Pacific. Last sync information shown below.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-[#1a2f25] border-[#2a3f35]">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Clock className="h-5 w-5 text-[#c9a962]" />
+            Sync History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-400">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+              Loading sync logs...
+            </div>
+          ) : syncStatus?.logs && syncStatus.logs.length > 0 ? (
+            <div className="space-y-4">
+              {syncStatus.logs.map((log) => (
+                <div
+                  key={log.id}
+                  className="p-4 bg-[#0d1a14] rounded-lg border border-[#2a3f35]"
+                  data-testid={`sync-log-${log.id}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      {getStatusBadge(log.status)}
+                      <span className="text-white font-medium">
+                        {log.syncType === "full" ? "Full Sync" : `${log.county} County`}
+                      </span>
+                    </div>
+                    <span className="text-gray-500 text-sm">
+                      {log.startedAt ? new Date(log.startedAt).toLocaleString() : "N/A"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Scraped:</span>{" "}
+                      <span className="text-white">{log.homesScraped}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Updated:</span>{" "}
+                      <span className="text-[#c9a962]">{log.homesUpdated}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Created:</span>{" "}
+                      <span className="text-green-400">{log.homesCreated}</span>
+                    </div>
+                  </div>
+                  {log.errors && log.errors.length > 0 && (
+                    <div className="mt-2 p-2 bg-red-900/20 rounded border border-red-800">
+                      <div className="flex items-center gap-2 text-red-400 text-sm">
+                        <AlertCircle className="h-4 w-4" />
+                        {log.errors.length} error(s)
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              No sync logs yet. Start a sync to see the history.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -1137,6 +1397,14 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
               <UserCheck className="h-4 w-4 mr-2" />
               Claims
             </TabsTrigger>
+            <TabsTrigger
+              value="dshs-sync"
+              className="data-[state=active]:bg-[#c9a962] data-[state=active]:text-black"
+              data-testid="tab-dshs-sync"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              DSHS Sync
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -1161,6 +1429,10 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
 
           <TabsContent value="claims">
             <ClaimsTab />
+          </TabsContent>
+
+          <TabsContent value="dshs-sync">
+            <DshsSyncTab />
           </TabsContent>
         </Tabs>
       </main>
