@@ -26,50 +26,17 @@ export default function OwnerLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter your email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Dev bypass: empty email and password allows quick access
-      if (!email.trim() && !password.trim()) {
-        try {
-          const response = await fetch("/api/owners/dev-login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          });
-          if (response.ok) {
-            window.location.href = "/owner/dashboard";
-            return;
-          } else {
-            const data = await response.json();
-            toast({
-              title: "Quick Login Failed",
-              description: data.error || "Could not log in. Please try again.",
-              variant: "destructive",
-            });
-            setIsSubmitting(false);
-            return;
-          }
-        } catch (err) {
-          toast({
-            title: "Connection Error",
-            description: "Could not connect to server. Please try again.",
-            variant: "destructive",
-          });
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      
-      if (!email || !password) {
-        toast({
-          title: "Missing Information",
-          description: "Please enter your email and password.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
       await login(email, password);
       setLocation("/owner/dashboard");
     } catch (error) {
