@@ -384,6 +384,53 @@ export const passwordResetTokensRelations = relations(passwordResetTokens, ({ on
   }),
 }));
 
+// DSHS Sync Logs table - tracks sync operations
+export const dshsSyncLogs = pgTable("dshs_sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  syncType: text("sync_type").notNull(), // full, incremental, single
+  startedAt: timestamp("started_at").notNull(),
+  completedAt: timestamp("completed_at"),
+  status: text("status").notNull().default("running"), // running, success, failed
+  homesChecked: integer("homes_checked").default(0),
+  homesAdded: integer("homes_added").default(0),
+  homesUpdated: integer("homes_updated").default(0),
+  inspectionsAdded: integer("inspections_added").default(0),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDshsSyncLogSchema = createInsertSchema(dshsSyncLogs).omit({ id: true, createdAt: true });
+export type InsertDshsSyncLog = z.infer<typeof insertDshsSyncLogSchema>;
+export type DshsSyncLog = typeof dshsSyncLogs.$inferSelect;
+
+// DSHS Home Sync table - tracks individual home sync status
+export const dshsHomeSync = pgTable("dshs_home_sync", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }),
+  licenseNumber: text("license_number").notNull().unique(),
+  lastSyncedAt: timestamp("last_synced_at"),
+  lastDataHash: text("last_data_hash"),
+  syncStatus: text("sync_status").notNull().default("pending"), // pending, synced, failed
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  licenseIdx: index("dshs_home_sync_license_idx").on(table.licenseNumber),
+  facilityIdx: index("dshs_home_sync_facility_idx").on(table.facilityId),
+}));
+
+export const insertDshsHomeSyncSchema = createInsertSchema(dshsHomeSync).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertDshsHomeSync = z.infer<typeof insertDshsHomeSyncSchema>;
+export type DshsHomeSync = typeof dshsHomeSync.$inferSelect;
+
+// DSHS Home Sync Relations
+export const dshsHomeSyncRelations = relations(dshsHomeSync, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [dshsHomeSync.facilityId],
+    references: [facilities.id],
+  }),
+}));
+
 export const ownerInvitesRelations = relations(ownerInvites, ({ one }) => ({
   facility: one(facilities, {
     fields: [ownerInvites.facilityId],

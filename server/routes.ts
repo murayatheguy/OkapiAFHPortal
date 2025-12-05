@@ -1101,5 +1101,55 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================
+  // DSHS SYNC API
+  // ============================================
+
+  // Get sync status and logs
+  app.get("/api/admin/dshs-sync", async (req, res) => {
+    try {
+      const logs = await storage.getDshsSyncLogs(10);
+      const totalHomes = await storage.getFacilityCount();
+      const syncedHomes = await storage.getSyncedHomesCount();
+
+      res.json({ logs, totalHomes, syncedHomes });
+    } catch (error) {
+      console.error("Error getting DSHS sync status:", error);
+      res.status(500).json({ error: "Failed to get sync status" });
+    }
+  });
+
+  // Trigger manual sync
+  app.post("/api/admin/dshs-sync", async (req, res) => {
+    try {
+      const { type = 'full', county } = req.body;
+      
+      const { getSyncService } = await import('./dshs-sync');
+      const syncService = getSyncService();
+
+      if (type === 'single' && county) {
+        syncService.syncSingleCounty(county).catch(console.error);
+        res.json({ message: 'Single county sync started', county });
+      } else {
+        syncService.fullSync().catch(console.error);
+        res.json({ message: 'Full sync started', type: 'full' });
+      }
+    } catch (error) {
+      console.error("Error starting DSHS sync:", error);
+      res.status(500).json({ error: "Failed to start sync" });
+    }
+  });
+
+  // Get list of Washington counties
+  app.get("/api/admin/dshs-sync/counties", async (req, res) => {
+    try {
+      const { WA_COUNTIES } = await import('./dshs-sync');
+      res.json({ counties: WA_COUNTIES });
+    } catch (error) {
+      console.error("Error getting counties:", error);
+      res.status(500).json({ error: "Failed to get counties" });
+    }
+  });
+
   return httpServer;
 }

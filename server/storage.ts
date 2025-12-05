@@ -10,6 +10,8 @@ import {
   claimRequests,
   passwordResetTokens,
   activityLog,
+  dshsSyncLogs,
+  dshsHomeSync,
   type User, 
   type InsertUser,
   type Facility,
@@ -31,7 +33,8 @@ import {
   type PasswordResetToken,
   type InsertPasswordResetToken,
   type ActivityLog,
-  type InsertActivityLog
+  type InsertActivityLog,
+  type DshsSyncLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
@@ -150,6 +153,11 @@ export interface IStorage {
     claimedFacilities: number;
     unclaimedFacilities: number;
   }>;
+
+  // DSHS Sync
+  getDshsSyncLogs(limit?: number): Promise<DshsSyncLog[]>;
+  getFacilityCount(): Promise<number>;
+  getSyncedHomesCount(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -669,6 +677,30 @@ export class DatabaseStorage implements IStorage {
       claimedFacilities: claimedFacilitiesResult?.count || 0,
       unclaimedFacilities: unclaimedFacilitiesResult?.count || 0,
     };
+  }
+
+  // DSHS Sync Methods
+  async getDshsSyncLogs(limit: number = 10): Promise<DshsSyncLog[]> {
+    return await db
+      .select()
+      .from(dshsSyncLogs)
+      .orderBy(desc(dshsSyncLogs.createdAt))
+      .limit(limit);
+  }
+
+  async getFacilityCount(): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(facilities);
+    return result?.count || 0;
+  }
+
+  async getSyncedHomesCount(): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(dshsHomeSync)
+      .where(eq(dshsHomeSync.syncStatus, 'synced'));
+    return result?.count || 0;
   }
 }
 
