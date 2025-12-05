@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import {
   Building2, Users, MessageSquare, Star, LayoutDashboard, LogOut,
   CheckCircle, XCircle, Mail, Phone, MapPin, Calendar,
-  Home, TrendingUp, Shield, Search, Trash2, ExternalLink
+  Home, TrendingUp, Shield, Search, Trash2, ExternalLink, UserCheck, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Facility, Inquiry, Review, Owner } from "@shared/schema";
+import type { Facility, Inquiry, Review, Owner, ClaimRequest } from "@shared/schema";
+import { Textarea } from "@/components/ui/textarea";
 
 interface AdminData {
   id: string;
@@ -547,6 +548,236 @@ function InquiriesTab() {
   );
 }
 
+interface ClaimWithFacility extends ClaimRequest {
+  facility?: Facility;
+}
+
+function ClaimsTab() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [selectedClaim, setSelectedClaim] = useState<ClaimWithFacility | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  const { data: allClaims = [], isLoading } = useQuery<ClaimRequest[]>({
+    queryKey: ["/api/claims"],
+  });
+
+  const { data: pendingClaims = [] } = useQuery<ClaimWithFacility[]>({
+    queryKey: ["/api/claims/pending"],
+  });
+
+  const { data: facilities = [] } = useQuery<Facility[]>({
+    queryKey: ["/api/facilities"],
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (claimId: string) => {
+      const adminData = JSON.parse(localStorage.getItem("adminData") || "{}");
+      const res = await apiRequest("POST", `/api/claims/${claimId}/approve`, { 
+        adminId: adminData.id 
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/claims/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({ title: "Claim approved", description: "Owner account created/linked successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ claimId, reason }: { claimId: string; reason: string }) => {
+      const adminData = JSON.parse(localStorage.getItem("adminData") || "{}");
+      const res = await apiRequest("POST", `/api/claims/${claimId}/reject`, { 
+        adminId: adminData.id,
+        rejectionReason: reason
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/claims/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/facilities"] });
+      setShowRejectDialog(false);
+      setSelectedClaim(null);
+      setRejectionReason("");
+      toast({ title: "Claim rejected" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const getFacilityName = (facilityId: string) => {
+    const facility = facilities.find((f) => f.id === facilityId);
+    return facility?.name || "Unknown Facility";
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge className="bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30">Pending</Badge>;
+      case "verified":
+        return <Badge className="bg-blue-600/20 text-blue-400 hover:bg-blue-600/30">Verified</Badge>;
+      case "approved":
+        return <Badge className="bg-green-600/20 text-green-400 hover:bg-green-600/30">Approved</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-600/20 text-red-400 hover:bg-red-600/30">Rejected</Badge>;
+      default:
+        return <Badge className="bg-gray-600/20 text-gray-400">{status}</Badge>;
+    }
+  };
+
+  const displayClaims = statusFilter === "all" ? allClaims : 
+    allClaims.filter(c => c.status === statusFilter);
+
+  if (isLoading) {
+    return <div className="text-gray-400">Loading claims...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <p className="text-gray-400">{pendingClaims.length} pending claims</p>
+          <Badge className="bg-[#c9a962]/20 text-[#c9a962]">{allClaims.length} total</Badge>
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[150px] bg-[#0d1a14] border-[#2a3f35] text-white" data-testid="select-claim-status-filter">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a2f25] border-[#2a3f35]">
+            <SelectItem value="all" className="text-white">All Claims</SelectItem>
+            <SelectItem value="pending" className="text-white">Pending Review</SelectItem>
+            <SelectItem value="verified" className="text-white">Verified</SelectItem>
+            <SelectItem value="approved" className="text-white">Approved</SelectItem>
+            <SelectItem value="rejected" className="text-white">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3">
+        {displayClaims.map((claim) => (
+          <Card key={claim.id} className="bg-[#1a2f25] border-[#2a3f35]" data-testid={`card-claim-${claim.id}`}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-medium text-white">{claim.requesterName}</h3>
+                    {getStatusBadge(claim.status)}
+                  </div>
+                  <p className="text-[#c9a962] text-sm mb-2">
+                    Claiming: {getFacilityName(claim.facilityId)}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      {claim.requesterEmail}
+                    </span>
+                    {claim.requesterPhone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        {claim.requesterPhone}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
+                  {claim.relationship && (
+                    <p className="text-gray-400 text-sm mt-2">Role: {claim.relationship}</p>
+                  )}
+                  {claim.rejectionReason && (
+                    <p className="text-red-400 text-sm mt-2">Rejected: {claim.rejectionReason}</p>
+                  )}
+                </div>
+                {(claim.status === "pending" || claim.status === "verified") && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                      onClick={() => approveMutation.mutate(claim.id)}
+                      disabled={approveMutation.isPending}
+                      data-testid={`button-approve-claim-${claim.id}`}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                      onClick={() => {
+                        setSelectedClaim(claim);
+                        setShowRejectDialog(true);
+                      }}
+                      data-testid={`button-reject-claim-${claim.id}`}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {displayClaims.length === 0 && (
+        <div className="text-center py-12 text-gray-400">
+          No claims found.
+        </div>
+      )}
+
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent className="bg-[#1a2f25] border-[#2a3f35]">
+          <DialogHeader>
+            <DialogTitle className="text-white">Reject Claim</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Please provide a reason for rejecting this ownership claim.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-gray-300">Rejection Reason</Label>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter reason for rejection..."
+                className="bg-[#0d1a14] border-[#2a3f35] text-white"
+                data-testid="input-rejection-reason"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowRejectDialog(false)} className="text-gray-400">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => selectedClaim && rejectMutation.mutate({ claimId: selectedClaim.id, reason: rejectionReason })}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={!rejectionReason || rejectMutation.isPending}
+              data-testid="button-confirm-reject"
+            >
+              Reject Claim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function ReviewsTab() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -781,6 +1012,14 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
               <Star className="h-4 w-4 mr-2" />
               Reviews
             </TabsTrigger>
+            <TabsTrigger
+              value="claims"
+              className="data-[state=active]:bg-[#c9a962] data-[state=active]:text-black"
+              data-testid="tab-claims"
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Claims
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -801,6 +1040,10 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
 
           <TabsContent value="reviews">
             <ReviewsTab />
+          </TabsContent>
+
+          <TabsContent value="claims">
+            <ClaimsTab />
           </TabsContent>
         </Tabs>
       </main>

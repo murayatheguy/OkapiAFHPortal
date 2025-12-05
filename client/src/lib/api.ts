@@ -1,4 +1,4 @@
-import type { Facility, TeamMember, Credential, Inquiry } from "@shared/schema";
+import type { Facility, TeamMember, Credential, Inquiry, ClaimRequest, Owner } from "@shared/schema";
 
 const API_BASE = "/api";
 
@@ -180,5 +180,84 @@ export async function updateInquiry(
     body: JSON.stringify(data),
   });
   if (!response.ok) throw new Error("Failed to update inquiry");
+  return response.json();
+}
+
+// Claims API
+export async function submitClaimRequest(data: {
+  facilityId: string;
+  requesterEmail: string;
+  requesterName: string;
+  requesterPhone?: string;
+  relationship?: string;
+}): Promise<{ claim: Partial<ClaimRequest>; message: string }> {
+  const response = await fetch(`${API_BASE}/claims`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to submit claim request");
+  }
+  return response.json();
+}
+
+export async function verifyClaimRequest(
+  claimId: string,
+  verificationCode: string
+): Promise<{ claim: ClaimRequest; message: string }> {
+  const response = await fetch(`${API_BASE}/claims/${claimId}/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ verificationCode }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to verify claim");
+  }
+  return response.json();
+}
+
+export async function getClaimsByFacility(facilityId: string): Promise<ClaimRequest[]> {
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/claims`);
+  if (!response.ok) throw new Error("Failed to fetch claims");
+  return response.json();
+}
+
+// Owner API
+export async function loginOwner(email: string, password: string): Promise<{ owner: Owner }> {
+  const response = await fetch(`${API_BASE}/owners/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Login failed");
+  }
+  return response.json();
+}
+
+export async function setupOwnerAccount(data: {
+  email: string;
+  password: string;
+  token?: string;
+}): Promise<{ owner: Owner; message: string }> {
+  const response = await fetch(`${API_BASE}/owners/setup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Account setup failed");
+  }
+  return response.json();
+}
+
+export async function getOwnerFacilities(ownerId: string): Promise<Facility[]> {
+  const response = await fetch(`${API_BASE}/owners/${ownerId}/facilities`);
+  if (!response.ok) throw new Error("Failed to fetch owner facilities");
   return response.json();
 }

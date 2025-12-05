@@ -7,6 +7,9 @@ import {
   admins,
   reviews,
   owners,
+  claimRequests,
+  passwordResetTokens,
+  activityLog,
   type User, 
   type InsertUser,
   type Facility,
@@ -22,10 +25,16 @@ import {
   type Review,
   type InsertReview,
   type Owner,
-  type InsertOwner
+  type InsertOwner,
+  type ClaimRequest,
+  type InsertClaimRequest,
+  type PasswordResetToken,
+  type InsertPasswordResetToken,
+  type ActivityLog,
+  type InsertActivityLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, sql, inArray, desc, count, gte } from "drizzle-orm";
+import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -46,7 +55,7 @@ export interface IStorage {
   }): Promise<Facility[]>;
   getAllFacilities(): Promise<Facility[]>;
   createFacility(facility: InsertFacility): Promise<Facility>;
-  updateFacility(id: string, facility: Partial<InsertFacility>): Promise<Facility | undefined>;
+  updateFacility(id: string, facility: Partial<InsertFacility> & { claimedAt?: Date | null }): Promise<Facility | undefined>;
 
   // Team Members
   getTeamMember(id: string): Promise<TeamMember | undefined>;
@@ -95,7 +104,7 @@ export interface IStorage {
   getOwnerByEmail(email: string): Promise<Owner | undefined>;
   getAllOwners(): Promise<Owner[]>;
   createOwner(owner: InsertOwner): Promise<Owner>;
-  updateOwner(id: string, owner: Partial<InsertOwner>): Promise<Owner | undefined>;
+  updateOwner(id: string, owner: Partial<InsertOwner> & { lastLoginAt?: Date }): Promise<Owner | undefined>;
 
   // Stats for Admin Dashboard
   getStats(): Promise<{
@@ -108,6 +117,38 @@ export interface IStorage {
 
   // All inquiries for admin
   getAllInquiries(): Promise<Inquiry[]>;
+
+  // Claim Requests
+  getClaimRequest(id: string): Promise<ClaimRequest | undefined>;
+  getClaimRequestsByFacility(facilityId: string): Promise<ClaimRequest[]>;
+  getClaimRequestsByOwner(ownerId: string): Promise<ClaimRequest[]>;
+  getClaimRequestsByStatus(status: string): Promise<ClaimRequest[]>;
+  getPendingClaimRequests(): Promise<(ClaimRequest & { facility?: Facility })[]>;
+  getAllClaimRequests(): Promise<ClaimRequest[]>;
+  createClaimRequest(claimRequest: InsertClaimRequest): Promise<ClaimRequest>;
+  updateClaimRequest(id: string, data: Partial<InsertClaimRequest> & { reviewedAt?: Date }): Promise<ClaimRequest | undefined>;
+
+  // Password Reset Tokens
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenUsed(id: string): Promise<void>;
+  deleteExpiredPasswordResetTokens(): Promise<void>;
+
+  // Activity Log
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  getActivityLogByEntity(entityType: string, entityId: string): Promise<ActivityLog[]>;
+  getRecentActivityLog(limit?: number): Promise<ActivityLog[]>;
+
+  // Facilities by Owner
+  getFacilitiesByOwner(ownerId: string): Promise<Facility[]>;
+
+  // Extended Stats
+  getClaimStats(): Promise<{
+    pendingClaims: number;
+    approvedClaims: number;
+    claimedFacilities: number;
+    unclaimedFacilities: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -198,7 +239,7 @@ export class DatabaseStorage implements IStorage {
     return facility;
   }
 
-  async updateFacility(id: string, updateData: Partial<InsertFacility>): Promise<Facility | undefined> {
+  async updateFacility(id: string, updateData: Partial<InsertFacility> & { claimedAt?: Date | null }): Promise<Facility | undefined> {
     const [facility] = await db
       .update(facilities)
       .set(updateData)
@@ -417,7 +458,7 @@ export class DatabaseStorage implements IStorage {
     return owner;
   }
 
-  async updateOwner(id: string, updateData: Partial<InsertOwner>): Promise<Owner | undefined> {
+  async updateOwner(id: string, updateData: Partial<InsertOwner> & { lastLoginAt?: Date }): Promise<Owner | undefined> {
     const [owner] = await db
       .update(owners)
       .set({ ...updateData, updatedAt: new Date() })
@@ -452,6 +493,173 @@ export class DatabaseStorage implements IStorage {
   // All inquiries for admin
   async getAllInquiries(): Promise<Inquiry[]> {
     return await db.select().from(inquiries).orderBy(desc(inquiries.createdAt));
+  }
+
+  // Claim Requests
+  async getClaimRequest(id: string): Promise<ClaimRequest | undefined> {
+    const [claim] = await db.select().from(claimRequests).where(eq(claimRequests.id, id));
+    return claim || undefined;
+  }
+
+  async getClaimRequestsByFacility(facilityId: string): Promise<ClaimRequest[]> {
+    return await db
+      .select()
+      .from(claimRequests)
+      .where(eq(claimRequests.facilityId, facilityId))
+      .orderBy(desc(claimRequests.createdAt));
+  }
+
+  async getClaimRequestsByOwner(ownerId: string): Promise<ClaimRequest[]> {
+    return await db
+      .select()
+      .from(claimRequests)
+      .where(eq(claimRequests.ownerId, ownerId))
+      .orderBy(desc(claimRequests.createdAt));
+  }
+
+  async getClaimRequestsByStatus(status: string): Promise<ClaimRequest[]> {
+    return await db
+      .select()
+      .from(claimRequests)
+      .where(eq(claimRequests.status, status))
+      .orderBy(desc(claimRequests.createdAt));
+  }
+
+  async getPendingClaimRequests(): Promise<(ClaimRequest & { facility?: Facility })[]> {
+    const claims = await db
+      .select()
+      .from(claimRequests)
+      .where(or(
+        eq(claimRequests.status, "pending"),
+        eq(claimRequests.status, "verified")
+      ))
+      .orderBy(desc(claimRequests.createdAt));
+
+    const claimsWithFacilities = await Promise.all(
+      claims.map(async (claim) => {
+        const facility = await this.getFacility(claim.facilityId);
+        return { ...claim, facility };
+      })
+    );
+
+    return claimsWithFacilities;
+  }
+
+  async getAllClaimRequests(): Promise<ClaimRequest[]> {
+    return await db.select().from(claimRequests).orderBy(desc(claimRequests.createdAt));
+  }
+
+  async createClaimRequest(insertClaim: InsertClaimRequest): Promise<ClaimRequest> {
+    const [claim] = await db.insert(claimRequests).values(insertClaim).returning();
+    return claim;
+  }
+
+  async updateClaimRequest(id: string, updateData: Partial<InsertClaimRequest> & { reviewedAt?: Date }): Promise<ClaimRequest | undefined> {
+    const [claim] = await db
+      .update(claimRequests)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(claimRequests.id, id))
+      .returning();
+    return claim || undefined;
+  }
+
+  // Password Reset Tokens
+  async createPasswordResetToken(insertToken: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [token] = await db.insert(passwordResetTokens).values(insertToken).returning();
+    return token;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return resetToken || undefined;
+  }
+
+  async markPasswordResetTokenUsed(id: string): Promise<void> {
+    await db
+      .update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.id, id));
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    await db
+      .delete(passwordResetTokens)
+      .where(lt(passwordResetTokens.expiresAt, new Date()));
+  }
+
+  // Activity Log
+  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
+    const [log] = await db.insert(activityLog).values(insertLog).returning();
+    return log;
+  }
+
+  async getActivityLogByEntity(entityType: string, entityId: string): Promise<ActivityLog[]> {
+    return await db
+      .select()
+      .from(activityLog)
+      .where(and(
+        eq(activityLog.entityType, entityType),
+        eq(activityLog.entityId, entityId)
+      ))
+      .orderBy(desc(activityLog.createdAt));
+  }
+
+  async getRecentActivityLog(limit: number = 50): Promise<ActivityLog[]> {
+    return await db
+      .select()
+      .from(activityLog)
+      .orderBy(desc(activityLog.createdAt))
+      .limit(limit);
+  }
+
+  // Facilities by Owner
+  async getFacilitiesByOwner(ownerId: string): Promise<Facility[]> {
+    return await db
+      .select()
+      .from(facilities)
+      .where(eq(facilities.ownerId, ownerId))
+      .orderBy(facilities.name);
+  }
+
+  // Extended Stats for Claims
+  async getClaimStats(): Promise<{
+    pendingClaims: number;
+    approvedClaims: number;
+    claimedFacilities: number;
+    unclaimedFacilities: number;
+  }> {
+    const [pendingClaimsResult] = await db
+      .select({ count: count() })
+      .from(claimRequests)
+      .where(or(
+        eq(claimRequests.status, "pending"),
+        eq(claimRequests.status, "verified")
+      ));
+    
+    const [approvedClaimsResult] = await db
+      .select({ count: count() })
+      .from(claimRequests)
+      .where(eq(claimRequests.status, "approved"));
+    
+    const [claimedFacilitiesResult] = await db
+      .select({ count: count() })
+      .from(facilities)
+      .where(eq(facilities.claimStatus, "claimed"));
+    
+    const [unclaimedFacilitiesResult] = await db
+      .select({ count: count() })
+      .from(facilities)
+      .where(eq(facilities.claimStatus, "unclaimed"));
+
+    return {
+      pendingClaims: pendingClaimsResult?.count || 0,
+      approvedClaims: approvedClaimsResult?.count || 0,
+      claimedFacilities: claimedFacilitiesResult?.count || 0,
+      unclaimedFacilities: unclaimedFacilitiesResult?.count || 0,
+    };
   }
 }
 

@@ -22,7 +22,7 @@ import {
 import { 
   MapPin, Phone, MessageSquare, Calendar, CheckCircle2, ShieldCheck, 
   AlertTriangle, Clock, Users, Banknote, ArrowLeft, ArrowRight, Check,
-  Building2, Star, Loader2, ChevronDown, ChevronUp, ExternalLink
+  Building2, Star, Loader2, ChevronDown, ChevronUp, ExternalLink, UserCheck, HelpCircle
 } from "lucide-react";
 import { 
   Carousel,
@@ -38,6 +38,7 @@ export default function FacilityDetails() {
   const [match, params] = useRoute("/facility/:id");
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showTourModal, setShowTourModal] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
   const [expandedInspections, setExpandedInspections] = useState(false);
 
   const { data, isLoading, error } = useQuery({
@@ -153,6 +154,27 @@ export default function FacilityDetails() {
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                   DSHS Verified
                 </Badge>
+                {facility.claimStatus === "claimed" ? (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1.5">
+                    <UserCheck className="h-3.5 w-3.5 mr-1.5" />
+                    Owner Verified
+                  </Badge>
+                ) : facility.claimStatus === "pending" ? (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5">
+                    <Clock className="h-3.5 w-3.5 mr-1.5" />
+                    Claim Pending
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant="outline" 
+                    className="bg-amber-50 text-amber-700 border-amber-200 px-3 py-1.5 cursor-pointer hover:bg-amber-100 transition-colors"
+                    onClick={() => setShowClaimModal(true)}
+                    data-testid="badge-claim-home"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5 mr-1.5" />
+                    Own This Home?
+                  </Badge>
+                )}
                 {hasOkapiCertifiedStaff && (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1.5">
                     <Star className="h-3.5 w-3.5 mr-1.5 fill-blue-500" />
@@ -722,6 +744,88 @@ export default function FacilityDetails() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTourModal(false)}>Cancel</Button>
             <Button onClick={() => setShowTourModal(false)}>Request Tour</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CLAIM HOME MODAL */}
+      <Dialog open={showClaimModal} onOpenChange={setShowClaimModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Claim Your Home
+            </DialogTitle>
+            <DialogDescription>
+              Are you the owner or operator of {facility.name}? Claim this listing to manage your facility profile, respond to inquiries, and build trust with families.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+              <h4 className="font-semibold text-sm mb-2">Benefits of Claiming</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Display "Owner Verified" badge to build trust</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Manage your facility profile, photos, and description</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Receive and respond to family inquiries directly</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Respond to reviews and manage your reputation</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <span>Access Okapi Academy for staff training</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="claim-name">Your Name *</Label>
+                <Input id="claim-name" placeholder="John Smith" data-testid="input-claim-name" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="claim-email">Email Address *</Label>
+                <Input id="claim-email" type="email" placeholder="owner@example.com" data-testid="input-claim-email" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="claim-phone">Phone Number</Label>
+                <Input id="claim-phone" type="tel" placeholder="(555) 123-4567" data-testid="input-claim-phone" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="claim-relationship">Your Relationship to This Home *</Label>
+                <Select>
+                  <SelectTrigger id="claim-relationship" data-testid="select-claim-relationship">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="owner">Owner</SelectItem>
+                    <SelectItem value="operator">Operator/Manager</SelectItem>
+                    <SelectItem value="authorized_rep">Authorized Representative</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              By submitting, you confirm that you are authorized to manage this listing. We will verify your ownership before granting access.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowClaimModal(false)}>Cancel</Button>
+            <Button onClick={() => setShowClaimModal(false)} data-testid="button-submit-claim">
+              Submit Claim Request
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema } from "@shared/schema";
+import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, insertInquirySchema, insertReviewSchema, insertOwnerSchema, insertClaimRequestSchema, insertActivityLogSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -489,16 +490,22 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      if (!owner.password) {
-        return res.status(401).json({ error: "Password not set. Please contact support." });
+      if (!owner.passwordHash) {
+        return res.status(401).json({ error: "Password not set. Please complete account setup first." });
       }
 
-      const isValid = await bcrypt.compare(password, owner.password);
+      if (owner.status !== "active") {
+        return res.status(401).json({ error: "Account is not active. Please verify your email or contact support." });
+      }
+
+      const isValid = await bcrypt.compare(password, owner.passwordHash);
       if (!isValid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      const { password: _, ...ownerData } = owner;
+      await storage.updateOwner(owner.id, { lastLoginAt: new Date() });
+
+      const { passwordHash: _, ...ownerData } = owner;
       res.json({ owner: ownerData });
     } catch (error) {
       console.error("Error during owner login:", error);
@@ -522,8 +529,8 @@ export async function registerRoutes(
       }
 
       let ownerData = { ...result.data };
-      if (ownerData.password) {
-        ownerData.password = await bcrypt.hash(ownerData.password, 10);
+      if (ownerData.passwordHash) {
+        ownerData.passwordHash = await bcrypt.hash(ownerData.passwordHash, 10);
       }
       
       const owner = await storage.createOwner(ownerData);
@@ -538,8 +545,8 @@ export async function registerRoutes(
   app.patch("/api/owners/:id", async (req, res) => {
     try {
       let updateData = { ...req.body };
-      if (updateData.password) {
-        updateData.password = await bcrypt.hash(updateData.password, 10);
+      if (updateData.passwordHash) {
+        updateData.passwordHash = await bcrypt.hash(updateData.passwordHash, 10);
       }
 
       const owner = await storage.updateOwner(req.params.id, updateData);
@@ -550,6 +557,425 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating owner:", error);
       res.status(500).json({ error: "Failed to update owner" });
+    }
+  });
+
+  // Get owner's facilities
+  app.get("/api/owners/:ownerId/facilities", async (req, res) => {
+    try {
+      const facilitiesList = await storage.getFacilitiesByOwner(req.params.ownerId);
+      res.json(facilitiesList);
+    } catch (error) {
+      console.error("Error getting owner facilities:", error);
+      res.status(500).json({ error: "Failed to get owner facilities" });
+    }
+  });
+
+  // ============================================
+  // CLAIM REQUESTS API
+  // ============================================
+
+  // Get all claim requests (admin)
+  app.get("/api/claims", async (req, res) => {
+    try {
+      const status = req.query.status as string;
+      const claims = status 
+        ? await storage.getClaimRequestsByStatus(status)
+        : await storage.getAllClaimRequests();
+      res.json(claims);
+    } catch (error) {
+      console.error("Error getting claims:", error);
+      res.status(500).json({ error: "Failed to get claims" });
+    }
+  });
+
+  // Get pending claim requests with facility info (admin)
+  app.get("/api/claims/pending", async (req, res) => {
+    try {
+      const pendingClaims = await storage.getPendingClaimRequests();
+      res.json(pendingClaims);
+    } catch (error) {
+      console.error("Error getting pending claims:", error);
+      res.status(500).json({ error: "Failed to get pending claims" });
+    }
+  });
+
+  // Get claim stats (admin)
+  app.get("/api/claims/stats", async (req, res) => {
+    try {
+      const stats = await storage.getClaimStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting claim stats:", error);
+      res.status(500).json({ error: "Failed to get claim stats" });
+    }
+  });
+
+  // Get single claim request
+  app.get("/api/claims/:id", async (req, res) => {
+    try {
+      const claim = await storage.getClaimRequest(req.params.id);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim request not found" });
+      }
+      
+      const facility = await storage.getFacility(claim.facilityId);
+      res.json({ ...claim, facility });
+    } catch (error) {
+      console.error("Error getting claim:", error);
+      res.status(500).json({ error: "Failed to get claim" });
+    }
+  });
+
+  // Get claims for a specific facility
+  app.get("/api/facilities/:facilityId/claims", async (req, res) => {
+    try {
+      const claims = await storage.getClaimRequestsByFacility(req.params.facilityId);
+      res.json(claims);
+    } catch (error) {
+      console.error("Error getting facility claims:", error);
+      res.status(500).json({ error: "Failed to get facility claims" });
+    }
+  });
+
+  // Create claim request (public - for owners claiming facilities)
+  app.post("/api/claims", async (req, res) => {
+    try {
+      const result = insertClaimRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          error: fromZodError(result.error).message 
+        });
+      }
+
+      const facilityId = result.data.facilityId;
+      const facility = await storage.getFacility(facilityId);
+      if (!facility) {
+        return res.status(404).json({ error: "Facility not found" });
+      }
+
+      if (facility.claimStatus === "claimed") {
+        return res.status(400).json({ error: "This facility has already been claimed" });
+      }
+
+      const existingClaims = await storage.getClaimRequestsByFacility(facilityId);
+      const pendingClaim = existingClaims.find(c => c.status === "pending" || c.status === "verified");
+      if (pendingClaim) {
+        return res.status(400).json({ error: "A claim request is already pending for this facility" });
+      }
+
+      const verificationCode = crypto.randomBytes(3).toString("hex").toUpperCase();
+      const verificationCodeExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      const claimData = {
+        ...result.data,
+        verificationCode,
+        verificationCodeExpiresAt,
+        status: "pending",
+      };
+
+      const claim = await storage.createClaimRequest(claimData);
+
+      await storage.updateFacility(facilityId, { claimStatus: "pending" });
+
+      await storage.createActivityLog({
+        entityType: "home",
+        entityId: facilityId,
+        action: "claim_submitted",
+        performedByType: "owner",
+        details: { 
+          claimId: claim.id, 
+          requesterEmail: claim.requesterEmail,
+          requesterName: claim.requesterName
+        },
+      });
+
+      res.status(201).json({ 
+        claim: { 
+          id: claim.id, 
+          status: claim.status,
+          createdAt: claim.createdAt
+        },
+        message: "Claim request submitted successfully. You will receive a verification email shortly."
+      });
+    } catch (error) {
+      console.error("Error creating claim:", error);
+      res.status(500).json({ error: "Failed to submit claim request" });
+    }
+  });
+
+  // Verify claim (owner verifies with code)
+  app.post("/api/claims/:id/verify", async (req, res) => {
+    try {
+      const { verificationCode } = req.body;
+      
+      if (!verificationCode) {
+        return res.status(400).json({ error: "Verification code is required" });
+      }
+
+      const claim = await storage.getClaimRequest(req.params.id);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim request not found" });
+      }
+
+      if (claim.status !== "pending") {
+        return res.status(400).json({ error: "Claim is not pending verification" });
+      }
+
+      if (claim.verificationAttempts && claim.verificationAttempts >= 5) {
+        return res.status(400).json({ error: "Maximum verification attempts exceeded. Please submit a new claim." });
+      }
+
+      if (claim.verificationCodeExpiresAt && new Date(claim.verificationCodeExpiresAt) < new Date()) {
+        return res.status(400).json({ error: "Verification code has expired. Please submit a new claim." });
+      }
+
+      if (claim.verificationCode !== verificationCode.toUpperCase()) {
+        await storage.updateClaimRequest(claim.id, {
+          verificationAttempts: (claim.verificationAttempts || 0) + 1
+        });
+        return res.status(400).json({ error: "Invalid verification code" });
+      }
+
+      const updatedClaim = await storage.updateClaimRequest(claim.id, {
+        status: "verified",
+      });
+
+      await storage.createActivityLog({
+        entityType: "home",
+        entityId: claim.facilityId,
+        action: "claim_verified",
+        performedByType: "owner",
+        details: { claimId: claim.id },
+      });
+
+      res.json({ 
+        claim: updatedClaim,
+        message: "Verification successful. Your claim is now pending admin approval."
+      });
+    } catch (error) {
+      console.error("Error verifying claim:", error);
+      res.status(500).json({ error: "Failed to verify claim" });
+    }
+  });
+
+  // Approve claim (admin)
+  app.post("/api/claims/:id/approve", async (req, res) => {
+    try {
+      const { adminId, adminNotes } = req.body;
+      
+      const claim = await storage.getClaimRequest(req.params.id);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim request not found" });
+      }
+
+      if (claim.status !== "pending" && claim.status !== "verified") {
+        return res.status(400).json({ error: "Claim cannot be approved in its current status" });
+      }
+
+      let owner = await storage.getOwnerByEmail(claim.requesterEmail);
+      if (!owner) {
+        owner = await storage.createOwner({
+          email: claim.requesterEmail,
+          name: claim.requesterName,
+          phone: claim.requesterPhone,
+          status: "pending_verification",
+        });
+      }
+
+      const updatedClaim = await storage.updateClaimRequest(claim.id, {
+        status: "approved",
+        ownerId: owner.id,
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes,
+      });
+
+      await storage.updateFacility(claim.facilityId, {
+        claimStatus: "claimed",
+        ownerId: owner.id,
+        claimedAt: new Date(),
+      });
+
+      await storage.createActivityLog({
+        entityType: "home",
+        entityId: claim.facilityId,
+        action: "ownership_claimed",
+        performedByType: "admin",
+        performedById: adminId,
+        details: { 
+          claimId: claim.id,
+          ownerId: owner.id,
+          ownerEmail: owner.email
+        },
+      });
+
+      res.json({ 
+        claim: updatedClaim,
+        owner,
+        message: "Claim approved successfully. Owner account created/linked."
+      });
+    } catch (error) {
+      console.error("Error approving claim:", error);
+      res.status(500).json({ error: "Failed to approve claim" });
+    }
+  });
+
+  // Reject claim (admin)
+  app.post("/api/claims/:id/reject", async (req, res) => {
+    try {
+      const { adminId, rejectionReason, adminNotes } = req.body;
+      
+      if (!rejectionReason) {
+        return res.status(400).json({ error: "Rejection reason is required" });
+      }
+
+      const claim = await storage.getClaimRequest(req.params.id);
+      if (!claim) {
+        return res.status(404).json({ error: "Claim request not found" });
+      }
+
+      if (claim.status !== "pending" && claim.status !== "verified") {
+        return res.status(400).json({ error: "Claim cannot be rejected in its current status" });
+      }
+
+      const updatedClaim = await storage.updateClaimRequest(claim.id, {
+        status: "rejected",
+        rejectionReason,
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes,
+      });
+
+      await storage.updateFacility(claim.facilityId, {
+        claimStatus: "unclaimed",
+      });
+
+      await storage.createActivityLog({
+        entityType: "home",
+        entityId: claim.facilityId,
+        action: "claim_rejected",
+        performedByType: "admin",
+        performedById: adminId,
+        details: { 
+          claimId: claim.id,
+          rejectionReason
+        },
+      });
+
+      res.json({ 
+        claim: updatedClaim,
+        message: "Claim rejected."
+      });
+    } catch (error) {
+      console.error("Error rejecting claim:", error);
+      res.status(500).json({ error: "Failed to reject claim" });
+    }
+  });
+
+  // Revoke ownership (admin)
+  app.post("/api/facilities/:id/revoke-ownership", async (req, res) => {
+    try {
+      const { adminId, reason } = req.body;
+      
+      const facility = await storage.getFacility(req.params.id);
+      if (!facility) {
+        return res.status(404).json({ error: "Facility not found" });
+      }
+
+      if (facility.claimStatus !== "claimed" || !facility.ownerId) {
+        return res.status(400).json({ error: "Facility is not currently claimed" });
+      }
+
+      const previousOwnerId = facility.ownerId;
+
+      await storage.updateFacility(req.params.id, {
+        claimStatus: "unclaimed",
+        ownerId: null,
+        claimedAt: null,
+      });
+
+      await storage.createActivityLog({
+        entityType: "home",
+        entityId: req.params.id,
+        action: "ownership_revoked",
+        performedByType: "admin",
+        performedById: adminId,
+        details: { 
+          previousOwnerId,
+          reason
+        },
+      });
+
+      res.json({ message: "Ownership revoked successfully" });
+    } catch (error) {
+      console.error("Error revoking ownership:", error);
+      res.status(500).json({ error: "Failed to revoke ownership" });
+    }
+  });
+
+  // Owner account setup (set password)
+  app.post("/api/owners/setup", async (req, res) => {
+    try {
+      const { email, password, token } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      const owner = await storage.getOwnerByEmail(email);
+      if (!owner) {
+        return res.status(404).json({ error: "Owner not found" });
+      }
+
+      if (owner.passwordHash) {
+        return res.status(400).json({ error: "Account already set up. Please use login." });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      
+      const updatedOwner = await storage.updateOwner(owner.id, {
+        passwordHash,
+        status: "active",
+        emailVerified: true,
+      });
+
+      const { passwordHash: _, ...ownerData } = updatedOwner!;
+      res.json({ owner: ownerData, message: "Account setup complete. You can now log in." });
+    } catch (error) {
+      console.error("Error setting up owner account:", error);
+      res.status(500).json({ error: "Failed to set up account" });
+    }
+  });
+
+  // ============================================
+  // ACTIVITY LOG API
+  // ============================================
+
+  // Get activity log for an entity
+  app.get("/api/activity-log/:entityType/:entityId", async (req, res) => {
+    try {
+      const logs = await storage.getActivityLogByEntity(req.params.entityType, req.params.entityId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error getting activity log:", error);
+      res.status(500).json({ error: "Failed to get activity log" });
+    }
+  });
+
+  // Get recent activity log (admin)
+  app.get("/api/admin/activity-log", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : 50;
+      const logs = await storage.getRecentActivityLog(limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error getting recent activity log:", error);
+      res.status(500).json({ error: "Failed to get activity log" });
     }
   });
 
