@@ -123,6 +123,7 @@ export interface IStorage {
   getClaimRequestsByFacility(facilityId: string): Promise<ClaimRequest[]>;
   getClaimRequestsByOwner(ownerId: string): Promise<ClaimRequest[]>;
   getClaimRequestsByStatus(status: string): Promise<ClaimRequest[]>;
+  getClaimRequestsByEmail(email: string): Promise<ClaimRequest[]>;
   getPendingClaimRequests(): Promise<(ClaimRequest & { facility?: Facility })[]>;
   getAllClaimRequests(): Promise<ClaimRequest[]>;
   createClaimRequest(claimRequest: InsertClaimRequest): Promise<ClaimRequest>;
@@ -522,6 +523,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(claimRequests)
       .where(eq(claimRequests.status, status))
+      .orderBy(desc(claimRequests.createdAt));
+  }
+
+  async getClaimRequestsByEmail(email: string): Promise<ClaimRequest[]> {
+    return await db
+      .select()
+      .from(claimRequests)
+      .where(eq(claimRequests.requesterEmail, email))
       .orderBy(desc(claimRequests.createdAt));
   }
 

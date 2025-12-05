@@ -506,11 +506,79 @@ export async function registerRoutes(
       await storage.updateOwner(owner.id, { lastLoginAt: new Date() });
 
       const { passwordHash: _, ...ownerData } = owner;
+      
+      (req.session as any).ownerId = owner.id;
+      
       res.json({ owner: ownerData });
     } catch (error) {
       console.error("Error during owner login:", error);
       res.status(500).json({ error: "Login failed" });
     }
+  });
+
+  // Get current owner (me)
+  app.get("/api/owners/me", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const owner = await storage.getOwner(ownerId);
+      if (!owner) {
+        (req.session as any).ownerId = null;
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { passwordHash: _, ...ownerData } = owner;
+      res.json(ownerData);
+    } catch (error) {
+      console.error("Error getting current owner:", error);
+      res.status(500).json({ error: "Failed to get owner data" });
+    }
+  });
+
+  // Get current owner's facilities
+  app.get("/api/owners/me/facilities", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const facilitiesList = await storage.getFacilitiesByOwner(ownerId);
+      res.json(facilitiesList);
+    } catch (error) {
+      console.error("Error getting owner facilities:", error);
+      res.status(500).json({ error: "Failed to get facilities" });
+    }
+  });
+
+  // Get current owner's claims
+  app.get("/api/owners/me/claims", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const owner = await storage.getOwner(ownerId);
+      if (!owner) {
+        return res.status(404).json({ error: "Owner not found" });
+      }
+
+      const claims = await storage.getClaimRequestsByEmail(owner.email);
+      res.json(claims);
+    } catch (error) {
+      console.error("Error getting owner claims:", error);
+      res.status(500).json({ error: "Failed to get claims" });
+    }
+  });
+
+  // Owner logout
+  app.post("/api/owners/logout", (req, res) => {
+    (req.session as any).ownerId = null;
+    res.json({ success: true });
   });
 
   // Create owner (admin)
@@ -915,19 +983,58 @@ export async function registerRoutes(
   });
 
   // Owner account setup (set password)
+  // Validate setup token
+  app.get("/api/owners/setup/validate", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== "string") {
+        return res.status(400).json({ error: "Token is required" });
+      }
+
+      const tokenRecord = await storage.getPasswordResetToken(token);
+      if (!tokenRecord) {
+        return res.status(404).json({ error: "Invalid token" });
+      }
+
+      if (tokenRecord.used || new Date(tokenRecord.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "Token expired or already used" });
+      }
+
+      const owner = await storage.getOwner(tokenRecord.ownerId);
+      if (!owner) {
+        return res.status(404).json({ error: "Owner not found" });
+      }
+
+      res.json({ valid: true, name: owner.name, email: owner.email });
+    } catch (error) {
+      console.error("Error validating setup token:", error);
+      res.status(500).json({ error: "Failed to validate token" });
+    }
+  });
+
   app.post("/api/owners/setup", async (req, res) => {
     try {
-      const { email, password, token } = req.body;
+      const { token, password } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
+      if (!token || !password) {
+        return res.status(400).json({ error: "Token and password are required" });
       }
 
       if (password.length < 8) {
         return res.status(400).json({ error: "Password must be at least 8 characters" });
       }
 
-      const owner = await storage.getOwnerByEmail(email);
+      const tokenRecord = await storage.getPasswordResetToken(token);
+      if (!tokenRecord) {
+        return res.status(404).json({ error: "Invalid token" });
+      }
+
+      if (tokenRecord.used || new Date(tokenRecord.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "Token expired or already used" });
+      }
+
+      const owner = await storage.getOwner(tokenRecord.ownerId);
       if (!owner) {
         return res.status(404).json({ error: "Owner not found" });
       }
@@ -943,6 +1050,10 @@ export async function registerRoutes(
         status: "active",
         emailVerified: true,
       });
+
+      await storage.markPasswordResetTokenUsed(tokenRecord.id);
+
+      (req.session as any).ownerId = owner.id;
 
       const { passwordHash: _, ...ownerData } = updatedOwner!;
       res.json({ owner: ownerData, message: "Account setup complete. You can now log in." });

@@ -130,9 +130,14 @@ function FacilitiesTab() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [claimFilter, setClaimFilter] = useState<string>("all");
 
   const { data: facilities = [], isLoading } = useQuery<Facility[]>({
     queryKey: ["/api/facilities"],
+  });
+
+  const { data: owners = [] } = useQuery<Owner[]>({
+    queryKey: ["/api/owners"],
   });
 
   const updateFacilityMutation = useMutation({
@@ -147,11 +152,18 @@ function FacilitiesTab() {
     },
   });
 
+  const getOwnerName = (ownerId: string | null) => {
+    if (!ownerId) return null;
+    const owner = owners.find(o => o.id === ownerId);
+    return owner?.name || "Unknown";
+  };
+
   const filteredFacilities = facilities.filter((f) => {
     const matchesSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.city.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || f.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesClaim = claimFilter === "all" || f.claimStatus === claimFilter;
+    return matchesSearch && matchesStatus && matchesClaim;
   });
 
   const getStatusBadge = (status: string) => {
@@ -195,10 +207,23 @@ function FacilitiesTab() {
             <SelectItem value="inactive" className="text-white">Inactive</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={claimFilter} onValueChange={setClaimFilter}>
+          <SelectTrigger className="w-[150px] bg-[#0d1a14] border-[#2a3f35] text-white" data-testid="select-claim-filter">
+            <SelectValue placeholder="Ownership" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1a2f25] border-[#2a3f35]">
+            <SelectItem value="all" className="text-white">All Ownership</SelectItem>
+            <SelectItem value="claimed" className="text-white">Claimed</SelectItem>
+            <SelectItem value="pending" className="text-white">Claim Pending</SelectItem>
+            <SelectItem value="unclaimed" className="text-white">Unclaimed</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-3">
-        {filteredFacilities.map((facility) => (
+        {filteredFacilities.map((facility) => {
+          const ownerName = getOwnerName(facility.ownerId);
+          return (
           <Card key={facility.id} className="bg-[#1a2f25] border-[#2a3f35]" data-testid={`card-facility-${facility.id}`}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
@@ -222,6 +247,27 @@ function FacilitiesTab() {
                       <span className="text-gray-400 text-sm">
                         {facility.availableBeds} beds available
                       </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge 
+                        variant="outline"
+                        className={
+                          facility.claimStatus === "claimed" 
+                            ? "text-green-400 border-green-600/30" 
+                            : facility.claimStatus === "pending"
+                            ? "text-yellow-400 border-yellow-600/30"
+                            : "text-gray-400 border-gray-600/30"
+                        }
+                      >
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        {facility.claimStatus === "claimed" ? "Claimed" : facility.claimStatus === "pending" ? "Claim Pending" : "Unclaimed"}
+                      </Badge>
+                      {ownerName && (
+                        <span className="text-gray-400 text-sm flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {ownerName}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -257,7 +303,8 @@ function FacilitiesTab() {
               </div>
             </CardContent>
           </Card>
-        ))}
+          )
+        })}
       </div>
 
       {filteredFacilities.length === 0 && (
@@ -273,10 +320,15 @@ function OwnersTab() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [newOwner, setNewOwner] = useState({ name: "", email: "", phone: "", password: "" });
 
   const { data: owners = [], isLoading } = useQuery<Owner[]>({
     queryKey: ["/api/owners"],
+  });
+
+  const { data: facilities = [] } = useQuery<Facility[]>({
+    queryKey: ["/api/facilities"],
   });
 
   const createOwnerMutation = useMutation({
@@ -296,6 +348,19 @@ function OwnersTab() {
     },
   });
 
+  const getOwnerFacilityCount = (ownerId: string) => {
+    return facilities.filter(f => f.ownerId === ownerId).length;
+  };
+
+  const filteredOwners = statusFilter === "all" 
+    ? owners 
+    : owners.filter(o => {
+        if (statusFilter === "pending") {
+          return o.status === "pending" || o.status === "pending_verification";
+        }
+        return o.status === statusFilter;
+      });
+
   if (isLoading) {
     return <div className="text-gray-400">Loading owners...</div>;
   }
@@ -303,7 +368,20 @@ function OwnersTab() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <p className="text-gray-400">{owners.length} registered owners</p>
+        <div className="flex items-center gap-4">
+          <p className="text-gray-400">{filteredOwners.length} registered owners</p>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px] bg-[#0d1a14] border-[#2a3f35] text-white">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button
           onClick={() => setShowAddDialog(true)}
           className="bg-[#c9a962] hover:bg-[#b89952] text-black"
@@ -314,32 +392,71 @@ function OwnersTab() {
       </div>
 
       <div className="grid gap-4">
-        {owners.map((owner) => (
-          <Card key={owner.id} className="bg-[#1a2f25] border-[#2a3f35]" data-testid={`card-owner-${owner.id}`}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-white">{owner.name}</h3>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {owner.email}
-                    </span>
-                    {owner.phone && (
+        {filteredOwners.map((owner) => {
+          const facilityCount = getOwnerFacilityCount(owner.id);
+          return (
+            <Card key={owner.id} className="bg-[#1a2f25] border-[#2a3f35]" data-testid={`card-owner-${owner.id}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-medium text-white">{owner.name}</h3>
+                      <Badge 
+                        variant={owner.status === "active" ? "default" : "secondary"}
+                        className={
+                          owner.status === "active" 
+                            ? "bg-green-600/20 text-green-400 border-green-600/30" 
+                            : (owner.status === "pending" || owner.status === "pending_verification")
+                            ? "bg-yellow-600/20 text-yellow-400 border-yellow-600/30"
+                            : owner.status === "suspended"
+                            ? "bg-red-600/20 text-red-400 border-red-600/30"
+                            : "bg-gray-600/20 text-gray-400 border-gray-600/30"
+                        }
+                      >
+                        {owner.status === "pending_verification" ? "Pending Setup" : owner.status || "pending"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
                       <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        {owner.phone}
+                        <Mail className="h-3 w-3" />
+                        {owner.email}
                       </span>
+                      {owner.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {owner.phone}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        {facilityCount} {facilityCount === 1 ? "facility" : "facilities"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Joined {owner.createdAt ? new Date(owner.createdAt).toLocaleDateString() : "N/A"}
+                      </span>
+                      {owner.lastLoginAt && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Last login {new Date(owner.lastLoginAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!owner.emailVerified && (
+                      <Badge variant="outline" className="text-orange-400 border-orange-400/30">
+                        Email not verified
+                      </Badge>
                     )}
                   </div>
                 </div>
-                <div className="text-gray-400 text-sm">
-                  Joined {owner.createdAt ? new Date(owner.createdAt).toLocaleDateString() : "N/A"}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
