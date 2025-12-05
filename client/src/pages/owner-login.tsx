@@ -29,14 +29,33 @@ export default function OwnerLogin() {
     setIsSubmitting(true);
     try {
       // Dev bypass: empty email and password allows quick access
-      if (!email && !password) {
-        const response = await fetch("/api/owners/dev-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-        if (response.ok) {
-          window.location.href = "/owner/dashboard";
+      if (!email.trim() && !password.trim()) {
+        try {
+          const response = await fetch("/api/owners/dev-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          });
+          if (response.ok) {
+            window.location.href = "/owner/dashboard";
+            return;
+          } else {
+            const data = await response.json();
+            toast({
+              title: "Quick Login Failed",
+              description: data.error || "Could not log in. Please try again.",
+              variant: "destructive",
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (err) {
+          toast({
+            title: "Connection Error",
+            description: "Could not connect to server. Please try again.",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
           return;
         }
       }
