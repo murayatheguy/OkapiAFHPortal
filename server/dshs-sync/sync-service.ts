@@ -123,6 +123,9 @@ export class DSHSSyncService {
       const homes = await this.scraper.scrapeCounty(county);
       console.log(`[DSHS Sync] Found ${homes.length} homes in ${county}`);
 
+      let consecutiveErrors = 0;
+      const maxConsecutiveErrors = 5;
+
       for (const home of homes) {
         stats.checked++;
 
@@ -134,9 +137,30 @@ export class DSHSSyncService {
           if (result.created) stats.added++;
           if (result.updated) stats.updated++;
           stats.inspections += result.newInspections;
+          
+          consecutiveErrors = 0;
 
-        } catch (err) {
+        } catch (err: any) {
           console.error(`[DSHS Sync] Error processing ${home.licenseNumber}:`, err);
+          consecutiveErrors++;
+          
+          if (err.message?.includes('Connection closed') || err.message?.includes('Target closed')) {
+            console.log(`[DSHS Sync] Browser connection lost, reinitializing...`);
+            try {
+              await this.scraper.close();
+              await this.delay(3000);
+              await this.scraper.init();
+              console.log(`[DSHS Sync] Browser reinitialized successfully`);
+              consecutiveErrors = 0;
+            } catch (reinitErr) {
+              console.error(`[DSHS Sync] Failed to reinitialize browser:`, reinitErr);
+            }
+          }
+          
+          if (consecutiveErrors >= maxConsecutiveErrors) {
+            console.error(`[DSHS Sync] Too many consecutive errors (${consecutiveErrors}), stopping sync`);
+            break;
+          }
         }
 
         await this.delay(1500);
