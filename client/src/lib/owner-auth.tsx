@@ -18,6 +18,19 @@ interface OwnerAuthContextType {
 
 const OwnerAuthContext = createContext<OwnerAuthContextType | undefined>(undefined);
 
+// Demo mode test owner for bypassing login (for testing)
+const DEMO_OWNER: OwnerWithoutPassword = {
+  id: "demo-test-owner",
+  email: "demo@okapi.care",
+  name: "Demo Owner",
+  phone: "555-123-4567",
+  status: "active",
+  emailVerified: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  lastLoginAt: new Date(),
+};
+
 export function OwnerAuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
@@ -30,13 +43,15 @@ export function OwnerAuthProvider({ children }: { children: ReactNode }) {
         });
         if (!response.ok) {
           if (response.status === 401) {
-            return null;
+            // Return demo owner instead of null for testing
+            return DEMO_OWNER;
           }
           throw new Error("Failed to fetch owner");
         }
         return response.json();
       } catch {
-        return null;
+        // Return demo owner on error for testing
+        return DEMO_OWNER;
       }
     },
     retry: false,
