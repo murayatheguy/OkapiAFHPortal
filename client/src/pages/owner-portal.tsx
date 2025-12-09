@@ -1,4 +1,4 @@
-import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send, Truck, MapPin } from "lucide-react";
+import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send, Truck, MapPin, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +13,32 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTeamMembers, getFacility, createTeamMember, getInquiries, updateInquiry } from "@/lib/api";
+import { getTeamMembers, getFacility, createTeamMember, createCredential, getInquiries, updateInquiry } from "@/lib/api";
 import { apiRequest } from "@/lib/queryClient";
 import type { Inquiry, Review } from "@shared/schema";
 import caregiver1 from '@assets/generated_images/generic_portrait_of_a_friendly_male_caregiver.png';
 import caregiver2 from '@assets/generated_images/generic_portrait_of_a_friendly_female_caregiver.png';
+
+interface ManualCredential {
+  id: string;
+  name: string;
+  issueDate: string;
+  expirationDate: string;
+}
+
+interface ManualFormData {
+  fullName: string;
+  email: string;
+  role: string;
+  credentials: ManualCredential[];
+}
+
+const initialManualForm: ManualFormData = {
+  fullName: "",
+  email: "",
+  role: "",
+  credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
+};
 
 export default function OwnerDashboard() {
   const [activeSection, setActiveSection] = useState("team");
@@ -26,6 +47,8 @@ export default function OwnerDashboard() {
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [responseText, setResponseText] = useState("");
+  const [manualForm, setManualForm] = useState<ManualFormData>(initialManualForm);
+  const [isSubmittingManual, setIsSubmittingManual] = useState(false);
   const queryClient = useQueryClient();
   
   const FACILITY_ID = "d66a7b70-4972-4ff0-85c5-ae9799b8c76a";
@@ -99,6 +122,86 @@ export default function OwnerDashboard() {
   
   const isLoading = facilityLoading || teamLoading;
   const newInquiries = inquiries.filter(i => i.status === "new").length;
+
+  const addCredential = () => {
+    setManualForm(prev => ({
+      ...prev,
+      credentials: [...prev.credentials, { id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
+    }));
+  };
+
+  const removeCredential = (id: string) => {
+    setManualForm(prev => ({
+      ...prev,
+      credentials: prev.credentials.filter(c => c.id !== id)
+    }));
+  };
+
+  const updateCredential = (id: string, field: keyof ManualCredential, value: string) => {
+    setManualForm(prev => ({
+      ...prev,
+      credentials: prev.credentials.map(c => 
+        c.id === id ? { ...c, [field]: value } : c
+      )
+    }));
+  };
+
+  const getCredentialStatus = (expirationDate: string): "Current" | "Expiring Soon" | "Expired" => {
+    if (!expirationDate) return "Current";
+    const expDate = new Date(expirationDate);
+    const today = new Date();
+    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    if (expDate < today) return "Expired";
+    if (expDate < thirtyDaysFromNow) return "Expiring Soon";
+    return "Current";
+  };
+
+  const handleManualSubmit = async () => {
+    if (!manualForm.fullName.trim() || !manualForm.role) return;
+    
+    setIsSubmittingManual(true);
+    try {
+      const newMember = await createTeamMember({
+        facilityId: FACILITY_ID,
+        name: manualForm.fullName,
+        email: manualForm.email || undefined,
+        role: manualForm.role,
+        status: "Active",
+        isManualEntry: true
+      });
+
+      const validCredentials = manualForm.credentials.filter(c => c.name.trim());
+      for (const cred of validCredentials) {
+        await createCredential({
+          teamMemberId: newMember.id,
+          name: cred.name,
+          type: "Certification",
+          status: getCredentialStatus(cred.expirationDate),
+          issuedDate: cred.issueDate || undefined,
+          expiryDate: cred.expirationDate || undefined,
+          source: "Manual Entry"
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["team-members", FACILITY_ID] });
+      setManualForm(initialManualForm);
+      setShowInviteDialog(false);
+    } catch (error) {
+      console.error("Failed to add team member:", error);
+    } finally {
+      setIsSubmittingManual(false);
+    }
+  };
+
+  const resetManualForm = () => {
+    setManualForm({
+      fullName: "",
+      email: "",
+      role: "",
+      credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
+    });
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
@@ -342,35 +445,161 @@ export default function OwnerDashboard() {
                         </div>
                       </TabsContent>
                       
-                      <TabsContent value="manual" className="space-y-4">
+                      <TabsContent value="manual" className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div className="bg-amber-50 p-3 rounded-lg text-sm text-amber-800 border border-amber-100 mb-4">
                           <p className="flex gap-2">
                             <AlertCircle className="h-4 w-4 shrink-0" />
-                            You will need to manually upload and track certificates for this user.
+                            Enter staff details and credentials manually. Expiration dates affect compliance tracking.
                           </p>
                         </div>
+                        
                         <div className="grid gap-2">
-                          <Label htmlFor="manual-name">Full Name</Label>
-                          <Input id="manual-name" />
+                          <Label htmlFor="manual-name">Full Name *</Label>
+                          <Input 
+                            id="manual-name" 
+                            placeholder="e.g. Jane Doe"
+                            value={manualForm.fullName}
+                            onChange={(e) => setManualForm(prev => ({ ...prev, fullName: e.target.value }))}
+                            data-testid="input-manual-name"
+                          />
                         </div>
+                        
                         <div className="grid gap-2">
-                          <Label htmlFor="manual-role">Role</Label>
-                          <Select>
-                            <SelectTrigger>
+                          <Label htmlFor="manual-email">Email Address (optional)</Label>
+                          <Input 
+                            id="manual-email" 
+                            type="email"
+                            placeholder="jane@example.com"
+                            value={manualForm.email}
+                            onChange={(e) => setManualForm(prev => ({ ...prev, email: e.target.value }))}
+                            data-testid="input-manual-email"
+                          />
+                        </div>
+                        
+                        <div className="grid gap-2">
+                          <Label htmlFor="manual-role">Role *</Label>
+                          <Select 
+                            value={manualForm.role} 
+                            onValueChange={(value) => setManualForm(prev => ({ ...prev, role: value }))}
+                          >
+                            <SelectTrigger data-testid="select-manual-role">
                               <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="caregiver">Caregiver (HCA/CNA)</SelectItem>
-                              <SelectItem value="manager">Resident Manager</SelectItem>
+                              <SelectItem value="Caregiver (HCA/CNA)">Caregiver (HCA/CNA)</SelectItem>
+                              <SelectItem value="Resident Manager">Resident Manager</SelectItem>
+                              <SelectItem value="Administrator">Administrator</SelectItem>
+                              <SelectItem value="Nurse (RN/LPN)">Nurse (RN/LPN)</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        <Separator className="my-4" />
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">Credentials & Certifications</Label>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={addCredential}
+                              className="h-7 text-xs gap-1"
+                              data-testid="button-add-credential"
+                            >
+                              <Plus className="h-3 w-3" /> Add Credential
+                            </Button>
+                          </div>
+                          
+                          {manualForm.credentials.map((cred, index) => (
+                            <div key={cred.id} className="p-3 border rounded-lg bg-muted/20 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-muted-foreground">Credential {index + 1}</span>
+                                {manualForm.credentials.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeCredential(cred.id)}
+                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                                    data-testid={`button-remove-credential-${index}`}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              <div className="grid gap-2">
+                                <Label className="text-xs">Credential Name</Label>
+                                <Input
+                                  placeholder="e.g. Home Care Aide Certificate, CPR/First Aid"
+                                  value={cred.name}
+                                  onChange={(e) => updateCredential(cred.id, "name", e.target.value)}
+                                  className="h-8 text-sm"
+                                  data-testid={`input-credential-name-${index}`}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-2">
+                                  <Label className="text-xs">Issue Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={cred.issueDate}
+                                    onChange={(e) => updateCredential(cred.id, "issueDate", e.target.value)}
+                                    className="h-8 text-sm"
+                                    data-testid={`input-credential-issue-${index}`}
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label className="text-xs">Expiration Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={cred.expirationDate}
+                                    onChange={(e) => updateCredential(cred.id, "expirationDate", e.target.value)}
+                                    className="h-8 text-sm"
+                                    data-testid={`input-credential-expiry-${index}`}
+                                  />
+                                </div>
+                              </div>
+                              
+                              {cred.expirationDate && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Status:</span>
+                                  {getCredentialStatus(cred.expirationDate) === "Current" && (
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">Current</Badge>
+                                  )}
+                                  {getCredentialStatus(cred.expirationDate) === "Expiring Soon" && (
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">Expiring Soon</Badge>
+                                  )}
+                                  {getCredentialStatus(cred.expirationDate) === "Expired" && (
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">Expired</Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </TabsContent>
                     </Tabs>
 
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
-                      <Button onClick={() => setShowInviteDialog(false)} style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}>Send Invitation</Button>
+                      <Button variant="outline" onClick={() => { resetManualForm(); setShowInviteDialog(false); }}>Cancel</Button>
+                      <Button 
+                        onClick={handleManualSubmit} 
+                        disabled={isSubmittingManual || !manualForm.fullName.trim() || !manualForm.role}
+                        style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                        data-testid="button-add-team-member"
+                      >
+                        {isSubmittingManual ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Adding...
+                          </>
+                        ) : (
+                          "Add Team Member"
+                        )}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
