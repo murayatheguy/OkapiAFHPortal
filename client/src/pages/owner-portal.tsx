@@ -1,4 +1,4 @@
-import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send, Truck, MapPin, Trash2 } from "lucide-react";
+import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send, Truck, MapPin, Trash2, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -48,6 +48,38 @@ const initialInviteForm: ManualFormData = {
   credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
 };
 
+interface TransportRequestForm {
+  providerId: string;
+  residentInitials: string;
+  mobilityType: string;
+  specialNeeds: string;
+  tripType: string;
+  pickupDate: string;
+  pickupTime: string;
+  pickupLocation: string;
+  pickupAddress: string;
+  dropoffLocation: string;
+  dropoffAddress: string;
+  returnTime: string;
+  additionalNotes: string;
+}
+
+const initialTransportForm: TransportRequestForm = {
+  providerId: "",
+  residentInitials: "",
+  mobilityType: "",
+  specialNeeds: "",
+  tripType: "one_way",
+  pickupDate: "",
+  pickupTime: "",
+  pickupLocation: "",
+  pickupAddress: "",
+  dropoffLocation: "",
+  dropoffAddress: "",
+  returnTime: "",
+  additionalNotes: "",
+};
+
 export default function OwnerDashboard() {
   const [activeSection, setActiveSection] = useState("team");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -60,6 +92,8 @@ export default function OwnerDashboard() {
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [activeTab, setActiveTab] = useState("invite");
+  const [showTransportDialog, setShowTransportDialog] = useState(false);
+  const [transportForm, setTransportForm] = useState<TransportRequestForm>(initialTransportForm);
   const queryClient = useQueryClient();
   
   const FACILITY_ID = "d66a7b70-4972-4ff0-85c5-ae9799b8c76a";
@@ -1236,11 +1270,341 @@ export default function OwnerDashboard() {
                   <h1 className="text-2xl font-bold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Transport Services</h1>
                   <p className="text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem' }}>Book reliable NEMT transport for your residents.</p>
                 </div>
-                <Button className="gap-2" style={{ backgroundColor: '#c9a962', color: '#0d1a14' }} data-testid="button-request-transport">
+                <Button 
+                  className="gap-2" 
+                  style={{ backgroundColor: '#c9a962', color: '#0d1a14' }} 
+                  data-testid="button-request-transport"
+                  onClick={() => setShowTransportDialog(true)}
+                >
                   <Plus className="h-4 w-4" />
                   Request Transport
                 </Button>
               </div>
+
+              {/* Transport Request Dialog */}
+              <Dialog open={showTransportDialog} onOpenChange={setShowTransportDialog}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Request Transport</DialogTitle>
+                    <DialogDescription>
+                      Fill out the details below and we'll redirect you to the provider's booking form.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-6 py-4">
+                    {/* Provider Selection */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Select Transport Provider *</Label>
+                      <Select 
+                        value={transportForm.providerId} 
+                        onValueChange={(value) => setTransportForm(prev => ({ ...prev, providerId: value }))}
+                      >
+                        <SelectTrigger data-testid="select-transport-provider">
+                          <SelectValue placeholder="Choose a transport company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {transportProviders.map(provider => (
+                            <SelectItem key={provider.id} value={provider.id}>
+                              <div className="flex items-center gap-2">
+                                <Truck className="h-4 w-4 text-muted-foreground" />
+                                <span>{provider.name}</span>
+                                {provider.isVerified && (
+                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 ml-1">Verified</Badge>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {transportForm.providerId && (() => {
+                        const selectedProvider = transportProviders.find(p => p.id === transportForm.providerId);
+                        return selectedProvider ? (
+                          <div className="p-3 bg-muted/30 rounded-lg text-sm border">
+                            <p className="font-medium" style={{ fontFamily: "'Jost', sans-serif" }}>{selectedProvider.name}</p>
+                            <p className="text-muted-foreground text-xs mt-1 line-clamp-2">{selectedProvider.description}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              {selectedProvider.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {selectedProvider.phone}
+                                </span>
+                              )}
+                              {selectedProvider.operatingHours && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {selectedProvider.operatingHours}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+
+                    <Separator />
+
+                    {/* Resident Information */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm" style={{ fontFamily: "'Jost', sans-serif", color: '#1a2f25' }}>Resident Information</h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="resident-initials">Resident Initials *</Label>
+                          <Input
+                            id="resident-initials"
+                            placeholder="e.g. J.D."
+                            value={transportForm.residentInitials}
+                            onChange={(e) => setTransportForm(prev => ({ ...prev, residentInitials: e.target.value }))}
+                            data-testid="input-resident-initials"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="mobility-type">Mobility Type *</Label>
+                          <Select 
+                            value={transportForm.mobilityType} 
+                            onValueChange={(value) => setTransportForm(prev => ({ ...prev, mobilityType: value }))}
+                          >
+                            <SelectTrigger data-testid="select-mobility-type">
+                              <SelectValue placeholder="Select mobility needs" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ambulatory">Ambulatory (walks independently)</SelectItem>
+                              <SelectItem value="wheelchair">Wheelchair</SelectItem>
+                              <SelectItem value="gurney">Gurney/Stretcher</SelectItem>
+                              <SelectItem value="bariatric">Bariatric</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="special-needs">Special Needs or Medical Equipment</Label>
+                        <Input
+                          id="special-needs"
+                          placeholder="e.g. oxygen tank, walker, hearing impaired"
+                          value={transportForm.specialNeeds}
+                          onChange={(e) => setTransportForm(prev => ({ ...prev, specialNeeds: e.target.value }))}
+                          data-testid="input-special-needs"
+                        />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Trip Details */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm" style={{ fontFamily: "'Jost', sans-serif", color: '#1a2f25' }}>Trip Details</h4>
+                      
+                      <div className="space-y-2">
+                        <Label>Trip Type *</Label>
+                        <div className="flex gap-2">
+                          {[
+                            { value: "one_way", label: "One-Way" },
+                            { value: "round_trip", label: "Round Trip" },
+                            { value: "wait_return", label: "Wait & Return" },
+                          ].map(option => (
+                            <Button
+                              key={option.value}
+                              type="button"
+                              variant={transportForm.tripType === option.value ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setTransportForm(prev => ({ ...prev, tripType: option.value }))}
+                              style={transportForm.tripType === option.value ? { backgroundColor: '#c9a962', color: '#0d1a14' } : {}}
+                              data-testid={`button-trip-${option.value}`}
+                            >
+                              {option.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="pickup-date">Pickup Date *</Label>
+                          <Input
+                            id="pickup-date"
+                            type="date"
+                            value={transportForm.pickupDate}
+                            onChange={(e) => setTransportForm(prev => ({ ...prev, pickupDate: e.target.value }))}
+                            data-testid="input-pickup-date"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="pickup-time">Pickup Time *</Label>
+                          <Input
+                            id="pickup-time"
+                            type="time"
+                            value={transportForm.pickupTime}
+                            onChange={(e) => setTransportForm(prev => ({ ...prev, pickupTime: e.target.value }))}
+                            data-testid="input-pickup-time"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="pickup-location">Pickup Location Name</Label>
+                        <Input
+                          id="pickup-location"
+                          placeholder="e.g. Sunny Days AFH, Dr. Smith's Office"
+                          value={transportForm.pickupLocation}
+                          onChange={(e) => setTransportForm(prev => ({ ...prev, pickupLocation: e.target.value }))}
+                          data-testid="input-pickup-location"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="pickup-address">Pickup Address *</Label>
+                        <Input
+                          id="pickup-address"
+                          placeholder="Full street address"
+                          value={transportForm.pickupAddress}
+                          onChange={(e) => setTransportForm(prev => ({ ...prev, pickupAddress: e.target.value }))}
+                          data-testid="input-pickup-address"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="dropoff-location">Dropoff Location Name</Label>
+                        <Input
+                          id="dropoff-location"
+                          placeholder="e.g. Swedish Medical Center, Dialysis Center"
+                          value={transportForm.dropoffLocation}
+                          onChange={(e) => setTransportForm(prev => ({ ...prev, dropoffLocation: e.target.value }))}
+                          data-testid="input-dropoff-location"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="dropoff-address">Dropoff Address *</Label>
+                        <Input
+                          id="dropoff-address"
+                          placeholder="Full street address"
+                          value={transportForm.dropoffAddress}
+                          onChange={(e) => setTransportForm(prev => ({ ...prev, dropoffAddress: e.target.value }))}
+                          data-testid="input-dropoff-address"
+                        />
+                      </div>
+
+                      {(transportForm.tripType === "round_trip" || transportForm.tripType === "wait_return") && (
+                        <div className="space-y-2">
+                          <Label htmlFor="return-time">
+                            {transportForm.tripType === "wait_return" ? "Estimated Appointment Duration" : "Return Pickup Time"}
+                          </Label>
+                          <Input
+                            id="return-time"
+                            type={transportForm.tripType === "wait_return" ? "text" : "time"}
+                            placeholder={transportForm.tripType === "wait_return" ? "e.g. 2 hours" : ""}
+                            value={transportForm.returnTime}
+                            onChange={(e) => setTransportForm(prev => ({ ...prev, returnTime: e.target.value }))}
+                            data-testid="input-return-time"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Additional Notes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="additional-notes">Additional Notes</Label>
+                      <Textarea
+                        id="additional-notes"
+                        placeholder="Any other information the transport provider should know..."
+                        value={transportForm.additionalNotes}
+                        onChange={(e) => setTransportForm(prev => ({ ...prev, additionalNotes: e.target.value }))}
+                        rows={3}
+                        data-testid="textarea-additional-notes"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Booking Summary - shows before redirecting */}
+                  {transportForm.providerId && transportForm.residentInitials && transportForm.mobilityType && transportForm.pickupDate && transportForm.pickupTime && transportForm.pickupAddress && transportForm.dropoffAddress && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800 text-sm">Ready to Book</span>
+                      </div>
+                      <p className="text-xs text-green-700 mb-3">
+                        Your trip details are ready. Click below to open the provider's booking form. You can copy the information below to complete your booking.
+                      </p>
+                      <div className="bg-white p-3 rounded border text-xs space-y-1 font-mono">
+                        <p><strong>Resident:</strong> {transportForm.residentInitials} ({transportForm.mobilityType})</p>
+                        <p><strong>Date/Time:</strong> {transportForm.pickupDate} at {transportForm.pickupTime}</p>
+                        <p><strong>Pickup:</strong> {transportForm.pickupAddress}</p>
+                        <p><strong>Dropoff:</strong> {transportForm.dropoffAddress}</p>
+                        {transportForm.specialNeeds && <p><strong>Special Needs:</strong> {transportForm.specialNeeds}</p>}
+                        {transportForm.additionalNotes && <p><strong>Notes:</strong> {transportForm.additionalNotes}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  <DialogFooter className="flex-col sm:flex-row gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setTransportForm(initialTransportForm);
+                        setShowTransportDialog(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    {(() => {
+                      const selectedProvider = transportProviders.find(p => p.id === transportForm.providerId);
+                      const isComplete = transportForm.providerId && transportForm.residentInitials && transportForm.mobilityType && transportForm.pickupDate && transportForm.pickupTime && transportForm.pickupAddress && transportForm.dropoffAddress;
+                      
+                      if (selectedProvider?.website && isComplete) {
+                        return (
+                          <Button
+                            asChild
+                            style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                            data-testid="button-continue-booking"
+                          >
+                            <a 
+                              href={selectedProvider.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              onClick={() => {
+                                setTimeout(() => {
+                                  setTransportForm(initialTransportForm);
+                                  setShowTransportDialog(false);
+                                }, 500);
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Open {selectedProvider.name} Booking
+                            </a>
+                          </Button>
+                        );
+                      } else if (selectedProvider?.phone && isComplete) {
+                        return (
+                          <Button
+                            asChild
+                            style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                            data-testid="button-call-provider"
+                          >
+                            <a href={`tel:${selectedProvider.phone}`}>
+                              <Phone className="h-4 w-4 mr-2" />
+                              Call {selectedProvider.name}
+                            </a>
+                          </Button>
+                        );
+                      } else {
+                        return (
+                          <Button
+                            disabled={!isComplete}
+                            style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                            data-testid="button-continue-booking"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Continue to Provider Booking
+                          </Button>
+                        );
+                      }
+                    })()}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
