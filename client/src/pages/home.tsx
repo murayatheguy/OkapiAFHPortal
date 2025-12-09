@@ -122,7 +122,7 @@ export default function Home() {
             OKAPI
           </span>
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#e8e4dc', fontSize: '1.25rem' }}>
-            Care
+            Care Network
           </span>
         </div>
         
@@ -540,7 +540,7 @@ export default function Home() {
                 OKAPI
               </span>
               <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#e8e4dc', fontSize: '1rem' }}>
-                Care
+                Care Network
               </span>
             </div>
             

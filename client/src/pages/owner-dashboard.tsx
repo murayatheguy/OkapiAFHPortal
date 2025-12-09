@@ -18,7 +18,7 @@ import {
   Home, Users, MessageSquare, Star, Settings, LogOut, Building2, 
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
-  Bookmark, BookmarkCheck, Globe, Shield
+  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap
 } from "lucide-react";
 
 export default function OwnerDashboardPage() {
@@ -218,6 +218,21 @@ export default function OwnerDashboardPage() {
                 ) : null}
               </button>
             ))}
+            
+            <div className="pt-4 mt-4 border-t border-amber-900/20">
+              <a
+                href="https://okapi-health-ai-info10705.replit.app/academy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-stone-400 hover:text-stone-200 hover:bg-stone-800/50"
+              >
+                <span className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Okapi Academy
+                </span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
           </nav>
 
           {pendingClaims > 0 && (
