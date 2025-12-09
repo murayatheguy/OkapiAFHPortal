@@ -1,4 +1,4 @@
-import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send } from "lucide-react";
+import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send, Truck, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -221,6 +221,15 @@ export default function OwnerDashboard() {
                   <Star className="h-4 w-4 mr-2" />
                   Reviews
                 </Button>
+                <Button 
+                  className="w-full justify-start" 
+                  variant={activeSection === "transport" ? "secondary" : "ghost"}
+                  onClick={() => setActiveSection("transport")}
+                  data-testid="button-transport-section"
+                >
+                  <Truck className="h-4 w-4 mr-2" />
+                  Transport
+                </Button>
               </div>
 
               <Card className="bg-primary/5 border-primary/20">
@@ -240,6 +249,29 @@ export default function OwnerDashboard() {
                   {/* Temporarily disabled - link: https://okapi-health-ai-info10705.replit.app/academy */}
                   <Button size="sm" variant="outline" className="w-full text-xs border-primary/20 text-muted-foreground opacity-50 cursor-not-allowed" disabled>
                     Go to Academy
+                  </Button>
+                </CardFooter>
+              </Card>
+
+              <Card className="bg-primary/5 border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Transport Services
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground pb-3">
+                  <p className="mb-2">Book wheelchair & gurney transport for your residents.</p>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full text-xs border-primary/20 text-primary hover:bg-primary/10"
+                    onClick={() => setActiveSection("transport")}
+                    data-testid="button-browse-providers"
+                  >
+                    Browse Providers
                   </Button>
                 </CardFooter>
               </Card>
@@ -740,6 +772,173 @@ export default function OwnerDashboard() {
               </Dialog>
               </>
               )}
+
+              {/* TRANSPORT SECTION */}
+              {activeSection === "transport" && (
+              <>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-bold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Transport Services</h1>
+                  <p className="text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem' }}>Book reliable NEMT transport for your residents.</p>
+                </div>
+                <Button className="gap-2" style={{ backgroundColor: '#c9a962', color: '#0d1a14' }} data-testid="button-request-transport">
+                  <Plus className="h-4 w-4" />
+                  Request Transport
+                </Button>
+              </div>
+
+              {/* Stats Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif" }}>Active Bookings</p>
+                        <h3 className="text-2xl font-bold mt-1" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>0</h3>
+                      </div>
+                      <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                        <Truck className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground" style={{ fontFamily: "'Jost', sans-serif" }}>Completed Trips</p>
+                        <h3 className="text-2xl font-bold mt-1 text-green-600" style={{ fontFamily: "'Cormorant', serif" }}>0</h3>
+                      </div>
+                      <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-amber-200 bg-amber-50/50">
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-amber-800" style={{ fontFamily: "'Jost', sans-serif" }}>Preferred Providers</p>
+                        <h3 className="text-2xl font-bold mt-1 text-amber-700" style={{ fontFamily: "'Cormorant', serif" }}>0</h3>
+                      </div>
+                      <div className="h-8 w-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">
+                        <Star className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Provider List */}
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-4 border-b bg-muted/20 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Preferred Providers</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'Jost', sans-serif" }}>Select companies for quick booking.</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-1" data-testid="button-add-provider">
+                    <Plus className="h-3 w-3" />
+                    Add Provider
+                  </Button>
+                </div>
+                
+                <div className="divide-y">
+                  {[
+                    {
+                      id: 1,
+                      name: "Seattle Mobility Solutions",
+                      services: ["Wheelchair", "Gurney", "Ambulatory"],
+                      coverage: ["King County", "Snohomish County"],
+                      rating: 5.0,
+                      reviewCount: 47
+                    },
+                    {
+                      id: 2,
+                      name: "Puget Sound Medical Transport",
+                      services: ["Wheelchair", "Gurney"],
+                      coverage: ["King County", "Pierce County"],
+                      rating: 4.5,
+                      reviewCount: 32
+                    },
+                    {
+                      id: 3,
+                      name: "Cascade Care Transit",
+                      services: ["Wheelchair", "Ambulatory"],
+                      coverage: ["King County"],
+                      rating: 4.2,
+                      reviewCount: 28
+                    },
+                    {
+                      id: 4,
+                      name: "Northwest NEMT Services",
+                      services: ["Wheelchair", "Gurney", "Bariatric"],
+                      coverage: ["Seattle Metro"],
+                      rating: 4.3,
+                      reviewCount: 19
+                    },
+                    {
+                      id: 5,
+                      name: "Evergreen Medical Transport",
+                      services: ["Wheelchair", "Gurney", "Ambulatory"],
+                      coverage: ["Snohomish County", "Skagit County"],
+                      rating: 4.8,
+                      reviewCount: 41
+                    }
+                  ].map((provider) => (
+                    <div key={provider.id} className="p-4 hover:bg-muted/5 transition-colors" data-testid={`card-provider-${provider.id}`}>
+                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                            <Truck className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: '#1a2f25' }}>{provider.name}</h4>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                              {provider.services.map((service, idx) => (
+                                <span key={service}>
+                                  {service}{idx < provider.services.length - 1 ? " •" : ""}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                              <MapPin className="h-3 w-3" />
+                              Serves: {provider.coverage.join(", ")}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 justify-end">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={cn(
+                                    "h-3 w-3",
+                                    i < Math.floor(provider.rating) ? "text-amber-400 fill-amber-400" : "text-gray-200"
+                                  )} 
+                                />
+                              ))}
+                              <span className="text-xs text-muted-foreground ml-1">({provider.reviewCount})</span>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-primary/20 text-primary hover:bg-primary/10"
+                            data-testid={`button-add-preferred-${provider.id}`}
+                          >
+                            Add to Preferred
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              </>
+              )}
             </div>
           </div>
         </div>
@@ -756,7 +955,7 @@ export default function OwnerDashboard() {
                 OKAPI
               </span>
               <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#e8e4dc', fontSize: '1rem' }}>
-                Care
+                Care Network
               </span>
             </div>
             
@@ -765,15 +964,19 @@ export default function OwnerDashboard() {
             </p>
 
             <div className="flex gap-5">
-              {['Privacy', 'Terms', 'Contact'].map((link) => (
-                <a 
-                  key={link}
-                  href="#" 
+              {[
+                { label: 'Privacy', href: '/privacy' },
+                { label: 'Terms', href: '/terms' },
+                { label: 'Contact', href: '#' }
+              ].map((link) => (
+                <Link 
+                  key={link.label}
+                  href={link.href} 
                   className="text-stone-500 hover:text-amber-200 transition-colors"
                   style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
                 >
-                  {link}
-                </a>
+                  {link.label}
+                </Link>
               ))}
             </div>
           </div>
