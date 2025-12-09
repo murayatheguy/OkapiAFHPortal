@@ -95,6 +95,13 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
+    // Add Prerender.io middleware for SEO (search engine crawlers)
+    const prerenderToken = process.env.PRERENDER_TOKEN;
+    if (prerenderToken) {
+      const prerender = (await import("prerender-node")).default;
+      app.use(prerender.set("prerenderToken", prerenderToken));
+      log("Prerender.io SEO middleware enabled");
+    }
     serveStatic(app);
   } else {
     const { setupVite } = await import("./vite");
