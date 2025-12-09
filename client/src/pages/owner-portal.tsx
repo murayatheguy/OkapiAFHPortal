@@ -40,6 +40,13 @@ const initialManualForm: ManualFormData = {
   credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
 };
 
+const initialInviteForm: ManualFormData = {
+  fullName: "",
+  email: "",
+  role: "",
+  credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
+};
+
 export default function OwnerDashboard() {
   const [activeSection, setActiveSection] = useState("team");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -48,7 +55,10 @@ export default function OwnerDashboard() {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [responseText, setResponseText] = useState("");
   const [manualForm, setManualForm] = useState<ManualFormData>(initialManualForm);
+  const [inviteForm, setInviteForm] = useState<ManualFormData>(initialInviteForm);
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
+  const [activeTab, setActiveTab] = useState("invite");
   const queryClient = useQueryClient();
   
   const FACILITY_ID = "d66a7b70-4972-4ff0-85c5-ae9799b8c76a";
@@ -201,6 +211,81 @@ export default function OwnerDashboard() {
       role: "",
       credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
     });
+  };
+
+  const addInviteCredential = () => {
+    setInviteForm(prev => ({
+      ...prev,
+      credentials: [...prev.credentials, { id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
+    }));
+  };
+
+  const removeInviteCredential = (id: string) => {
+    setInviteForm(prev => ({
+      ...prev,
+      credentials: prev.credentials.filter(c => c.id !== id)
+    }));
+  };
+
+  const updateInviteCredential = (id: string, field: keyof ManualCredential, value: string) => {
+    setInviteForm(prev => ({
+      ...prev,
+      credentials: prev.credentials.map(c => 
+        c.id === id ? { ...c, [field]: value } : c
+      )
+    }));
+  };
+
+  const handleInviteSubmit = async () => {
+    if (!inviteForm.fullName.trim() || !inviteForm.email.trim() || !inviteForm.role) return;
+    
+    setIsSubmittingInvite(true);
+    try {
+      const newMember = await createTeamMember({
+        facilityId: FACILITY_ID,
+        name: inviteForm.fullName,
+        email: inviteForm.email,
+        role: inviteForm.role,
+        status: "Invited",
+        isManualEntry: false
+      });
+
+      const validCredentials = inviteForm.credentials.filter(c => c.name.trim());
+      for (const cred of validCredentials) {
+        await createCredential({
+          teamMemberId: newMember.id,
+          name: cred.name,
+          type: "Certification",
+          status: getCredentialStatus(cred.expirationDate),
+          issuedDate: cred.issueDate || undefined,
+          expiryDate: cred.expirationDate || undefined,
+          source: "Manual Entry"
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["team-members", FACILITY_ID] });
+      resetInviteForm();
+      setShowInviteDialog(false);
+    } catch (error) {
+      console.error("Failed to invite team member:", error);
+    } finally {
+      setIsSubmittingInvite(false);
+    }
+  };
+
+  const resetInviteForm = () => {
+    setInviteForm({
+      fullName: "",
+      email: "",
+      role: "",
+      credentials: [{ id: crypto.randomUUID(), name: "", issueDate: "", expirationDate: "" }]
+    });
+  };
+
+  const resetAllForms = () => {
+    resetManualForm();
+    resetInviteForm();
+    setActiveTab("invite");
   };
 
   return (
@@ -405,13 +490,13 @@ export default function OwnerDashboard() {
                       </DialogDescription>
                     </DialogHeader>
                     
-                    <Tabs defaultValue="invite" className="w-full">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                       <TabsList className="grid w-full grid-cols-2 mb-4">
                         <TabsTrigger value="invite">Invite via Email</TabsTrigger>
                         <TabsTrigger value="manual">Manual Entry</TabsTrigger>
                       </TabsList>
                       
-                      <TabsContent value="invite" className="space-y-4">
+                      <TabsContent value="invite" className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div className="bg-muted/30 p-3 rounded-lg text-sm text-muted-foreground border mb-4">
                           <p className="flex gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
@@ -422,26 +507,135 @@ export default function OwnerDashboard() {
                             Okapi Academy certificates auto-sync to your dashboard.
                           </p>
                         </div>
+                        
                         <div className="grid gap-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" placeholder="e.g. Jane Doe" />
+                          <Label htmlFor="invite-name">Full Name *</Label>
+                          <Input 
+                            id="invite-name" 
+                            placeholder="e.g. Jane Doe"
+                            value={inviteForm.fullName}
+                            onChange={(e) => setInviteForm(prev => ({ ...prev, fullName: e.target.value }))}
+                            data-testid="input-invite-name"
+                          />
                         </div>
+                        
                         <div className="grid gap-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" placeholder="jane@example.com" />
+                          <Label htmlFor="invite-email">Email Address *</Label>
+                          <Input 
+                            id="invite-email" 
+                            type="email"
+                            placeholder="jane@example.com"
+                            value={inviteForm.email}
+                            onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
+                            data-testid="input-invite-email"
+                          />
                         </div>
+                        
                         <div className="grid gap-2">
-                          <Label htmlFor="role">Role</Label>
-                          <Select>
-                            <SelectTrigger>
+                          <Label htmlFor="invite-role">Role *</Label>
+                          <Select 
+                            value={inviteForm.role} 
+                            onValueChange={(value) => setInviteForm(prev => ({ ...prev, role: value }))}
+                          >
+                            <SelectTrigger data-testid="select-invite-role">
                               <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="caregiver">Caregiver (HCA/CNA)</SelectItem>
-                              <SelectItem value="manager">Resident Manager</SelectItem>
-                              <SelectItem value="admin">Administrator</SelectItem>
+                              <SelectItem value="Caregiver (HCA/CNA)">Caregiver (HCA/CNA)</SelectItem>
+                              <SelectItem value="Resident Manager">Resident Manager</SelectItem>
+                              <SelectItem value="Administrator">Administrator</SelectItem>
+                              <SelectItem value="Nurse (RN/LPN)">Nurse (RN/LPN)</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        <Separator className="my-4" />
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">Current Credentials (optional)</Label>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={addInviteCredential}
+                              className="h-7 text-xs gap-1"
+                              data-testid="button-add-invite-credential"
+                            >
+                              <Plus className="h-3 w-3" /> Add Credential
+                            </Button>
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground">Add any existing credentials this team member holds. They can update these after accepting the invitation.</p>
+                          
+                          {inviteForm.credentials.map((cred, index) => (
+                            <div key={cred.id} className="p-3 border rounded-lg bg-muted/20 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-muted-foreground">Credential {index + 1}</span>
+                                {inviteForm.credentials.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeInviteCredential(cred.id)}
+                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                                    data-testid={`button-remove-invite-credential-${index}`}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              <div className="grid gap-2">
+                                <Label className="text-xs">Credential Name</Label>
+                                <Input
+                                  placeholder="e.g. Home Care Aide Certificate, CPR/First Aid"
+                                  value={cred.name}
+                                  onChange={(e) => updateInviteCredential(cred.id, "name", e.target.value)}
+                                  className="h-8 text-sm"
+                                  data-testid={`input-invite-credential-name-${index}`}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-2">
+                                  <Label className="text-xs">Issue Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={cred.issueDate}
+                                    onChange={(e) => updateInviteCredential(cred.id, "issueDate", e.target.value)}
+                                    className="h-8 text-sm"
+                                    data-testid={`input-invite-credential-issue-${index}`}
+                                  />
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label className="text-xs">Expiration Date</Label>
+                                  <Input
+                                    type="date"
+                                    value={cred.expirationDate}
+                                    onChange={(e) => updateInviteCredential(cred.id, "expirationDate", e.target.value)}
+                                    className="h-8 text-sm"
+                                    data-testid={`input-invite-credential-expiry-${index}`}
+                                  />
+                                </div>
+                              </div>
+                              
+                              {cred.expirationDate && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Status:</span>
+                                  {getCredentialStatus(cred.expirationDate) === "Current" && (
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">Current</Badge>
+                                  )}
+                                  {getCredentialStatus(cred.expirationDate) === "Expiring Soon" && (
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">Expiring Soon</Badge>
+                                  )}
+                                  {getCredentialStatus(cred.expirationDate) === "Expired" && (
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">Expired</Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </TabsContent>
                       
@@ -584,22 +778,43 @@ export default function OwnerDashboard() {
                     </Tabs>
 
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => { resetManualForm(); setShowInviteDialog(false); }}>Cancel</Button>
-                      <Button 
-                        onClick={handleManualSubmit} 
-                        disabled={isSubmittingManual || !manualForm.fullName.trim() || !manualForm.role}
-                        style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
-                        data-testid="button-add-team-member"
-                      >
-                        {isSubmittingManual ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Adding...
-                          </>
-                        ) : (
-                          "Add Team Member"
-                        )}
-                      </Button>
+                      <Button variant="outline" onClick={() => { resetAllForms(); setShowInviteDialog(false); }}>Cancel</Button>
+                      {activeTab === "invite" ? (
+                        <Button 
+                          onClick={handleInviteSubmit} 
+                          disabled={isSubmittingInvite || !inviteForm.fullName.trim() || !inviteForm.email.trim() || !inviteForm.role}
+                          style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                          data-testid="button-send-invitation"
+                        >
+                          {isSubmittingInvite ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Invitation
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={handleManualSubmit} 
+                          disabled={isSubmittingManual || !manualForm.fullName.trim() || !manualForm.role}
+                          style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                          data-testid="button-add-team-member"
+                        >
+                          {isSubmittingManual ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Adding...
+                            </>
+                          ) : (
+                            "Add Team Member"
+                          )}
+                        </Button>
+                      )}
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
