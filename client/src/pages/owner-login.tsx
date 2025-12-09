@@ -66,7 +66,7 @@ export default function OwnerLogin() {
             OKAPI
           </span>
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#e8e4dc', fontSize: '1.25rem' }}>
-            Care
+            Care Network
           </span>
         </Link>
         
