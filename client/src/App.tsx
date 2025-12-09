@@ -13,6 +13,8 @@ import OwnerLogin from "@/pages/owner-login";
 import OwnerSetup from "@/pages/owner-setup";
 import OwnerDashboard from "@/pages/owner-dashboard";
 import AdminPage from "@/pages/admin";
+import TermsPage from "@/pages/terms";
+import PrivacyPage from "@/pages/privacy";
 
 function Router() {
   return (
@@ -27,6 +29,8 @@ function Router() {
       <Route path="/owner/setup" component={OwnerSetup} />
       <Route path="/owner/dashboard" component={OwnerDashboard} />
       <Route path="/admin" component={AdminPage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
       <Route component={NotFound} />
     </Switch>
   );

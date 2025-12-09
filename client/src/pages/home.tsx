@@ -549,16 +549,27 @@ export default function Home() {
             </p>
 
             <div className="flex gap-5">
-              {['Privacy', 'Terms', 'Contact'].map((link) => (
-                <a 
-                  key={link}
-                  href="#" 
-                  className="text-stone-500 hover:text-amber-200 transition-colors"
-                  style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
-                >
-                  {link}
-                </a>
-              ))}
+              <a 
+                href="/privacy" 
+                className="text-stone-500 hover:text-amber-200 transition-colors"
+                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
+              >
+                Privacy
+              </a>
+              <a 
+                href="/terms" 
+                className="text-stone-500 hover:text-amber-200 transition-colors"
+                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
+              >
+                Terms
+              </a>
+              <a 
+                href="mailto:contact@okapicarenetwork.com" 
+                className="text-stone-500 hover:text-amber-200 transition-colors"
+                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
+              >
+                Contact
+              </a>
             </div>
           </div>
         </div>
