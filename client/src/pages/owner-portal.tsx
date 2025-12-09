@@ -1,4 +1,5 @@
 import { User, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle2, Clock, FileText, Upload, Mail, X, Plus, Users, Loader2, MessageSquare, Star, Phone, Calendar, Send, Truck, MapPin, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getFacility, createTeamMember, createCredential, getInquiries, updateInquiry } from "@/lib/api";
 import { apiRequest } from "@/lib/queryClient";
-import type { Inquiry, Review } from "@shared/schema";
+import type { Inquiry, Review, TransportProvider } from "@shared/schema";
 import caregiver1 from '@assets/generated_images/generic_portrait_of_a_friendly_male_caregiver.png';
 import caregiver2 from '@assets/generated_images/generic_portrait_of_a_friendly_female_caregiver.png';
 
@@ -91,6 +92,16 @@ export default function OwnerDashboard() {
     queryKey: ["facility-reviews", FACILITY_ID],
     queryFn: async () => {
       const response = await fetch(`/api/facilities/${FACILITY_ID}/reviews`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    retry: false,
+  });
+
+  const { data: transportProviders = [], isLoading: transportLoading } = useQuery<TransportProvider[]>({
+    queryKey: ["transport-providers"],
+    queryFn: async () => {
+      const response = await fetch("/api/transport/providers");
       if (!response.ok) return [];
       return response.json();
     },
@@ -1278,107 +1289,112 @@ export default function OwnerDashboard() {
               <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
                 <div className="p-4 border-b bg-muted/20 flex justify-between items-center">
                   <div>
-                    <h3 className="font-semibold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Preferred Providers</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'Jost', sans-serif" }}>Select companies for quick booking.</p>
+                    <h3 className="font-semibold" style={{ fontFamily: "'Cormorant', serif", color: '#1a2f25' }}>Available NEMT Providers</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5" style={{ fontFamily: "'Jost', sans-serif" }}>Browse and book medical transportation services.</p>
                   </div>
-                  <Button variant="outline" size="sm" className="gap-1" data-testid="button-add-provider">
-                    <Plus className="h-3 w-3" />
-                    Add Provider
-                  </Button>
                 </div>
                 
                 <div className="divide-y">
-                  {[
-                    {
-                      id: 1,
-                      name: "Seattle Mobility Solutions",
-                      services: ["Wheelchair", "Gurney", "Ambulatory"],
-                      coverage: ["King County", "Snohomish County"],
-                      rating: 5.0,
-                      reviewCount: 47
-                    },
-                    {
-                      id: 2,
-                      name: "Puget Sound Medical Transport",
-                      services: ["Wheelchair", "Gurney"],
-                      coverage: ["King County", "Pierce County"],
-                      rating: 4.5,
-                      reviewCount: 32
-                    },
-                    {
-                      id: 3,
-                      name: "Cascade Care Transit",
-                      services: ["Wheelchair", "Ambulatory"],
-                      coverage: ["King County"],
-                      rating: 4.2,
-                      reviewCount: 28
-                    },
-                    {
-                      id: 4,
-                      name: "Northwest NEMT Services",
-                      services: ["Wheelchair", "Gurney", "Bariatric"],
-                      coverage: ["Seattle Metro"],
-                      rating: 4.3,
-                      reviewCount: 19
-                    },
-                    {
-                      id: 5,
-                      name: "Evergreen Medical Transport",
-                      services: ["Wheelchair", "Gurney", "Ambulatory"],
-                      coverage: ["Snohomish County", "Skagit County"],
-                      rating: 4.8,
-                      reviewCount: 41
-                    }
-                  ].map((provider) => (
-                    <div key={provider.id} className="p-4 hover:bg-muted/5 transition-colors" data-testid={`card-provider-${provider.id}`}>
-                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                            <Truck className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: '#1a2f25' }}>{provider.name}</h4>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                              {provider.services.map((service, idx) => (
-                                <span key={service}>
-                                  {service}{idx < provider.services.length - 1 ? " •" : ""}
-                                </span>
-                              ))}
+                  {transportLoading ? (
+                    <div className="p-8 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mt-2">Loading providers...</p>
+                    </div>
+                  ) : transportProviders.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Truck className="h-8 w-8 mx-auto text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground mt-2">No transport providers available yet.</p>
+                    </div>
+                  ) : (
+                    transportProviders.map((provider) => (
+                      <div key={provider.id} className="p-5 hover:bg-muted/5 transition-colors" data-testid={`card-provider-${provider.id}`}>
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
+                              <Truck className="h-5 w-5" />
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <MapPin className="h-3 w-3" />
-                              Serves: {provider.coverage.join(", ")}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-4">
+                                <div>
+                                  <h4 className="font-semibold text-lg" style={{ fontFamily: "'Jost', sans-serif", color: '#1a2f25' }}>{provider.name}</h4>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <Star 
+                                        key={i} 
+                                        className={cn(
+                                          "h-3.5 w-3.5",
+                                          i < Math.floor(Number(provider.rating) || 0) ? "text-amber-400 fill-amber-400" : "text-gray-200"
+                                        )} 
+                                      />
+                                    ))}
+                                    <span className="text-xs text-muted-foreground ml-1">({provider.reviewCount || 0} reviews)</span>
+                                    {provider.isVerified && (
+                                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200 text-xs">Verified</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {provider.description && (
+                                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{provider.description}</p>
+                              )}
+                              
+                              <div className="flex flex-wrap gap-1.5 mt-3">
+                                {(provider.services as string[] || []).slice(0, 4).map((service) => (
+                                  <Badge key={service} variant="secondary" className="text-xs bg-primary/5 text-primary border-0">
+                                    {service}
+                                  </Badge>
+                                ))}
+                              </div>
+                              
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                                <MapPin className="h-3 w-3" />
+                                Serves: {(provider.serviceCounties as string[] || []).join(", ") || "Contact for coverage area"}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                          <div className="text-right">
-                            <div className="flex items-center gap-1 justify-end">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  className={cn(
-                                    "h-3 w-3",
-                                    i < Math.floor(provider.rating) ? "text-amber-400 fill-amber-400" : "text-gray-200"
-                                  )} 
-                                />
-                              ))}
-                              <span className="text-xs text-muted-foreground ml-1">({provider.reviewCount})</span>
+                          
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-3 border-t bg-muted/5 -mx-5 -mb-5 px-5 py-3">
+                            <div className="flex items-center gap-4 flex-1">
+                              {provider.phone && (
+                                <a 
+                                  href={`tel:${provider.phone}`}
+                                  className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                                  data-testid={`link-phone-${provider.id}`}
+                                >
+                                  <Phone className="h-4 w-4" />
+                                  {provider.phone}
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {provider.website && (
+                                <Button 
+                                  asChild
+                                  size="sm"
+                                  style={{ backgroundColor: '#c9a962', color: '#0d1a14' }}
+                                  data-testid={`button-book-${provider.id}`}
+                                >
+                                  <a href={provider.website} target="_blank" rel="noopener noreferrer">
+                                    Book a Ride
+                                  </a>
+                                </Button>
+                              )}
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="border-primary/20 text-primary hover:bg-primary/10"
+                                data-testid={`button-save-${provider.id}`}
+                              >
+                                <Star className="h-3.5 w-3.5 mr-1" />
+                                Save
+                              </Button>
                             </div>
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="border-primary/20 text-primary hover:bg-primary/10"
-                            data-testid={`button-add-preferred-${provider.id}`}
-                          >
-                            Add to Preferred
-                          </Button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
               </>
@@ -1428,9 +1444,4 @@ export default function OwnerDashboard() {
       </footer>
     </div>
   );
-}
-
-// Helper util for classnames inside component since we can't import
-function cn(...classes: (string | undefined | null | false)[]) {
-  return classes.filter(Boolean).join(' ');
 }

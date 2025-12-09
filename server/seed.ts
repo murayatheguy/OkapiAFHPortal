@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { facilities, teamMembers, credentials, admins, reviews, inquiries } from "@shared/schema";
+import { facilities, teamMembers, credentials, admins, reviews, inquiries, transportProviders } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 const UNSPLASH_IMAGES = [
@@ -725,8 +725,123 @@ export async function seedDatabase() {
   }
   console.log(`Created ${credentialData.length} credentials`);
 
+  // Seed transport providers (NEMT marketplace)
+  await db.delete(transportProviders);
+  
+  const transportProviderData = [
+    {
+      name: "Seattle Accessible Transportation",
+      slug: "seattle-accessible-transportation",
+      description: "Seattle Accessible Transportation is a trusted leader in non-emergency medical transportation across King County. We specialize in wheelchair-accessible vehicles, stretcher transport, and ambulatory services. Our trained drivers provide door-to-door service for dialysis, doctor appointments, and hospital discharges. With a commitment to safety and punctuality, we serve Adult Family Homes, skilled nursing facilities, and individual clients throughout the greater Seattle area.",
+      phone: "(206) 555-0142",
+      email: "dispatch@seattleaccessible.com",
+      website: "https://seattleaccessibletransport.com/book",
+      services: ["Wheelchair Transport", "Stretcher Service", "Ambulatory", "Door-to-Door"],
+      serviceCounties: ["King County", "South King County", "Seattle Metro"],
+      vehicleTypes: ["Wheelchair Van", "Stretcher Van", "Sedan"],
+      operatingHours: "24/7 Service Available",
+      acceptsMedicaid: true,
+      acceptsMedicare: true,
+      acceptsPrivatePay: true,
+      acceptsInsurance: true,
+      acceptedInsuranceList: "Most major insurance plans accepted",
+      baseRateCents: 4500,
+      pricePerMileCents: 275,
+      pricingNotes: "Medicaid rates apply for eligible patients. Call for quotes on specialized transport.",
+      rating: "4.8",
+      reviewCount: 156,
+      isVerified: true,
+      isFeatured: true,
+      displayOrder: 1,
+      status: "active",
+    },
+    {
+      name: "Rainier Mobility Solutions",
+      slug: "rainier-mobility-solutions",
+      description: "Rainier Mobility Solutions provides compassionate, reliable medical transportation throughout the Puget Sound region. Founded by healthcare professionals, we understand the unique needs of elderly and disabled passengers. Our fleet includes bariatric-capable vehicles, wheelchair lifts, and climate-controlled transport. We partner with Adult Family Homes to coordinate recurring rides for dialysis, therapy, and specialist appointments with flexible scheduling.",
+      phone: "(253) 555-0198",
+      email: "bookings@rainiermobility.com",
+      website: "https://rainiermobility.com/schedule",
+      services: ["Wheelchair Transport", "Bariatric Transport", "Ambulatory", "Recurring Rides"],
+      serviceCounties: ["King County", "Pierce County", "South Sound"],
+      vehicleTypes: ["Wheelchair Van", "Bariatric Van", "SUV"],
+      operatingHours: "Mon-Sat 6am-10pm, Sun 8am-6pm",
+      acceptsMedicaid: true,
+      acceptsMedicare: true,
+      acceptsPrivatePay: true,
+      acceptsInsurance: true,
+      acceptedInsuranceList: "Medicaid, Medicare, Molina, CHPW, Amerigroup",
+      baseRateCents: 4000,
+      pricePerMileCents: 250,
+      pricingNotes: "Discounts available for recurring weekly rides. AFH partnership rates available.",
+      rating: "4.6",
+      reviewCount: 89,
+      isVerified: true,
+      isFeatured: true,
+      displayOrder: 2,
+      status: "active",
+    },
+    {
+      name: "Upako Mobility",
+      slug: "upako-mobility",
+      description: "Upako Mobility is a community-focused NEMT provider serving diverse communities across Washington State. Our multilingual drivers and staff ensure comfortable, culturally sensitive transportation for all passengers. We specialize in non-emergency medical transport including dialysis, mental health appointments, and hospital discharges. With competitive Medicaid rates and flexible scheduling, we're the trusted choice for Adult Family Homes seeking reliable transport partners.",
+      phone: "(206) 555-0267",
+      email: "rides@upakomobility.com",
+      website: "https://upakomobility.com/request",
+      services: ["Wheelchair Transport", "Ambulatory", "Mental Health Transport", "Hospital Discharge"],
+      serviceCounties: ["King County", "Snohomish County", "Seattle Metro"],
+      vehicleTypes: ["Wheelchair Van", "Sedan", "Minivan"],
+      operatingHours: "24/7 Dispatch Available",
+      acceptsMedicaid: true,
+      acceptsMedicare: false,
+      acceptsPrivatePay: true,
+      acceptsInsurance: true,
+      acceptedInsuranceList: "Medicaid, Molina, Community Health Plan",
+      baseRateCents: 3800,
+      pricePerMileCents: 225,
+      pricingNotes: "Multilingual drivers available upon request. Same-day booking when available.",
+      rating: "4.5",
+      reviewCount: 67,
+      isVerified: true,
+      isFeatured: false,
+      displayOrder: 3,
+      status: "active",
+    },
+    {
+      name: "Seattle Flex Care",
+      slug: "seattle-flex-care",
+      description: "Seattle Flex Care offers premium non-emergency medical transportation with a focus on flexibility and patient comfort. Our modern fleet features wheelchair-accessible vehicles with extra legroom, climate control, and smooth suspension for a comfortable ride. We excel at last-minute bookings and accommodate schedule changes with ease. Perfect for Adult Family Homes that need a reliable backup transport partner or specialized long-distance medical transport.",
+      phone: "(425) 555-0334",
+      email: "schedule@seattleflexcare.com",
+      website: "https://seattleflexcare.com/book-now",
+      services: ["Wheelchair Transport", "Gurney Service", "Long-Distance Transport", "Same-Day Booking"],
+      serviceCounties: ["King County", "Snohomish County", "Kitsap County", "Pierce County"],
+      vehicleTypes: ["Wheelchair Van", "Gurney Van", "Luxury Sedan"],
+      operatingHours: "Mon-Sun 5am-11pm",
+      acceptsMedicaid: true,
+      acceptsMedicare: true,
+      acceptsPrivatePay: true,
+      acceptsInsurance: true,
+      acceptedInsuranceList: "All major insurance accepted",
+      baseRateCents: 5000,
+      pricePerMileCents: 300,
+      pricingNotes: "Premium comfort transport. Long-distance trips to Spokane, Portland available.",
+      rating: "4.7",
+      reviewCount: 112,
+      isVerified: true,
+      isFeatured: true,
+      displayOrder: 4,
+      status: "active",
+    },
+  ];
+
+  for (const provider of transportProviderData) {
+    await db.insert(transportProviders).values(provider as any);
+  }
+  console.log(`Created ${transportProviderData.length} transport providers`);
+
   console.log("Database seeding completed successfully!");
-  console.log(`Summary: ${facilityIds.length} facilities, ${reviewsCreated} reviews, ${inquiriesCreated} inquiries, ${teamMemberIds.length} team members`);
+  console.log(`Summary: ${facilityIds.length} facilities, ${reviewsCreated} reviews, ${inquiriesCreated} inquiries, ${teamMemberIds.length} team members, ${transportProviderData.length} transport providers`);
 }
 
 // Run if called directly
