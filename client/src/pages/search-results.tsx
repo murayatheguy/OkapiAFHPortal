@@ -350,7 +350,9 @@ export default function SearchResults() {
           <div className="flex-1">
             <div className="mb-4 flex justify-between items-end">
               <h1 className="text-2xl font-serif font-bold">
-                {filteredFacilities.length} Result{filteredFacilities.length !== 1 ? 's' : ''}
+                {filteredFacilities.length} {selectedFacilityTypes.length === 1 
+                  ? FACILITY_TYPES.find(t => t.id === selectedFacilityTypes[0])?.label || 'Facility'
+                  : 'Facilit'}{filteredFacilities.length !== 1 ? (selectedFacilityTypes.length === 1 ? 's' : 'ies') : (selectedFacilityTypes.length === 1 ? '' : 'y')}
               </h1>
               
               <div className="hidden md:flex items-center gap-2">

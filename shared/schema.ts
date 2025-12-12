@@ -228,6 +228,7 @@ export const facilities = pgTable("facilities", {
   status: text("status").notNull().default("active"), // active, pending, inactive
   featured: boolean("featured").default(false),
   acceptingInquiries: text("accepting_inquiries").default("accepting"), // accepting, waitlist, not_accepting
+  isDemo: boolean("is_demo").default(false), // Mark fictional/demo facilities
   
   // Metadata
   createdAt: timestamp("created_at").defaultNow(),

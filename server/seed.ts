@@ -575,102 +575,92 @@ export async function seedDatabase() {
   }
   console.log(`Created ${facilityIds.length} AFH facilities from real King County data`);
 
-  // Mock data for other facility types (ALF, SNF, Hospice)
-  const OTHER_FACILITY_DATA = [
-    // Assisted Living Facilities
-    {
-      name: "Sunrise Senior Living Seattle",
-      facilityType: 'alf',
-      address: "1515 Eastlake Ave E",
-      city: "Seattle",
-      zipCode: "98102",
-      county: "King",
-      phone: "(206) 555-0201",
-      licenseNumber: "ALF-001234",
-      capacity: 85,
-      specialties: ["Memory Care", "Respite Care", "Independent Living"],
-      description: "Sunrise Senior Living offers a welcoming community for seniors seeking assisted living in the heart of Seattle. Our elegant facility features restaurant-style dining, engaging activities, and compassionate care available 24/7.",
-      priceMin: 5200,
-      priceMax: 8500,
-    },
-    {
-      name: "Bellevue Gardens Assisted Living",
-      facilityType: 'alf',
-      address: "4500 148th Ave NE",
-      city: "Bellevue",
-      zipCode: "98007",
-      county: "King",
-      phone: "(425) 555-0302",
-      licenseNumber: "ALF-001235",
-      capacity: 120,
-      specialties: ["Memory Care", "Rehabilitation", "Respite Care"],
-      description: "A premier assisted living community in Bellevue offering luxury accommodations, personalized care plans, and a vibrant social calendar. Our dedicated staff ensures residents feel at home while receiving the support they need.",
-      priceMin: 5800,
-      priceMax: 9200,
-    },
-    // Skilled Nursing Facilities
-    {
-      name: "Evergreen Rehabilitation Center",
-      facilityType: 'snf',
-      address: "2200 NE 150th St",
-      city: "Shoreline",
-      zipCode: "98155",
-      county: "King",
-      phone: "(206) 555-0403",
-      licenseNumber: "SNF-002341",
-      capacity: 75,
-      specialties: ["Physical Therapy", "Cardiac Rehab", "Post-Surgery Recovery"],
-      description: "Evergreen Rehabilitation Center provides skilled nursing care and comprehensive rehabilitation services. Our medical team specializes in helping patients recover from surgery, illness, or injury with state-of-the-art therapy facilities.",
-      priceMin: 8500,
-      priceMax: 12000,
-    },
-    {
-      name: "Pacific Northwest Nursing & Rehab",
-      facilityType: 'snf',
-      address: "5600 California Ave SW",
-      city: "Seattle",
-      zipCode: "98136",
-      county: "King",
-      phone: "(206) 555-0504",
-      licenseNumber: "SNF-002342",
-      capacity: 90,
-      specialties: ["Stroke Recovery", "Wound Care", "Respiratory Therapy"],
-      description: "Pacific Northwest Nursing & Rehabilitation offers 24-hour skilled nursing care and specialized rehabilitation programs. Our Medicare-certified facility provides comprehensive medical care in a comfortable, healing environment.",
-      priceMin: 9200,
-      priceMax: 14000,
-    },
-    // Hospice Care
-    {
-      name: "Peaceful Journey Hospice",
-      facilityType: 'hospice',
-      address: "789 Totem Lake Way",
-      city: "Kirkland",
-      zipCode: "98034",
-      county: "King",
-      phone: "(425) 555-0605",
-      licenseNumber: "HSP-003451",
-      capacity: 16,
-      specialties: ["In-Home Care", "Residential Hospice", "Respite Care"],
-      description: "Peaceful Journey Hospice provides compassionate end-of-life care focused on comfort, dignity, and quality of life. Our interdisciplinary team offers medical care, emotional support, and spiritual guidance for patients and families.",
-      priceMin: 0, // Often covered by Medicare/insurance
-      priceMax: 6000,
-    },
-    {
-      name: "Serenity Hospice House",
-      facilityType: 'hospice',
-      address: "1234 Redmond Way",
-      city: "Redmond",
-      zipCode: "98052",
-      county: "King",
-      phone: "(425) 555-0706",
-      licenseNumber: "HSP-003452",
-      capacity: 12,
-      specialties: ["Residential Hospice", "Family Counseling", "Bereavement Support"],
-      description: "Serenity Hospice House offers a peaceful, home-like setting for individuals in their final journey. Our caring staff provides holistic support including pain management, emotional care, and family services in a serene environment.",
-      priceMin: 0,
-      priceMax: 5500,
-    },
+  // Mock data for other facility types (ALF, SNF, Hospice) - 60 fictional facilities
+  const ASSISTED_LIVING_DATA = [
+    { name: "Emerald City Senior Living", address: "1200 Pine Street", city: "Seattle", zipCode: "98101", county: "King", phone: "(206) 555-0101", licenseNumber: "ALF-001001", capacity: 85, specialties: ["Memory Care", "Respite Care"], priceMin: 5200, priceMax: 7500 },
+    { name: "Cascade View Assisted Living", address: "4500 Bellevue Way", city: "Bellevue", zipCode: "98004", county: "King", phone: "(425) 555-0102", licenseNumber: "ALF-001002", capacity: 120, specialties: ["Independent Living", "Assisted Living", "Memory Care"], priceMin: 5800, priceMax: 8200 },
+    { name: "Olympic Gardens Senior Community", address: "789 Harbor Drive", city: "Tacoma", zipCode: "98402", county: "Pierce", phone: "(253) 555-0103", licenseNumber: "ALF-001003", capacity: 65, specialties: ["Assisted Living", "Diabetic Care"], priceMin: 4800, priceMax: 6500 },
+    { name: "Puget Sound Senior Residence", address: "2100 Waterfront Lane", city: "Kirkland", zipCode: "98033", county: "King", phone: "(425) 555-0104", licenseNumber: "ALF-001004", capacity: 95, specialties: ["Memory Care", "Physical Therapy"], priceMin: 5500, priceMax: 7800 },
+    { name: "Rainier Vista Senior Living", address: "3300 Mountain View Blvd", city: "Renton", zipCode: "98055", county: "King", phone: "(425) 555-0105", licenseNumber: "ALF-001005", capacity: 72, specialties: ["Assisted Living"], priceMin: 4900, priceMax: 6800 },
+    { name: "Evergreen Terrace Assisted Living", address: "5600 Cedar Road", city: "Redmond", zipCode: "98052", county: "King", phone: "(425) 555-0106", licenseNumber: "ALF-001006", capacity: 88, specialties: ["Memory Care", "Respite Care"], priceMin: 5600, priceMax: 7900 },
+    { name: "Lake Washington Senior Living", address: "1800 Lakeside Ave", city: "Seattle", zipCode: "98122", county: "King", phone: "(206) 555-0107", licenseNumber: "ALF-001007", capacity: 110, specialties: ["Luxury Assisted Living", "Memory Care"], priceMin: 6200, priceMax: 8500 },
+    { name: "Spokane Valley Senior Community", address: "9200 Sprague Ave", city: "Spokane Valley", zipCode: "99206", county: "Spokane", phone: "(509) 555-0108", licenseNumber: "ALF-001008", capacity: 75, specialties: ["Assisted Living", "Diabetic Care"], priceMin: 4200, priceMax: 5800 },
+    { name: "Columbia River Senior Residence", address: "450 River Road", city: "Vancouver", zipCode: "98661", county: "Clark", phone: "(360) 555-0109", licenseNumber: "ALF-001009", capacity: 68, specialties: ["Assisted Living", "Respite Care"], priceMin: 4500, priceMax: 6200 },
+    { name: "Whidbey Island Senior Living", address: "200 Main Street", city: "Oak Harbor", zipCode: "98277", county: "Island", phone: "(360) 555-0110", licenseNumber: "ALF-001010", capacity: 45, specialties: ["Assisted Living"], priceMin: 4800, priceMax: 6500 },
+    { name: "Bellingham Bay Senior Community", address: "1500 Bay Street", city: "Bellingham", zipCode: "98225", county: "Whatcom", phone: "(360) 555-0111", licenseNumber: "ALF-001011", capacity: 82, specialties: ["Memory Care", "Assisted Living"], priceMin: 5100, priceMax: 7200 },
+    { name: "Federal Way Senior Residence", address: "32000 Pacific Highway", city: "Federal Way", zipCode: "98003", county: "King", phone: "(253) 555-0112", licenseNumber: "ALF-001012", capacity: 90, specialties: ["Assisted Living", "Physical Therapy"], priceMin: 4700, priceMax: 6400 },
+    { name: "Mercer Island Senior Living", address: "7800 Island Crest Way", city: "Mercer Island", zipCode: "98040", county: "King", phone: "(206) 555-0113", licenseNumber: "ALF-001013", capacity: 55, specialties: ["Luxury Assisted Living", "Memory Care", "Concierge Services"], priceMin: 7500, priceMax: 10500 },
+    { name: "Kennewick Senior Community", address: "5500 Clearwater Ave", city: "Kennewick", zipCode: "99336", county: "Benton", phone: "(509) 555-0114", licenseNumber: "ALF-001014", capacity: 70, specialties: ["Assisted Living"], priceMin: 4100, priceMax: 5600 },
+    { name: "Olympia Gardens Senior Living", address: "1200 Capitol Way", city: "Olympia", zipCode: "98501", county: "Thurston", phone: "(360) 555-0115", licenseNumber: "ALF-001015", capacity: 78, specialties: ["Assisted Living", "Memory Care"], priceMin: 4900, priceMax: 6700 },
+    { name: "Issaquah Highlands Senior Residence", address: "2200 Highlands Drive", city: "Issaquah", zipCode: "98029", county: "King", phone: "(425) 555-0116", licenseNumber: "ALF-001016", capacity: 65, specialties: ["Memory Care", "Wellness Programs"], priceMin: 5900, priceMax: 8100 },
+    { name: "Edmonds Waterfront Senior Living", address: "400 Admiral Way", city: "Edmonds", zipCode: "98020", county: "Snohomish", phone: "(425) 555-0117", licenseNumber: "ALF-001017", capacity: 58, specialties: ["Assisted Living", "Respite Care"], priceMin: 5400, priceMax: 7600 },
+    { name: "Yakima Valley Senior Community", address: "3100 Tieton Drive", city: "Yakima", zipCode: "98902", county: "Yakima", phone: "(509) 555-0118", licenseNumber: "ALF-001018", capacity: 62, specialties: ["Assisted Living", "Diabetic Care"], priceMin: 3900, priceMax: 5400 },
+    { name: "Bainbridge Island Senior Residence", address: "600 Winslow Way", city: "Bainbridge Island", zipCode: "98110", county: "Kitsap", phone: "(206) 555-0119", licenseNumber: "ALF-001019", capacity: 42, specialties: ["Luxury Assisted Living", "Memory Care"], priceMin: 6800, priceMax: 9200 },
+    { name: "Shoreline Senior Living", address: "18500 Aurora Ave N", city: "Shoreline", zipCode: "98133", county: "King", phone: "(206) 555-0120", licenseNumber: "ALF-001020", capacity: 76, specialties: ["Assisted Living", "Physical Therapy"], priceMin: 5000, priceMax: 7000 },
   ];
+
+  const SKILLED_NURSING_DATA = [
+    { name: "Seattle Medical & Rehabilitation Center", address: "500 Minor Ave", city: "Seattle", zipCode: "98104", county: "King", phone: "(206) 555-0201", licenseNumber: "SNF-002001", capacity: 120, specialties: ["Physical Therapy", "Cardiac Rehab", "Stroke Recovery"], priceMin: 9500, priceMax: 14000, medicareRating: 4 },
+    { name: "Bellevue Post-Acute Care Center", address: "1200 116th Ave NE", city: "Bellevue", zipCode: "98004", county: "King", phone: "(425) 555-0202", licenseNumber: "SNF-002002", capacity: 95, specialties: ["Orthopedic Rehab", "Physical Therapy", "Occupational Therapy"], priceMin: 10200, priceMax: 15000, medicareRating: 5 },
+    { name: "Tacoma Rehabilitation & Nursing", address: "3400 South Union Ave", city: "Tacoma", zipCode: "98409", county: "Pierce", phone: "(253) 555-0203", licenseNumber: "SNF-002003", capacity: 110, specialties: ["Wound Care", "IV Therapy", "Respiratory Care"], priceMin: 8800, priceMax: 12500, medicareRating: 3 },
+    { name: "Evergreen Skilled Nursing Center", address: "12000 NE 128th St", city: "Kirkland", zipCode: "98034", county: "King", phone: "(425) 555-0204", licenseNumber: "SNF-002004", capacity: 85, specialties: ["Memory Care", "Physical Therapy", "Speech Therapy"], priceMin: 9800, priceMax: 14200, medicareRating: 4 },
+    { name: "Spokane Valley Nursing & Rehab", address: "6500 E Sprague Ave", city: "Spokane Valley", zipCode: "99212", county: "Spokane", phone: "(509) 555-0205", licenseNumber: "SNF-002005", capacity: 100, specialties: ["Long-Term Care", "Physical Therapy"], priceMin: 8200, priceMax: 11500, medicareRating: 3 },
+    { name: "Vancouver Rehabilitation Center", address: "2900 Main Street", city: "Vancouver", zipCode: "98660", county: "Clark", phone: "(360) 555-0206", licenseNumber: "SNF-002006", capacity: 88, specialties: ["Cardiac Rehab", "Physical Therapy", "Diabetic Care"], priceMin: 8500, priceMax: 12000, medicareRating: 4 },
+    { name: "Renton Care & Rehabilitation", address: "4500 Talbot Road S", city: "Renton", zipCode: "98055", county: "King", phone: "(425) 555-0207", licenseNumber: "SNF-002007", capacity: 92, specialties: ["Stroke Recovery", "Physical Therapy", "Occupational Therapy"], priceMin: 9200, priceMax: 13500, medicareRating: 4 },
+    { name: "Federal Way Skilled Nursing", address: "1800 S 320th St", city: "Federal Way", zipCode: "98003", county: "King", phone: "(253) 555-0208", licenseNumber: "SNF-002008", capacity: 78, specialties: ["Wound Care", "IV Therapy"], priceMin: 8600, priceMax: 12200, medicareRating: 3 },
+    { name: "Olympia Nursing & Rehabilitation", address: "2200 Lilly Road NE", city: "Olympia", zipCode: "98506", county: "Thurston", phone: "(360) 555-0209", licenseNumber: "SNF-002009", capacity: 82, specialties: ["Physical Therapy", "Respiratory Care"], priceMin: 8800, priceMax: 12800, medicareRating: 4 },
+    { name: "Bellingham Transitional Care", address: "3000 Squalicum Pkwy", city: "Bellingham", zipCode: "98225", county: "Whatcom", phone: "(360) 555-0210", licenseNumber: "SNF-002010", capacity: 72, specialties: ["Orthopedic Rehab", "Physical Therapy"], priceMin: 9000, priceMax: 13000, medicareRating: 4 },
+    { name: "Kent Skilled Nursing Center", address: "25000 104th Ave SE", city: "Kent", zipCode: "98030", county: "King", phone: "(253) 555-0211", licenseNumber: "SNF-002011", capacity: 96, specialties: ["Long-Term Care", "Wound Care", "Diabetic Care"], priceMin: 8700, priceMax: 12400, medicareRating: 3 },
+    { name: "Redmond Post-Acute Care", address: "8800 160th Ave NE", city: "Redmond", zipCode: "98052", county: "King", phone: "(425) 555-0212", licenseNumber: "SNF-002012", capacity: 68, specialties: ["Cardiac Rehab", "Stroke Recovery", "Physical Therapy"], priceMin: 10500, priceMax: 15500, medicareRating: 5 },
+    { name: "Yakima Rehabilitation & Care", address: "1700 Tieton Drive", city: "Yakima", zipCode: "98902", county: "Yakima", phone: "(509) 555-0213", licenseNumber: "SNF-002013", capacity: 85, specialties: ["Long-Term Care", "Physical Therapy"], priceMin: 7800, priceMax: 11000, medicareRating: 3 },
+    { name: "Kennewick Nursing Center", address: "4200 W Clearwater Ave", city: "Kennewick", zipCode: "99336", county: "Benton", phone: "(509) 555-0214", licenseNumber: "SNF-002014", capacity: 76, specialties: ["Wound Care", "Respiratory Care"], priceMin: 7900, priceMax: 11200, medicareRating: 3 },
+    { name: "Everett Medical & Rehab Center", address: "3200 Colby Ave", city: "Everett", zipCode: "98201", county: "Snohomish", phone: "(425) 555-0215", licenseNumber: "SNF-002015", capacity: 104, specialties: ["Physical Therapy", "Occupational Therapy", "Speech Therapy"], priceMin: 9100, priceMax: 13200, medicareRating: 4 },
+    { name: "Burien Skilled Nursing", address: "15800 1st Ave S", city: "Burien", zipCode: "98148", county: "King", phone: "(206) 555-0216", licenseNumber: "SNF-002016", capacity: 72, specialties: ["Cardiac Rehab", "IV Therapy"], priceMin: 8900, priceMax: 12600, medicareRating: 4 },
+    { name: "Lacey Rehabilitation Center", address: "5500 Corporate Center Lane", city: "Lacey", zipCode: "98503", county: "Thurston", phone: "(360) 555-0217", licenseNumber: "SNF-002017", capacity: 80, specialties: ["Orthopedic Rehab", "Physical Therapy"], priceMin: 8600, priceMax: 12300, medicareRating: 4 },
+    { name: "Puyallup Nursing & Care Center", address: "1100 Shaw Road", city: "Puyallup", zipCode: "98372", county: "Pierce", phone: "(253) 555-0218", licenseNumber: "SNF-002018", capacity: 88, specialties: ["Long-Term Care", "Wound Care", "Diabetic Care"], priceMin: 8500, priceMax: 12100, medicareRating: 3 },
+    { name: "Bothell Post-Acute & Rehab", address: "10200 Main Street", city: "Bothell", zipCode: "98011", county: "King", phone: "(425) 555-0219", licenseNumber: "SNF-002019", capacity: 70, specialties: ["Stroke Recovery", "Physical Therapy", "Speech Therapy"], priceMin: 9600, priceMax: 14000, medicareRating: 4 },
+    { name: "Lynnwood Transitional Care", address: "19800 44th Ave W", city: "Lynnwood", zipCode: "98036", county: "Snohomish", phone: "(425) 555-0220", licenseNumber: "SNF-002020", capacity: 82, specialties: ["Cardiac Rehab", "Physical Therapy", "Respiratory Care"], priceMin: 9300, priceMax: 13600, medicareRating: 4 },
+  ];
+
+  const HOSPICE_DATA = [
+    { name: "Peaceful Harbor Hospice", address: "1500 Madison Street", city: "Seattle", zipCode: "98104", county: "King", phone: "(206) 555-0301", licenseNumber: "HSP-003001", capacity: 24, specialties: ["Residential Hospice", "Respite Care", "Family Support"] },
+    { name: "Cascade Comfort Care", address: "800 112th Ave NE", city: "Bellevue", zipCode: "98004", county: "King", phone: "(425) 555-0302", licenseNumber: "HSP-003002", capacity: 18, specialties: ["Palliative Care", "Pain Management", "Family Counseling"] },
+    { name: "Olympic Serenity Hospice", address: "2100 Pacific Ave", city: "Tacoma", zipCode: "98402", county: "Pierce", phone: "(253) 555-0303", licenseNumber: "HSP-003003", capacity: 20, specialties: ["Residential Hospice", "Bereavement Support"] },
+    { name: "Evergreen Hospice Care", address: "10500 NE 8th Street", city: "Kirkland", zipCode: "98033", county: "King", phone: "(425) 555-0304", licenseNumber: "HSP-003004", capacity: 16, specialties: ["Palliative Care", "Family Support", "Spiritual Care"] },
+    { name: "Spokane Valley Hospice", address: "5800 E Broadway Ave", city: "Spokane Valley", zipCode: "99212", county: "Spokane", phone: "(509) 555-0305", licenseNumber: "HSP-003005", capacity: 22, specialties: ["Residential Hospice", "Pain Management"] },
+    { name: "Columbia Comfort Hospice", address: "1800 Main Street", city: "Vancouver", zipCode: "98660", county: "Clark", phone: "(360) 555-0306", licenseNumber: "HSP-003006", capacity: 18, specialties: ["Palliative Care", "Bereavement Support"] },
+    { name: "Rainier Hospice Services", address: "3600 Talbot Road S", city: "Renton", zipCode: "98055", county: "King", phone: "(425) 555-0307", licenseNumber: "HSP-003007", capacity: 14, specialties: ["Pain Management", "Family Counseling"] },
+    { name: "Bellingham Hospice Care", address: "2500 Lakeway Drive", city: "Bellingham", zipCode: "98229", county: "Whatcom", phone: "(360) 555-0308", licenseNumber: "HSP-003008", capacity: 16, specialties: ["Residential Hospice", "Spiritual Care"] },
+    { name: "Olympia Comfort Care Hospice", address: "1000 Capitol Way S", city: "Olympia", zipCode: "98501", county: "Thurston", phone: "(360) 555-0309", licenseNumber: "HSP-003009", capacity: 18, specialties: ["Palliative Care", "Family Support"] },
+    { name: "Puget Sound Hospice", address: "600 University Street", city: "Seattle", zipCode: "98101", county: "King", phone: "(206) 555-0310", licenseNumber: "HSP-003010", capacity: 28, specialties: ["Residential Hospice", "Pain Management", "Music Therapy"] },
+    { name: "Federal Way Hospice Care", address: "2400 S 320th St", city: "Federal Way", zipCode: "98003", county: "King", phone: "(253) 555-0311", licenseNumber: "HSP-003011", capacity: 14, specialties: ["Palliative Care", "Bereavement Support"] },
+    { name: "Redmond Hospice Services", address: "16300 NE 80th St", city: "Redmond", zipCode: "98052", county: "King", phone: "(425) 555-0312", licenseNumber: "HSP-003012", capacity: 12, specialties: ["Pain Management", "Family Counseling", "Spiritual Care"] },
+    { name: "Yakima Valley Hospice", address: "2800 Castlevale Road", city: "Yakima", zipCode: "98902", county: "Yakima", phone: "(509) 555-0313", licenseNumber: "HSP-003013", capacity: 20, specialties: ["Residential Hospice", "Respite Care"] },
+    { name: "Kennewick Comfort Hospice", address: "3500 W Kennewick Ave", city: "Kennewick", zipCode: "99336", county: "Benton", phone: "(509) 555-0314", licenseNumber: "HSP-003014", capacity: 16, specialties: ["Palliative Care", "Family Support"] },
+    { name: "Everett Hospice Care", address: "2700 Hoyt Ave", city: "Everett", zipCode: "98201", county: "Snohomish", phone: "(425) 555-0315", licenseNumber: "HSP-003015", capacity: 18, specialties: ["Residential Hospice", "Bereavement Support"] },
+    { name: "Kent Serenity Hospice", address: "22400 84th Ave S", city: "Kent", zipCode: "98032", county: "King", phone: "(253) 555-0316", licenseNumber: "HSP-003016", capacity: 14, specialties: ["Pain Management", "Spiritual Care"] },
+    { name: "Issaquah Hospice Services", address: "100 NW Gilman Blvd", city: "Issaquah", zipCode: "98027", county: "King", phone: "(425) 555-0317", licenseNumber: "HSP-003017", capacity: 12, specialties: ["Palliative Care", "Family Counseling", "Art Therapy"] },
+    { name: "Lacey Comfort Care Hospice", address: "4400 Meridian Road", city: "Lacey", zipCode: "98503", county: "Thurston", phone: "(360) 555-0318", licenseNumber: "HSP-003018", capacity: 16, specialties: ["Residential Hospice", "Respite Care"] },
+    { name: "Puyallup Valley Hospice", address: "800 S Meridian", city: "Puyallup", zipCode: "98371", county: "Pierce", phone: "(253) 555-0319", licenseNumber: "HSP-003019", capacity: 18, specialties: ["Palliative Care", "Bereavement Support"] },
+    { name: "Shoreline Hospice Care", address: "17500 Aurora Ave N", city: "Shoreline", zipCode: "98133", county: "King", phone: "(206) 555-0320", licenseNumber: "HSP-003020", capacity: 14, specialties: ["Pain Management", "Family Support", "Spiritual Care"] },
+  ];
+
+  const OTHER_FACILITY_DATA = [
+    ...ASSISTED_LIVING_DATA.map(f => ({ ...f, facilityType: 'alf' as const })),
+    ...SKILLED_NURSING_DATA.map(f => ({ ...f, facilityType: 'snf' as const })),
+    ...HOSPICE_DATA.map(f => ({ ...f, facilityType: 'hospice' as const, priceMin: 0, priceMax: 6000 })),
+  ];
+
+  // Generate description for fictional facilities
+  const generateFictionalDescription = (name: string, type: string, city: string, specialties: string[]): string => {
+    if (type === 'alf') {
+      return `${name} is a premier assisted living community in ${city}, Washington. Our elegant facility offers personalized care plans, restaurant-style dining, and a vibrant social calendar. Specializing in ${specialties.slice(0, 2).join(' and ')}, our dedicated staff ensures residents feel at home while receiving the support they need.`;
+    } else if (type === 'snf') {
+      return `${name} provides skilled nursing care and comprehensive rehabilitation services in ${city}. Our Medicare-certified facility specializes in ${specialties.slice(0, 2).join(' and ')}, helping patients recover from surgery, illness, or injury with state-of-the-art therapy facilities and 24-hour nursing care.`;
+    } else {
+      return `${name} provides compassionate end-of-life care focused on comfort, dignity, and quality of life in ${city}. Our interdisciplinary team offers ${specialties.slice(0, 2).join(' and ')}, providing medical care, emotional support, and spiritual guidance for patients and families.`;
+    }
+  };
 
   for (let i = 0; i < OTHER_FACILITY_DATA.length; i++) {
     const data = OTHER_FACILITY_DATA[i];
@@ -686,7 +676,7 @@ export async function seedDatabase() {
       phone: data.phone,
       email: `info@${slugify(data.name).substring(0, 15)}.com`,
       capacity: data.capacity,
-      availableBeds: Math.floor(Math.random() * 8) + 1,
+      availableBeds: Math.floor(Math.random() * Math.min(15, data.capacity * 0.2)) + 1,
       priceMin: data.priceMin,
       priceMax: data.priceMax,
       rating: (4.3 + Math.random() * 0.6).toFixed(1),
@@ -710,17 +700,18 @@ export async function seedDatabase() {
         ? ["DOH Licensed", "Medicare Certified", "NHPCO Member"]
         : ["DSHS Licensed", "State Certified"],
       images: getImagesForIndex(FACILITY_DATA.length + i),
-      description: data.description,
+      description: generateFictionalDescription(data.name, data.facilityType, data.city, data.specialties),
       yearEstablished: 2005 + Math.floor(Math.random() * 15),
       status: "active",
-      featured: i === 0 || i === 2 || i === 4, // One of each type featured
+      featured: i % 20 === 0, // First of each type featured
       acceptingInquiries: "accepting",
+      isDemo: true, // Mark all fictional facilities as demo data
     };
 
     const result = await db.insert(facilities).values(facility).returning({ id: facilities.id });
     facilityIds.push(result[0].id);
   }
-  console.log(`Created ${OTHER_FACILITY_DATA.length} additional facilities (ALF, SNF, Hospice)`);
+  console.log(`Created ${OTHER_FACILITY_DATA.length} fictional facilities (20 ALF, 20 SNF, 20 Hospice)`);
 
   // Seed reviews for facilities
   let reviewsCreated = 0;
