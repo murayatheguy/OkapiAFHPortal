@@ -621,6 +621,37 @@ export const passwordResetTokensRelations = relations(passwordResetTokens, ({ on
   }),
 }));
 
+// DSHS Inspections table - stores actual inspection records from DSHS
+export const dshsInspections = pgTable("dshs_inspections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  
+  inspectionDate: date("inspection_date").notNull(),
+  inspectionType: text("inspection_type").notNull(), // Routine, Complaint, Follow-up, Initial
+  violationCount: integer("violation_count").default(0),
+  outcomeSummary: text("outcome_summary"), // "No violations", "1 violation cited", etc.
+  enforcementActions: text("enforcement_actions"), // null if none
+  
+  sourceUrl: text("source_url"), // Original DSHS URL
+  scrapedAt: timestamp("scraped_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("dshs_inspections_facility_idx").on(table.facilityId),
+  dateIdx: index("dshs_inspections_date_idx").on(table.inspectionDate),
+}));
+
+export const insertDshsInspectionSchema = createInsertSchema(dshsInspections).omit({ id: true, createdAt: true, scrapedAt: true });
+export type InsertDshsInspection = z.infer<typeof insertDshsInspectionSchema>;
+export type DshsInspection = typeof dshsInspections.$inferSelect;
+
+// DSHS Inspections Relations
+export const dshsInspectionsRelations = relations(dshsInspections, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [dshsInspections.facilityId],
+    references: [facilities.id],
+  }),
+}));
+
 // DSHS Sync Logs table - tracks sync operations
 export const dshsSyncLogs = pgTable("dshs_sync_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
