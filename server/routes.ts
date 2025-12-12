@@ -102,6 +102,17 @@ export async function registerRoutes(
     }
   });
 
+  // Get DSHS inspections for a facility
+  app.get("/api/facilities/:id/inspections", async (req, res) => {
+    try {
+      const inspections = await storage.getInspectionsByFacility(req.params.id);
+      res.json(inspections);
+    } catch (error) {
+      console.error("Error getting facility inspections:", error);
+      res.status(500).json({ error: "Failed to get inspections" });
+    }
+  });
+
   // Create new facility
   app.post("/api/facilities", async (req, res) => {
     try {

@@ -12,6 +12,7 @@ import {
   activityLog,
   dshsSyncLogs,
   dshsHomeSync,
+  dshsInspections,
   transportProviders,
   transportBookings,
   providerReviews,
@@ -39,6 +40,8 @@ import {
   type ActivityLog,
   type InsertActivityLog,
   type DshsSyncLog,
+  type DshsInspection,
+  type InsertDshsInspection,
   type TransportProvider,
   type InsertTransportProvider,
   type TransportBooking,
@@ -206,6 +209,11 @@ export interface IStorage {
   unsaveProvider(ownerId: string, providerId: string): Promise<void>;
   isProviderSaved(ownerId: string, providerId: string): Promise<boolean>;
   updateSavedProviderNotes(ownerId: string, providerId: string, notes: string): Promise<OwnerSavedProvider | undefined>;
+
+  // DSHS Inspections
+  getInspectionsByFacility(facilityId: string): Promise<DshsInspection[]>;
+  createInspection(inspection: InsertDshsInspection): Promise<DshsInspection>;
+  deleteInspectionsByFacility(facilityId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1027,6 +1035,22 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return updated || undefined;
+  }
+
+  // DSHS Inspections
+  async getInspectionsByFacility(facilityId: string): Promise<DshsInspection[]> {
+    return await db.select().from(dshsInspections)
+      .where(eq(dshsInspections.facilityId, facilityId))
+      .orderBy(desc(dshsInspections.inspectionDate));
+  }
+
+  async createInspection(inspection: InsertDshsInspection): Promise<DshsInspection> {
+    const [result] = await db.insert(dshsInspections).values(inspection).returning();
+    return result;
+  }
+
+  async deleteInspectionsByFacility(facilityId: string): Promise<void> {
+    await db.delete(dshsInspections).where(eq(dshsInspections.facilityId, facilityId));
   }
 }
 
