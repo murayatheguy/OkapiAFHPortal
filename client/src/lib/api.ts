@@ -261,3 +261,22 @@ export async function getOwnerFacilities(ownerId: string): Promise<Facility[]> {
   if (!response.ok) throw new Error("Failed to fetch owner facilities");
   return response.json();
 }
+
+// DSHS Inspections
+export interface DshsInspection {
+  id: string;
+  facilityId: string;
+  inspectionDate: string;
+  inspectionType: string;
+  violationCount: number;
+  outcomeSummary?: string;
+  enforcementActions?: string;
+  sourceUrl?: string;
+  scrapedAt: string;
+}
+
+export async function getFacilityInspections(facilityId: string): Promise<DshsInspection[]> {
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/inspections`);
+  if (!response.ok) throw new Error("Failed to fetch inspections");
+  return response.json();
+}

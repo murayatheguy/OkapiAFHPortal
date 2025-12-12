@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
-import { getFacilityWithTeam, submitClaimRequest } from "@/lib/api";
+import { getFacilityWithTeam, submitClaimRequest, getFacilityInspections, type DshsInspection } from "@/lib/api";
+import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -114,6 +115,12 @@ export default function FacilityDetails() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["facility", params?.id],
     queryFn: () => getFacilityWithTeam(params?.id || ""),
+    enabled: !!params?.id,
+  });
+
+  const { data: inspections = [] } = useQuery({
+    queryKey: ["facility-inspections", params?.id],
+    queryFn: () => getFacilityInspections(params?.id || ""),
     enabled: !!params?.id,
   });
 
@@ -340,10 +347,41 @@ export default function FacilityDetails() {
 
                 {/* Inspection & Compliance History */}
                 <div className="bg-white rounded-lg border p-4">
-                  <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-500 mb-3">Inspection Reports</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    For complete inspection history, complaint investigations, and enforcement actions, 
-                    please visit the official Washington State DSHS website.
+                  <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-500 mb-3">Inspection History</h4>
+                  
+                  {inspections.length > 0 ? (
+                    <div className="space-y-3 mb-4">
+                      {inspections.slice(0, 5).map((inspection) => (
+                        <div 
+                          key={inspection.id} 
+                          className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border"
+                          data-testid={`inspection-${inspection.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`h-2.5 w-2.5 rounded-full ${inspection.violationCount === 0 ? 'bg-green-500' : inspection.violationCount <= 2 ? 'bg-amber-500' : 'bg-red-500'}`} />
+                            <div>
+                              <p className="font-medium text-sm">{inspection.inspectionType || 'Inspection'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(inspection.inspectionDate), 'MMM d, yyyy')}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-sm font-medium ${inspection.violationCount === 0 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {inspection.violationCount === 0 ? 'No violations' : `${inspection.violationCount} violation${inspection.violationCount > 1 ? 's' : ''}`}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mb-4">
+                      No inspection data available yet. DSHS data is synced periodically.
+                    </p>
+                  )}
+
+                  <p className="text-sm text-muted-foreground mb-3">
+                    For complete inspection history and official records, visit the DSHS website.
                   </p>
                   {facility.dshsReportUrl ? (
                     <a 
@@ -353,12 +391,17 @@ export default function FacilityDetails() {
                       className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm"
                       data-testid="button-view-dshs-inspections"
                     >
-                      View Inspection Reports on DSHS <ExternalLink className="h-4 w-4 ml-2" />
+                      View Full Reports on DSHS <ExternalLink className="h-4 w-4 ml-2" />
                     </a>
                   ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      Visit <a href="https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-homes" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">dshs.wa.gov</a> to search for this facility's compliance records.
-                    </p>
+                    <a 
+                      href="https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-homes" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-sm"
+                    >
+                      Search for this facility on dshs.wa.gov
+                    </a>
                   )}
                 </div>
 
