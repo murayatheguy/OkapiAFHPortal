@@ -30,11 +30,29 @@ const FACILITY_TYPES = [
 ] as const;
 
 export default function SearchResults() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   
   const getQueryParam = (param: string) => {
     const searchParams = new URLSearchParams(window.location.search);
     return searchParams.get(param) || "";
+  };
+
+  const updateUrlParams = (newTypes: string[], newQuery?: string) => {
+    const params = new URLSearchParams(window.location.search);
+    if (newTypes.length > 0) {
+      params.set('type', newTypes.join(','));
+    } else {
+      params.delete('type');
+    }
+    if (newQuery !== undefined) {
+      if (newQuery) {
+        params.set('q', newQuery);
+      } else {
+        params.delete('q');
+      }
+    }
+    const newUrl = params.toString() ? `/search?${params.toString()}` : '/search';
+    window.history.replaceState({}, '', newUrl);
   };
 
   const [searchQuery, setSearchQuery] = useState(getQueryParam('q'));
@@ -53,11 +71,11 @@ export default function SearchResults() {
   }, [location]);
 
   const toggleFacilityType = (typeId: string) => {
-    setSelectedFacilityTypes(prev => 
-      prev.includes(typeId) 
-        ? prev.filter(id => id !== typeId)
-        : [...prev, typeId]
-    );
+    const newTypes = selectedFacilityTypes.includes(typeId) 
+      ? selectedFacilityTypes.filter(id => id !== typeId)
+      : [...selectedFacilityTypes, typeId];
+    setSelectedFacilityTypes(newTypes);
+    updateUrlParams(newTypes);
   };
 
   const specialties = ["Memory Care", "Hospice", "Mental Health", "Developmental Disabilities", "Respite", "High Acuity"];
@@ -109,6 +127,7 @@ export default function SearchResults() {
     setSelectedSpecialties([]);
     setSelectedFacilityTypes([]);
     setPriceRange([3000, 10000]);
+    updateUrlParams([], "");
   };
 
   return (

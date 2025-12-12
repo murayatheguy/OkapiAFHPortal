@@ -3,8 +3,15 @@ import type { Facility } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { MapPin, Phone, Calendar, CheckCircle2, ShieldCheck, AlertCircle, Check } from "lucide-react";
+import { MapPin, Phone, Calendar, CheckCircle2, ShieldCheck, AlertCircle, Check, Home, Building2, Hospital, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const FACILITY_TYPE_CONFIG = {
+  afh: { label: 'Adult Family Home', icon: Home, color: 'bg-emerald-600/90' },
+  alf: { label: 'Assisted Living', icon: Building2, color: 'bg-blue-600/90' },
+  snf: { label: 'Skilled Nursing', icon: Hospital, color: 'bg-purple-600/90' },
+  hospice: { label: 'Hospice', icon: Heart, color: 'bg-rose-600/90' },
+} as const;
 
 interface FacilityCardProps {
   facility: Facility;
@@ -13,6 +20,9 @@ interface FacilityCardProps {
 export function FacilityCard({ facility }: FacilityCardProps) {
   const hasImage = facility.images && facility.images.length > 0;
   const safeImages = facility.images || [];
+  const facilityTypeKey = (facility.facilityType || 'afh') as keyof typeof FACILITY_TYPE_CONFIG;
+  const typeConfig = FACILITY_TYPE_CONFIG[facilityTypeKey];
+  const TypeIcon = typeConfig.icon;
   
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 bg-card flex flex-col h-full">
@@ -25,6 +35,10 @@ export function FacilityCard({ facility }: FacilityCardProps) {
           />
         )}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <Badge className={cn(typeConfig.color, "text-white border-none shadow-sm flex items-center gap-1.5")}>
+            <TypeIcon className="h-3 w-3" />
+            {typeConfig.label}
+          </Badge>
           {facility.availableBeds > 0 ? (
             <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white border-none shadow-sm">
               {facility.availableBeds} Bed{facility.availableBeds > 1 ? 's' : ''} Available
