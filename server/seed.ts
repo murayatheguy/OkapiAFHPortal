@@ -568,6 +568,7 @@ export async function seedDatabase() {
       status: "active",
       featured: i < 6, // First 6 are featured
       acceptingInquiries: availableBeds > 0 ? "accepting" : "waitlist",
+      dshsReportUrl: data.disclosureUrl,
     };
 
     const result = await db.insert(facilities).values(facility).returning({ id: facilities.id });

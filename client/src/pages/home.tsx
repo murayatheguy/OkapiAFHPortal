@@ -118,9 +118,17 @@ export default function Home() {
     setLocation(`/search${params.toString() ? '?' + params.toString() : ''}`);
   };
 
+  // Apply facility type filter to the results
+  const applyFacilityTypeFilter = (facilities: typeof featuredFacilities) => {
+    if (selectedFacilityTypes.length === 0) return facilities;
+    return facilities.filter(f => 
+      f.facilityType && selectedFacilityTypes.includes(f.facilityType.toLowerCase())
+    );
+  };
+
   const filteredFacilities = activeFilter === 'all' 
-    ? featuredFacilities.slice(0, 6) 
-    : filteredBySpecialty.slice(0, 6);
+    ? applyFacilityTypeFilter(featuredFacilities).slice(0, 6) 
+    : applyFacilityTypeFilter(filteredBySpecialty).slice(0, 6);
 
   return (
     <div className="min-h-screen" style={{ 
