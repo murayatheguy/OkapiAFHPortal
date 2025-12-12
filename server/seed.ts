@@ -538,6 +538,7 @@ export async function seedDatabase() {
     const facility = {
       name: data.name,
       slug: slugify(data.name),
+      facilityType: 'afh', // All real data is Adult Family Homes
       address: data.address,
       city: data.city,
       state: "WA",
@@ -572,7 +573,154 @@ export async function seedDatabase() {
     const result = await db.insert(facilities).values(facility).returning({ id: facilities.id });
     facilityIds.push(result[0].id);
   }
-  console.log(`Created ${facilityIds.length} facilities from real King County data`);
+  console.log(`Created ${facilityIds.length} AFH facilities from real King County data`);
+
+  // Mock data for other facility types (ALF, SNF, Hospice)
+  const OTHER_FACILITY_DATA = [
+    // Assisted Living Facilities
+    {
+      name: "Sunrise Senior Living Seattle",
+      facilityType: 'alf',
+      address: "1515 Eastlake Ave E",
+      city: "Seattle",
+      zipCode: "98102",
+      county: "King",
+      phone: "(206) 555-0201",
+      licenseNumber: "ALF-001234",
+      capacity: 85,
+      specialties: ["Memory Care", "Respite Care", "Independent Living"],
+      description: "Sunrise Senior Living offers a welcoming community for seniors seeking assisted living in the heart of Seattle. Our elegant facility features restaurant-style dining, engaging activities, and compassionate care available 24/7.",
+      priceMin: 5200,
+      priceMax: 8500,
+    },
+    {
+      name: "Bellevue Gardens Assisted Living",
+      facilityType: 'alf',
+      address: "4500 148th Ave NE",
+      city: "Bellevue",
+      zipCode: "98007",
+      county: "King",
+      phone: "(425) 555-0302",
+      licenseNumber: "ALF-001235",
+      capacity: 120,
+      specialties: ["Memory Care", "Rehabilitation", "Respite Care"],
+      description: "A premier assisted living community in Bellevue offering luxury accommodations, personalized care plans, and a vibrant social calendar. Our dedicated staff ensures residents feel at home while receiving the support they need.",
+      priceMin: 5800,
+      priceMax: 9200,
+    },
+    // Skilled Nursing Facilities
+    {
+      name: "Evergreen Rehabilitation Center",
+      facilityType: 'snf',
+      address: "2200 NE 150th St",
+      city: "Shoreline",
+      zipCode: "98155",
+      county: "King",
+      phone: "(206) 555-0403",
+      licenseNumber: "SNF-002341",
+      capacity: 75,
+      specialties: ["Physical Therapy", "Cardiac Rehab", "Post-Surgery Recovery"],
+      description: "Evergreen Rehabilitation Center provides skilled nursing care and comprehensive rehabilitation services. Our medical team specializes in helping patients recover from surgery, illness, or injury with state-of-the-art therapy facilities.",
+      priceMin: 8500,
+      priceMax: 12000,
+    },
+    {
+      name: "Pacific Northwest Nursing & Rehab",
+      facilityType: 'snf',
+      address: "5600 California Ave SW",
+      city: "Seattle",
+      zipCode: "98136",
+      county: "King",
+      phone: "(206) 555-0504",
+      licenseNumber: "SNF-002342",
+      capacity: 90,
+      specialties: ["Stroke Recovery", "Wound Care", "Respiratory Therapy"],
+      description: "Pacific Northwest Nursing & Rehabilitation offers 24-hour skilled nursing care and specialized rehabilitation programs. Our Medicare-certified facility provides comprehensive medical care in a comfortable, healing environment.",
+      priceMin: 9200,
+      priceMax: 14000,
+    },
+    // Hospice Care
+    {
+      name: "Peaceful Journey Hospice",
+      facilityType: 'hospice',
+      address: "789 Totem Lake Way",
+      city: "Kirkland",
+      zipCode: "98034",
+      county: "King",
+      phone: "(425) 555-0605",
+      licenseNumber: "HSP-003451",
+      capacity: 16,
+      specialties: ["In-Home Care", "Residential Hospice", "Respite Care"],
+      description: "Peaceful Journey Hospice provides compassionate end-of-life care focused on comfort, dignity, and quality of life. Our interdisciplinary team offers medical care, emotional support, and spiritual guidance for patients and families.",
+      priceMin: 0, // Often covered by Medicare/insurance
+      priceMax: 6000,
+    },
+    {
+      name: "Serenity Hospice House",
+      facilityType: 'hospice',
+      address: "1234 Redmond Way",
+      city: "Redmond",
+      zipCode: "98052",
+      county: "King",
+      phone: "(425) 555-0706",
+      licenseNumber: "HSP-003452",
+      capacity: 12,
+      specialties: ["Residential Hospice", "Family Counseling", "Bereavement Support"],
+      description: "Serenity Hospice House offers a peaceful, home-like setting for individuals in their final journey. Our caring staff provides holistic support including pain management, emotional care, and family services in a serene environment.",
+      priceMin: 0,
+      priceMax: 5500,
+    },
+  ];
+
+  for (let i = 0; i < OTHER_FACILITY_DATA.length; i++) {
+    const data = OTHER_FACILITY_DATA[i];
+    const facility = {
+      name: data.name,
+      slug: slugify(data.name),
+      facilityType: data.facilityType,
+      address: data.address,
+      city: data.city,
+      state: "WA",
+      zipCode: data.zipCode,
+      county: data.county,
+      phone: data.phone,
+      email: `info@${slugify(data.name).substring(0, 15)}.com`,
+      capacity: data.capacity,
+      availableBeds: Math.floor(Math.random() * 8) + 1,
+      priceMin: data.priceMin,
+      priceMax: data.priceMax,
+      rating: (4.3 + Math.random() * 0.6).toFixed(1),
+      reviewCount: Math.floor(Math.random() * 40) + 10,
+      licenseNumber: data.licenseNumber,
+      licenseStatus: "Active",
+      lastInspectionDate: "2024-11-01",
+      violationsCount: 0,
+      acceptsMedicaid: data.facilityType === 'hospice' || data.facilityType === 'snf',
+      acceptsPrivatePay: true,
+      specialties: data.specialties,
+      amenities: data.facilityType === 'alf' 
+        ? ["Restaurant Dining", "Fitness Center", "Transportation", "24/7 Care", "Activities Program"]
+        : data.facilityType === 'snf'
+        ? ["Therapy Gym", "Private Rooms", "Medical Equipment", "24/7 Nursing", "Family Lounge"]
+        : ["Private Suites", "Gardens", "Chapel", "Family Rooms", "Grief Counseling"],
+      careTypes: data.specialties,
+      certifications: data.facilityType === 'snf' 
+        ? ["Medicare Certified", "Medicaid Certified", "DSHS Licensed"]
+        : data.facilityType === 'hospice'
+        ? ["DOH Licensed", "Medicare Certified", "NHPCO Member"]
+        : ["DSHS Licensed", "State Certified"],
+      images: getImagesForIndex(FACILITY_DATA.length + i),
+      description: data.description,
+      yearEstablished: 2005 + Math.floor(Math.random() * 15),
+      status: "active",
+      featured: i === 0 || i === 2 || i === 4, // One of each type featured
+      acceptingInquiries: "accepting",
+    };
+
+    const result = await db.insert(facilities).values(facility).returning({ id: facilities.id });
+    facilityIds.push(result[0].id);
+  }
+  console.log(`Created ${OTHER_FACILITY_DATA.length} additional facilities (ALF, SNF, Hospice)`);
 
   // Seed reviews for facilities
   let reviewsCreated = 0;
