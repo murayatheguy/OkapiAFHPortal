@@ -47,7 +47,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Seifu, Hiwot",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755337",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755337",
   },
   {
     name: "A Plus Adult Family Home",
@@ -61,7 +61,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Cavada, Dolores E.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755642",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755642",
   },
   {
     name: "AA Suite Adult Family Home LLC",
@@ -75,7 +75,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Rizal, Giri",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=757752",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=757752",
   },
   {
     name: "Always Home AFH",
@@ -89,7 +89,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["Specialized Behavior Support", "HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Solomon, Saba H.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754734",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754734",
   },
   {
     name: "Bright Rose AFH LLC",
@@ -103,7 +103,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Private Duty Nursing", "HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Assen, Abiy B.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755908",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755908",
   },
   {
     name: "Dynasty AFH LLC",
@@ -117,7 +117,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Specialized Behavior Support", "HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Paul, Bernard K.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=756657",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=756657",
   },
   {
     name: "Neighbors Choice Care LLC",
@@ -131,7 +131,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Adult Family Home"],
     pointOfContact: "Dimanga Kutambula, Leiticia",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=756353",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=756353",
   },
   {
     name: "Safe Haven AFH",
@@ -145,7 +145,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Specialized Behavior Support", "HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Mekonnen, Girmachew T.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754712",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754712",
   },
   {
     name: "#1 Freedom Adult Family Home LLC",
@@ -159,7 +159,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Tesfamicael, Natsnet G.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755888",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755888",
   },
   {
     name: "#1st Ivanna AFH",
@@ -173,7 +173,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Kiuna, Damaris W.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754177",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754177",
   },
   {
     name: "#I Care AFH LLC",
@@ -187,7 +187,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Specialized Behavior Support", "HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Enyew, Ephrem",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755284",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755284",
   },
   {
     name: "#1 Amen Adult Family Home LLC",
@@ -201,7 +201,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Kindane, Haregu",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755603",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755603",
   },
   {
     name: "#1 Helping Hand AFH LLC",
@@ -215,7 +215,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Cislaru, Natalia",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=756797",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=756797",
   },
   {
     name: "#1 Little Angel Adult Family Home LLC",
@@ -229,7 +229,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["Adult Family Home"],
     pointOfContact: "Mwaura, Tabitha M.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755763",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755763",
   },
   {
     name: "#1 The Rock of Mercy LLC",
@@ -243,7 +243,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Adult Family Home"],
     pointOfContact: "Aho, Mohokoi",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754142",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754142",
   },
   {
     name: "1st Northgate Adult Family Home",
@@ -257,7 +257,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Sahile, Helen A.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754459",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754459",
   },
   {
     name: "Cedar Park",
@@ -271,7 +271,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["Adult Family Home"],
     pointOfContact: "Drammeh, Jainaba",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754361",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754361",
   },
   {
     name: "Ethos AFH LLC",
@@ -285,7 +285,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Kassa, Abraham H.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=756015",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=756015",
   },
   {
     name: "Mulu's Golden Care AFH LLC",
@@ -299,7 +299,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Wereta, Mulu A.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754281",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754281",
   },
   {
     name: "Palm House LLC",
@@ -313,7 +313,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["Specialized Behavior Support", "HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Girma, Azeb M.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754316",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754316",
   },
   {
     name: "Trinity Elderly Care AFH 2",
@@ -327,7 +327,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Worku, Alemtsehay T.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=757496",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=757496",
   },
   {
     name: "Simren AFH",
@@ -341,7 +341,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Adult Family Home"],
     pointOfContact: "Segni Gemeda, Tirunesh",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=758357",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=758357",
   },
   {
     name: "Living At Lake Meridian AFH",
@@ -355,7 +355,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: [],
     pointOfContact: "Powell, Olimpia B.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=755352",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=755352",
   },
   {
     name: "Elizabeth's Care Home LLC",
@@ -369,7 +369,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["Specialized Behavior Support", "HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Otieno, Josephine A.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=758096",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=758096",
   },
   {
     name: "Perfect Care LLC",
@@ -383,7 +383,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia"],
     contracts: ["HCS Meaningful Day", "Expanded Community Services", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Solomon, Bezawit T.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754032",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754032",
   },
   {
     name: "Comfort Care AFH",
@@ -397,7 +397,7 @@ const FACILITY_DATA = [
     specialties: ["Mental Health", "Dementia", "Developmental Disabilities"],
     contracts: ["HCS Meaningful Day", "DDA Meaningful Day", "Adult Family Home"],
     pointOfContact: "Johnson, Mary L.",
-    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHServices.aspx?Lic=754500",
+    disclosureUrl: "https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=754500",
   },
 ];
 
