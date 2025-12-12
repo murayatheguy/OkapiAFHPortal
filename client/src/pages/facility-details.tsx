@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { 
   MapPin, Phone, MessageSquare, Calendar, CheckCircle2, ShieldCheck, 
-  AlertTriangle, Clock, Users, Banknote, ArrowLeft, ArrowRight, Check,
-  Building2, Star, Loader2, ChevronDown, ChevronUp, ExternalLink, UserCheck, HelpCircle
+  Clock, Users, Banknote, ArrowLeft, ArrowRight, Check,
+  Building2, Star, Loader2, ExternalLink, UserCheck, HelpCircle
 } from "lucide-react";
 import { 
   Carousel,
@@ -40,7 +40,6 @@ export default function FacilityDetails() {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showTourModal, setShowTourModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [expandedInspections, setExpandedInspections] = useState(false);
   const [claimForm, setClaimForm] = useState({
     requesterName: "",
     requesterEmail: "",
@@ -160,12 +159,6 @@ export default function FacilityDetails() {
     (!member.credentials || member.credentials.every(c => c.status === "Current" || c.status === "Expiring Soon"))
   );
 
-  const mockInspections = [
-    { date: "2024-10", type: "Routine Inspection", violations: 0, result: "No violations" },
-    { date: "2024-04", type: "Routine Inspection", violations: 0, result: "No violations" },
-    { date: "2023-10", type: "Routine Inspection", violations: 1, result: "1 minor violation - Medication log documentation incomplete", corrected: true },
-    { date: "2023-04", type: "Routine Inspection", violations: 0, result: "No violations" },
-  ];
 
   return (
     <div className="min-h-screen bg-background font-sans pb-24 lg:pb-0">
@@ -345,88 +338,30 @@ export default function FacilityDetails() {
                   </div>
                 </div>
 
-                {/* Inspection History - Note: In production, this would be synced from DSHS API */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-500">Inspection History</h4>
-                    <span className="text-xs text-muted-foreground bg-slate-100 px-2 py-1 rounded">Sample Data</span>
-                  </div>
-                  <div className="space-y-3">
-                    {mockInspections.slice(0, expandedInspections ? undefined : 3).map((inspection, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border">
-                        <div className="mt-0.5">
-                          {inspection.violations === 0 ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <AlertTriangle className="h-5 w-5 text-amber-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium text-sm">
-                              {new Date(inspection.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                            </p>
-                            <span className="text-xs text-muted-foreground">{inspection.type}</span>
-                          </div>
-                          <p className={cn("text-sm", inspection.violations > 0 ? "text-amber-700" : "text-green-700")}>
-                            {inspection.result}
-                          </p>
-                          {inspection.corrected && (
-                            <p className="text-xs text-green-600 mt-1">✓ Corrected within 30 days</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {mockInspections.length > 3 && (
-                    <Button 
-                      variant="ghost" 
-                      className="w-full mt-3 text-sm"
-                      onClick={() => setExpandedInspections(!expandedInspections)}
+                {/* Inspection & Compliance History */}
+                <div className="bg-white rounded-lg border p-4">
+                  <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-500 mb-3">Inspection Reports</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    For complete inspection history, complaint investigations, and enforcement actions, 
+                    please visit the official Washington State DSHS website.
+                  </p>
+                  {facility.dshsReportUrl ? (
+                    <a 
+                      href={facility.dshsReportUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium text-sm"
+                      data-testid="button-view-dshs-inspections"
                     >
-                      {expandedInspections ? (
-                        <>Show Less <ChevronUp className="h-4 w-4 ml-1" /></>
-                      ) : (
-                        <>Show All Inspections <ChevronDown className="h-4 w-4 ml-1" /></>
-                      )}
-                    </Button>
+                      View Inspection Reports on DSHS <ExternalLink className="h-4 w-4 ml-2" />
+                    </a>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      Visit <a href="https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-homes" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">dshs.wa.gov</a> to search for this facility's compliance records.
+                    </p>
                   )}
                 </div>
 
-                {/* Compliance Summary */}
-                <div className="bg-white rounded-lg border p-4">
-                  <h4 className="font-semibold text-sm mb-3">5-Year Summary</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Inspections:</span>
-                      <span className="font-medium">5</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Violations:</span>
-                      <span className="font-medium">{facility.violationsCount || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Enforcement Actions:</span>
-                      <span className="font-medium text-green-600">None</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">License Suspensions:</span>
-                      <span className="font-medium text-green-600">None</span>
-                    </div>
-                  </div>
-                </div>
-
-                {facility.dshsReportUrl && (
-                  <a 
-                    href={facility.dshsReportUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-primary hover:underline font-medium text-sm"
-                    data-testid="link-dshs-report"
-                  >
-                    View Full Report on DSHS Website <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
-                )}
               </CardContent>
             </Card>
 
