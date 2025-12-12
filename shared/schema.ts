@@ -153,11 +153,29 @@ export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLog.$inferSelect;
 
-// Facilities table (Adult Family Homes)
+// Facility type enum for different care facility types
+export const facilityTypeEnum = {
+  AFH: 'afh',
+  ALF: 'alf',
+  SNF: 'snf',
+  HOSPICE: 'hospice'
+} as const;
+
+export type FacilityType = typeof facilityTypeEnum[keyof typeof facilityTypeEnum];
+
+export const facilityTypeLabels: Record<FacilityType, { full: string; short: string; description: string }> = {
+  afh: { full: 'Adult Family Home', short: 'AFH', description: 'Small residential homes, 2-6 beds' },
+  alf: { full: 'Assisted Living Facility', short: 'Assisted Living', description: 'Larger facilities, 20-100+ beds' },
+  snf: { full: 'Skilled Nursing Facility', short: 'Skilled Nursing', description: 'Medical care and rehabilitation' },
+  hospice: { full: 'Hospice Care', short: 'Hospice', description: 'End of life care' },
+};
+
+// Facilities table (Care Facilities)
 export const facilities = pgTable("facilities", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  facilityType: text("facility_type").notNull().default('afh'), // afh, alf, snf, hospice
   address: text("address").notNull(),
   city: text("city").notNull(),
   state: text("state").notNull().default("WA"),
@@ -221,6 +239,7 @@ export const facilities = pgTable("facilities", {
   featuredIdx: index("facilities_featured_idx").on(table.featured),
   ownerIdx: index("facilities_owner_idx").on(table.ownerId),
   claimStatusIdx: index("facilities_claim_status_idx").on(table.claimStatus),
+  facilityTypeIdx: index("facilities_facility_type_idx").on(table.facilityType),
 }));
 
 export const insertFacilitySchema = createInsertSchema(facilities).omit({ id: true, createdAt: true, updatedAt: true });
