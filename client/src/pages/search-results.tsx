@@ -19,8 +19,15 @@ import {
   SheetTitle, 
   SheetTrigger 
 } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, Map, X, Loader2 } from "lucide-react";
+import { Search, SlidersHorizontal, Map, X, Loader2, Home, Building2, Hospital, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const FACILITY_TYPES = [
+  { id: 'afh', label: 'Adult Family Home', short: 'AFH', icon: Home },
+  { id: 'alf', label: 'Assisted Living', short: 'Assisted Living', icon: Building2 },
+  { id: 'snf', label: 'Skilled Nursing', short: 'Skilled Nursing', icon: Hospital },
+  { id: 'hospice', label: 'Hospice Care', short: 'Hospice', icon: Heart },
+] as const;
 
 export default function SearchResults() {
   const [location] = useLocation();
@@ -34,10 +41,24 @@ export default function SearchResults() {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [priceRange, setPriceRange] = useState([3000, 10000]);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
+  const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>(() => {
+    const typeParam = getQueryParam('type');
+    return typeParam ? typeParam.split(',').filter(t => FACILITY_TYPES.some(ft => ft.id === t)) : [];
+  });
 
   useEffect(() => {
     setSearchQuery(getQueryParam('q'));
+    const typeParam = getQueryParam('type');
+    setSelectedFacilityTypes(typeParam ? typeParam.split(',').filter(t => FACILITY_TYPES.some(ft => ft.id === t)) : []);
   }, [location]);
+
+  const toggleFacilityType = (typeId: string) => {
+    setSelectedFacilityTypes(prev => 
+      prev.includes(typeId) 
+        ? prev.filter(id => id !== typeId)
+        : [...prev, typeId]
+    );
+  };
 
   const specialties = ["Memory Care", "Hospice", "Mental Health", "Developmental Disabilities", "Respite", "High Acuity"];
   const paymentTypes = ["Medicaid", "Private Pay", "VA Benefits", "LTC Insurance"];
@@ -68,9 +89,12 @@ export default function SearchResults() {
       const matchesSpecialties = selectedSpecialties.length === 0 || 
         (facility.specialties && selectedSpecialties.some(s => facility.specialties!.includes(s)));
 
-      return matchesSearch && matchesAvailability && matchesSpecialties;
+      const matchesFacilityType = selectedFacilityTypes.length === 0 || 
+        (facility.facilityType && selectedFacilityTypes.includes(facility.facilityType));
+
+      return matchesSearch && matchesAvailability && matchesSpecialties && matchesFacilityType;
     });
-  }, [facilities, searchQuery, showOnlyAvailable, selectedSpecialties]);
+  }, [facilities, searchQuery, showOnlyAvailable, selectedSpecialties, selectedFacilityTypes]);
 
   const quickFilters = [
     { label: "Memory Care", action: () => toggleSpecialty("Memory Care"), active: selectedSpecialties.includes("Memory Care") },
@@ -83,6 +107,7 @@ export default function SearchResults() {
     setSearchQuery("");
     setShowOnlyAvailable(false);
     setSelectedSpecialties([]);
+    setSelectedFacilityTypes([]);
     setPriceRange([3000, 10000]);
   };
 
@@ -123,6 +148,28 @@ export default function SearchResults() {
                             onCheckedChange={(c) => setShowOnlyAvailable(!!c)}
                           />
                           <Label htmlFor="available-mobile">Available Beds Only</Label>
+                        </div>
+                        <Separator />
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">Facility Type</h4>
+                          <div className="space-y-2">
+                            {FACILITY_TYPES.map((type) => {
+                              const Icon = type.icon;
+                              return (
+                                <div key={type.id} className="flex items-center space-x-2">
+                                  <Checkbox 
+                                    id={`mobile-type-${type.id}`}
+                                    checked={selectedFacilityTypes.includes(type.id)}
+                                    onCheckedChange={() => toggleFacilityType(type.id)}
+                                  />
+                                  <Label htmlFor={`mobile-type-${type.id}`} className="flex items-center gap-2">
+                                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                    {type.short}
+                                  </Label>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                         <Separator />
                         <div>
@@ -193,6 +240,31 @@ export default function SearchResults() {
                       Available Beds Only
                     </Label>
                   </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Facility Type</h4>
+                <div className="space-y-2">
+                  {FACILITY_TYPES.map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <div key={type.id} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`type-${type.id}`} 
+                          checked={selectedFacilityTypes.includes(type.id)}
+                          onCheckedChange={() => toggleFacilityType(type.id)}
+                          data-testid={`filter-type-${type.id}`}
+                        />
+                        <Label htmlFor={`type-${type.id}`} className="text-sm font-normal cursor-pointer flex items-center gap-2">
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                          {type.short}
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

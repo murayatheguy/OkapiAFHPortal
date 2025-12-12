@@ -2,11 +2,20 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { getFeaturedFacilities, searchFacilities, autocompleteFacilities, type AutocompleteResult } from "@/lib/api";
+import { Home as HomeIcon, Building2, Hospital, Heart } from "lucide-react";
+
+const FACILITY_TYPES = [
+  { id: 'afh', label: 'Adult Family Home', short: 'AFH', description: '2-6 beds', icon: HomeIcon },
+  { id: 'alf', label: 'Assisted Living', short: 'Assisted Living', description: '20-100+ beds', icon: Building2 },
+  { id: 'snf', label: 'Skilled Nursing', short: 'Skilled Nursing', description: 'Medical Care', icon: Hospital },
+  { id: 'hospice', label: 'Hospice Care', short: 'Hospice', description: 'End of Life', icon: Heart },
+] as const;
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [searchValue, setSearchValue] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [autocompleteResults, setAutocompleteResults] = useState<AutocompleteResult[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -93,9 +102,20 @@ export default function Home() {
     enabled: activeFilter !== 'all',
   });
 
+  const toggleFacilityType = (typeId: string) => {
+    setSelectedFacilityTypes(prev => 
+      prev.includes(typeId) 
+        ? prev.filter(id => id !== typeId)
+        : [...prev, typeId]
+    );
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setLocation(`/search?q=${encodeURIComponent(searchValue)}`);
+    const params = new URLSearchParams();
+    if (searchValue) params.set('q', searchValue);
+    if (selectedFacilityTypes.length > 0) params.set('type', selectedFacilityTypes.join(','));
+    setLocation(`/search${params.toString() ? '?' + params.toString() : ''}`);
   };
 
   const filteredFacilities = activeFilter === 'all' 
@@ -205,8 +225,76 @@ export default function Home() {
             style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.9rem', color: '#9a978f', lineHeight: 1.6 }}
             data-testid="text-description"
           >
-            Connect with verified Adult Family Homes offering personalized attention and certified professionals.
+            Connect with verified care facilities offering personalized attention and certified professionals.
           </p>
+
+          {/* Facility Type Selector */}
+          <div className="max-w-2xl mx-auto mb-6">
+            <p 
+              className="mb-3 text-center"
+              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.75rem', color: '#9a978f', letterSpacing: '0.1em' }}
+            >
+              What type of care are you looking for?
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+              {FACILITY_TYPES.map((type) => {
+                const Icon = type.icon;
+                const isSelected = selectedFacilityTypes.includes(type.id);
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => toggleFacilityType(type.id)}
+                    className="relative p-3 md:p-4 rounded-lg transition-all duration-300 text-center group"
+                    style={{ 
+                      backgroundColor: isSelected ? 'rgba(201, 169, 98, 0.15)' : 'rgba(232, 228, 220, 0.05)',
+                      border: '1px solid',
+                      borderColor: isSelected ? '#c9a962' : 'rgba(201, 169, 98, 0.2)',
+                    }}
+                    data-testid={`facility-type-${type.id}`}
+                  >
+                    <Icon 
+                      className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 transition-colors"
+                      style={{ color: isSelected ? '#c9a962' : '#9a978f' }}
+                    />
+                    <p 
+                      className="text-xs md:text-sm mb-0.5 transition-colors"
+                      style={{ 
+                        fontFamily: "'Jost', sans-serif", 
+                        fontWeight: isSelected ? 500 : 400, 
+                        color: isSelected ? '#e8e4dc' : '#9a978f' 
+                      }}
+                    >
+                      {type.short}
+                    </p>
+                    <p 
+                      className="text-xs hidden md:block"
+                      style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, color: '#6b6860', fontSize: '0.65rem' }}
+                    >
+                      {type.description}
+                    </p>
+                    {isSelected && (
+                      <div 
+                        className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: '#c9a962' }}
+                      >
+                        <svg className="w-2.5 h-2.5 text-[#0d1a14]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedFacilityTypes.length === 0 && (
+              <p 
+                className="mt-2 text-center"
+                style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.65rem', color: '#6b6860' }}
+              >
+                No selection = All types shown
+              </p>
+            )}
+          </div>
 
           {/* Search Box - Compact */}
           <div className="max-w-lg mx-auto mb-6 relative" ref={searchContainerRef}>
