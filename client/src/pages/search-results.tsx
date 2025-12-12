@@ -108,7 +108,7 @@ export default function SearchResults() {
         (facility.specialties && selectedSpecialties.some(s => facility.specialties!.includes(s)));
 
       const matchesFacilityType = selectedFacilityTypes.length === 0 || 
-        (facility.facilityType && selectedFacilityTypes.includes(facility.facilityType));
+        (facility.facilityType && selectedFacilityTypes.includes(facility.facilityType.toLowerCase()));
 
       return matchesSearch && matchesAvailability && matchesSpecialties && matchesFacilityType;
     });
