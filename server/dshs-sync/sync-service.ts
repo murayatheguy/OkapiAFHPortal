@@ -307,6 +307,9 @@ export class DSHSSyncService {
               inspectionDate,
               inspectionType: inspection.type,
               violationCount: inspection.violations,
+              complianceNumbers: inspection.complianceNumbers || [],
+              documentUrl: inspection.documentUrl || null,
+              inspectionYear: inspection.year || null,
               scrapedAt: new Date()
             });
             newInspections++;

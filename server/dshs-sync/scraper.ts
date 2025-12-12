@@ -13,6 +13,15 @@ export interface ScrapedHome {
   phone: string;
 }
 
+export interface ScrapedInspection {
+  date: string;
+  type: string;
+  violations: number;
+  complianceNumbers: string[];
+  documentUrl: string | null;
+  year: number;
+}
+
 export interface ScrapedHomeDetail {
   licenseNumber: string;
   name: string;
@@ -24,11 +33,7 @@ export interface ScrapedHomeDetail {
   zipCode: string;
   county: string;
   phone: string;
-  inspections: {
-    date: string;
-    type: string;
-    violations: number;
-  }[];
+  inspections: ScrapedInspection[];
   scrapedAt: string;
   dataHash: string;
 }
@@ -277,7 +282,21 @@ export class DSHSScraper {
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
       const html = await page.content();
-      return this.parseHomeDetail(html, licenseNumber);
+      const homeDetail = this.parseHomeDetail(html, licenseNumber);
+
+      // Also scrape the forms page for inspection data
+      const inspections = await this.scrapeInspections(page, licenseNumber);
+      homeDetail.inspections = inspections;
+
+      // Recalculate hash with inspections included
+      const data = { ...homeDetail };
+      delete (data as any).dataHash;
+      homeDetail.dataHash = crypto
+        .createHash('md5')
+        .update(JSON.stringify(data))
+        .digest('hex');
+
+      return homeDetail;
 
     } catch (error) {
       console.error(`[DSHS Scraper] Error scraping home ${licenseNumber}:`, error);
@@ -285,6 +304,89 @@ export class DSHSScraper {
     } finally {
       await page.close();
     }
+  }
+
+  private async scrapeInspections(page: Page, licenseNumber: string): Promise<ScrapedInspection[]> {
+    const inspections: ScrapedInspection[] = [];
+    
+    try {
+      const formsUrl = `https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=${licenseNumber}`;
+      console.log(`[DSHS Scraper] Fetching forms page for license ${licenseNumber}...`);
+      await page.goto(formsUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+      
+      const html = await page.content();
+      const $ = cheerio.load(html);
+      
+      // Look for inspection links in the content_results div
+      $('#content_results li a, #content_results a').each((_, link) => {
+        const href = $(link).attr('href') || '';
+        const linkText = $(link).text().trim();
+        
+        // Only process inspection-related links
+        if (!href.toLowerCase().includes('/inspections/') && 
+            !linkText.toLowerCase().includes('inspection')) {
+          return;
+        }
+        
+        // Parse date from link text (e.g., "10/2025 - Inspections")
+        const dateMatch = linkText.match(/(\d{1,2})\/(\d{4})/);
+        let dateStr = '';
+        let year = new Date().getFullYear();
+        
+        if (dateMatch) {
+          const month = dateMatch[1].padStart(2, '0');
+          year = parseInt(dateMatch[2]);
+          dateStr = `${month}/01/${year}`;
+        }
+        
+        // Extract compliance determination numbers from PDF filename
+        // Format: "R 1 Amen Adult Family Home LLC 65016 66559 - SW.pdf"
+        const complianceNumbers: string[] = [];
+        const cdMatch = href.match(/(\d{5,6})/g);
+        if (cdMatch) {
+          // Filter out the license number and year
+          cdMatch.forEach(num => {
+            if (num !== licenseNumber && !num.startsWith('20')) {
+              complianceNumbers.push(num);
+            }
+          });
+        }
+        
+        // Determine type from link text
+        let type = 'Inspection';
+        if (linkText.toLowerCase().includes('investigation')) {
+          type = 'Investigation';
+        } else if (linkText.toLowerCase().includes('enforcement')) {
+          type = 'Enforcement';
+        } else if (linkText.toLowerCase().includes('follow')) {
+          type = 'Follow-up';
+        }
+        
+        // Build full URL for the document and encode spaces
+        let documentUrl = href;
+        if (href.startsWith('/')) {
+          documentUrl = `https://fortress.wa.gov${href}`;
+        }
+        // Encode spaces and special characters in the URL
+        documentUrl = documentUrl.replace(/ /g, '%20');
+        
+        inspections.push({
+          date: dateStr,
+          type,
+          violations: 0, // We can't determine this without parsing the PDF
+          complianceNumbers,
+          documentUrl,
+          year
+        });
+      });
+      
+      console.log(`[DSHS Scraper] Found ${inspections.length} inspections for license ${licenseNumber}`);
+      
+    } catch (error) {
+      console.error(`[DSHS Scraper] Error scraping inspections for ${licenseNumber}:`, error);
+    }
+    
+    return inspections;
   }
 
   private parseHomeDetail(html: string, licenseNumber: string): ScrapedHomeDetail {
@@ -377,30 +479,9 @@ export class DSHSScraper {
       zipCode: addressInfo.zipCode,
       county: getFieldValue('county'),
       phone: getFieldValue('phone') || getFieldValue('telephone'),
-      inspections: [],
+      inspections: [], // Will be populated by scrapeInspections
       scrapedAt: new Date().toISOString()
     };
-
-    $('table').each((_, table) => {
-      const headerText = $(table).find('th, thead').text().toLowerCase();
-      if (headerText.includes('inspection') || headerText.includes('visit') || headerText.includes('date')) {
-        $(table).find('tbody tr, tr').each((i, row) => {
-          if (i === 0 && $(row).find('th').length > 0) return;
-          
-          const cols = $(row).find('td');
-          if (cols.length >= 2) {
-            const dateText = $(cols[0]).text().trim();
-            if (dateText && /\d/.test(dateText)) {
-              data.inspections.push({
-                date: dateText,
-                type: $(cols[1]).text().trim() || 'Inspection',
-                violations: parseInt($(cols[2]).text().trim()) || 0
-              });
-            }
-          }
-        });
-      }
-    });
 
     const dataHash = crypto
       .createHash('md5')

@@ -627,10 +627,15 @@ export const dshsInspections = pgTable("dshs_inspections", {
   facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
   
   inspectionDate: date("inspection_date").notNull(),
-  inspectionType: text("inspection_type").notNull(), // Routine, Complaint, Follow-up, Initial
+  inspectionType: text("inspection_type").notNull(), // Routine, Complaint, Follow-up, Initial, Investigation
   violationCount: integer("violation_count").default(0),
   outcomeSummary: text("outcome_summary"), // "No violations", "1 violation cited", etc.
   enforcementActions: text("enforcement_actions"), // null if none
+  
+  // Compliance determination data from DSHS forms page
+  complianceNumbers: text("compliance_numbers").array().default(sql`ARRAY[]::text[]`), // e.g., ["65016", "66559"]
+  documentUrl: text("document_url"), // URL to PDF document
+  inspectionYear: integer("inspection_year"), // Year of the inspection
   
   sourceUrl: text("source_url"), // Original DSHS URL
   scrapedAt: timestamp("scraped_at").defaultNow(),
