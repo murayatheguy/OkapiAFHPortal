@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 import mapImage from '@assets/generated_images/clean_google_maps_style_street_map_of_a_residential_neighborhood.png';
+import { AddToCalendar } from "@/components/ui/add-to-calendar";
+import { createTourEvent } from "@/lib/calendar";
 
 export default function FacilityDetails() {
   const [match, params] = useRoute("/facility/:id");
@@ -46,6 +48,23 @@ export default function FacilityDetails() {
     requesterEmail: "",
     requesterPhone: "",
     relationship: ""
+  });
+  const [tourConfirmation, setTourConfirmation] = useState<{
+    submitted: boolean;
+    selectedDate: Date | null;
+    selectedTime: string;
+  }>({
+    submitted: false,
+    selectedDate: null,
+    selectedTime: "morning"
+  });
+  const [tourForm, setTourForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    preferredTime: "morning",
+    attendees: "1",
+    notes: ""
   });
 
   const queryClient = useQueryClient();
@@ -738,62 +757,204 @@ export default function FacilityDetails() {
       </Dialog>
 
       {/* TOUR REQUEST MODAL */}
-      <Dialog open={showTourModal} onOpenChange={setShowTourModal}>
+      <Dialog open={showTourModal} onOpenChange={(open) => {
+        setShowTourModal(open);
+        if (!open) {
+          setTourConfirmation({ submitted: false, selectedDate: null, selectedTime: "morning" });
+          setTourForm({ name: "", email: "", phone: "", preferredTime: "morning", attendees: "1", notes: "" });
+        }
+      }}>
         <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Schedule a Tour at {facility.name}</DialogTitle>
-            <DialogDescription>
-              Request a visit to meet the staff and see the home.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tour-name">Your Name *</Label>
-                <Input id="tour-name" placeholder="Jane Smith" />
+          {!tourConfirmation.submitted ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Schedule a Tour at {facility.name}</DialogTitle>
+                <DialogDescription>
+                  Request a visit to meet the staff and see the home.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tour-name">Your Name *</Label>
+                    <Input 
+                      id="tour-name" 
+                      placeholder="Jane Smith"
+                      value={tourForm.name}
+                      onChange={(e) => setTourForm({ ...tourForm, name: e.target.value })}
+                      data-testid="input-tour-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tour-email">Email *</Label>
+                    <Input 
+                      id="tour-email" 
+                      type="email" 
+                      placeholder="jane@email.com"
+                      value={tourForm.email}
+                      onChange={(e) => setTourForm({ ...tourForm, email: e.target.value })}
+                      data-testid="input-tour-email"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tour-phone">Phone *</Label>
+                  <Input 
+                    id="tour-phone" 
+                    type="tel" 
+                    placeholder="(555) 123-4567"
+                    value={tourForm.phone}
+                    onChange={(e) => setTourForm({ ...tourForm, phone: e.target.value })}
+                    data-testid="input-tour-phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Preferred Time</Label>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant={tourForm.preferredTime === "morning" ? "default" : "outline"} 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => setTourForm({ ...tourForm, preferredTime: "morning" })}
+                      data-testid="button-time-morning"
+                    >
+                      Morning (9am-12pm)
+                    </Button>
+                    <Button 
+                      variant={tourForm.preferredTime === "afternoon" ? "default" : "outline"} 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => setTourForm({ ...tourForm, preferredTime: "afternoon" })}
+                      data-testid="button-time-afternoon"
+                    >
+                      Afternoon (12pm-4pm)
+                    </Button>
+                    <Button 
+                      variant={tourForm.preferredTime === "evening" ? "default" : "outline"} 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => setTourForm({ ...tourForm, preferredTime: "evening" })}
+                      data-testid="button-time-evening"
+                    >
+                      Evening (4pm-7pm)
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tour-attendees">Number of people attending</Label>
+                  <Select 
+                    value={tourForm.attendees}
+                    onValueChange={(value) => setTourForm({ ...tourForm, attendees: value })}
+                  >
+                    <SelectTrigger data-testid="select-tour-attendees">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 person</SelectItem>
+                      <SelectItem value="2">2 people</SelectItem>
+                      <SelectItem value="3">3 people</SelectItem>
+                      <SelectItem value="4">4+ people</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tour-notes">Anything we should know? (optional)</Label>
+                  <Textarea 
+                    id="tour-notes" 
+                    rows={2}
+                    value={tourForm.notes}
+                    onChange={(e) => setTourForm({ ...tourForm, notes: e.target.value })}
+                    data-testid="textarea-tour-notes"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="tour-email">Email *</Label>
-                <Input id="tour-email" type="email" placeholder="jane@email.com" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tour-phone">Phone *</Label>
-              <Input id="tour-phone" type="tel" placeholder="(555) 123-4567" />
-            </div>
-            <div className="space-y-2">
-              <Label>Preferred Time</Label>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">Morning (9am-12pm)</Button>
-                <Button variant="outline" size="sm" className="flex-1">Afternoon (12pm-4pm)</Button>
-                <Button variant="outline" size="sm" className="flex-1">Evening (4pm-7pm)</Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tour-attendees">Number of people attending</Label>
-              <Select defaultValue="1">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 person</SelectItem>
-                  <SelectItem value="2">2 people</SelectItem>
-                  <SelectItem value="3">3 people</SelectItem>
-                  <SelectItem value="4">4+ people</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tour-notes">Anything we should know? (optional)</Label>
-              <Textarea id="tour-notes" rows={2} />
-            </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTourModal(false)}>Cancel</Button>
-            <Button onClick={() => setShowTourModal(false)}>Request Tour</Button>
-          </DialogFooter>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowTourModal(false)} data-testid="button-tour-cancel">Cancel</Button>
+                <Button 
+                  onClick={() => {
+                    const tourDate = new Date();
+                    tourDate.setDate(tourDate.getDate() + 3);
+                    if (tourForm.preferredTime === "morning") {
+                      tourDate.setHours(10, 0, 0, 0);
+                    } else if (tourForm.preferredTime === "afternoon") {
+                      tourDate.setHours(14, 0, 0, 0);
+                    } else {
+                      tourDate.setHours(17, 0, 0, 0);
+                    }
+                    setTourConfirmation({
+                      submitted: true,
+                      selectedDate: tourDate,
+                      selectedTime: tourForm.preferredTime
+                    });
+                    toast({
+                      title: "Tour Request Submitted",
+                      description: "The facility will contact you to confirm your appointment.",
+                    });
+                  }}
+                  data-testid="button-tour-submit"
+                >
+                  Request Tour
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-center mb-4">
+                  <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center">Tour Request Sent!</DialogTitle>
+                <DialogDescription className="text-center">
+                  Your tour request for {facility.name} has been submitted. The facility will contact you within 24-48 hours to confirm the appointment.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="bg-muted/50 rounded-lg p-4 border text-center">
+                  <p className="text-sm text-muted-foreground mb-1">Requested Time</p>
+                  <p className="font-semibold">
+                    {tourConfirmation.selectedTime === "morning" 
+                      ? "Morning (9am-12pm)" 
+                      : tourConfirmation.selectedTime === "afternoon" 
+                        ? "Afternoon (12pm-4pm)" 
+                        : "Evening (4pm-7pm)"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Once confirmed, add the appointment to your calendar
+                  </p>
+                </div>
+
+                {tourConfirmation.selectedDate && (
+                  <div className="flex justify-center">
+                    <AddToCalendar
+                      event={createTourEvent(
+                        facility.name,
+                        `${facility.address}, ${facility.city}, WA ${facility.zipCode}`,
+                        tourConfirmation.selectedDate
+                      )}
+                      buttonText="Add to Calendar"
+                      variant="default"
+                      size="lg"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="sm:justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowTourModal(false)}
+                  data-testid="button-tour-done"
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
