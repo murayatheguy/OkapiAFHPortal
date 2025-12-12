@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { getFacilityWithTeam, submitClaimRequest, getFacilityInspections, type DshsInspection } from "@/lib/api";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Dialog, 
   DialogContent, 
@@ -58,10 +60,19 @@ export default function FacilityDetails() {
     selectedDate: null,
     selectedTime: "morning"
   });
-  const [tourForm, setTourForm] = useState({
+  const [tourForm, setTourForm] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    preferredDate: Date | undefined;
+    preferredTime: string;
+    attendees: string;
+    notes: string;
+  }>({
     name: "",
     email: "",
     phone: "",
+    preferredDate: undefined,
     preferredTime: "morning",
     attendees: "1",
     notes: ""
@@ -761,7 +772,7 @@ export default function FacilityDetails() {
         setShowTourModal(open);
         if (!open) {
           setTourConfirmation({ submitted: false, selectedDate: null, selectedTime: "morning" });
-          setTourForm({ name: "", email: "", phone: "", preferredTime: "morning", attendees: "1", notes: "" });
+          setTourForm({ name: "", email: "", phone: "", preferredDate: undefined, preferredTime: "morning", attendees: "1", notes: "" });
         }
       }}>
         <DialogContent className="sm:max-w-[500px]">
@@ -810,7 +821,34 @@ export default function FacilityDetails() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Preferred Time</Label>
+                  <Label>Preferred Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !tourForm.preferredDate && "text-muted-foreground"
+                        )}
+                        data-testid="button-tour-date"
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {tourForm.preferredDate ? format(tourForm.preferredDate, "PPP") : "Select a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={tourForm.preferredDate}
+                        onSelect={(date) => setTourForm({ ...tourForm, preferredDate: date })}
+                        disabled={(date) => date < addDays(new Date(), 1) || date > addDays(new Date(), 60)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label>Preferred Time *</Label>
                   <div className="flex gap-2">
                     <Button 
                       variant={tourForm.preferredTime === "morning" ? "default" : "outline"} 
@@ -873,9 +911,17 @@ export default function FacilityDetails() {
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowTourModal(false)} data-testid="button-tour-cancel">Cancel</Button>
                 <Button 
+                  disabled={!tourForm.preferredDate}
                   onClick={() => {
-                    const tourDate = new Date();
-                    tourDate.setDate(tourDate.getDate() + 3);
+                    if (!tourForm.preferredDate) {
+                      toast({
+                        title: "Missing Date",
+                        description: "Please select a preferred date for your tour.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    const tourDate = new Date(tourForm.preferredDate);
                     if (tourForm.preferredTime === "morning") {
                       tourDate.setHours(10, 0, 0, 0);
                     } else if (tourForm.preferredTime === "afternoon") {
@@ -915,16 +961,21 @@ export default function FacilityDetails() {
               
               <div className="space-y-4 py-4">
                 <div className="bg-muted/50 rounded-lg p-4 border text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Requested Time</p>
-                  <p className="font-semibold">
+                  <p className="text-sm text-muted-foreground mb-1">Requested Date & Time</p>
+                  {tourConfirmation.selectedDate && (
+                    <p className="font-semibold text-lg">
+                      {format(tourConfirmation.selectedDate, "EEEE, MMMM d, yyyy")}
+                    </p>
+                  )}
+                  <p className="font-medium text-primary">
                     {tourConfirmation.selectedTime === "morning" 
                       ? "Morning (9am-12pm)" 
                       : tourConfirmation.selectedTime === "afternoon" 
                         ? "Afternoon (12pm-4pm)" 
                         : "Evening (4pm-7pm)"}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Once confirmed, add the appointment to your calendar
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Add this appointment to your calendar as a reminder
                   </p>
                 </div>
 
