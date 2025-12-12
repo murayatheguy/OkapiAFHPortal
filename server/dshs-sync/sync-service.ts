@@ -1,6 +1,6 @@
 import { DSHSScraper, WA_COUNTIES, ScrapedHomeDetail } from './scraper';
 import { db } from '../db';
-import { facilities, dshsSyncLogs, dshsHomeSync } from '@shared/schema';
+import { facilities, dshsSyncLogs, dshsHomeSync, dshsInspections } from '@shared/schema';
 import { eq, sql } from 'drizzle-orm';
 
 interface SyncStats {
@@ -199,7 +199,8 @@ export class DSHSSyncService {
   private async upsertHome(data: ScrapedHomeDetail): Promise<{ created: boolean; updated: boolean; newInspections: number }> {
     let created = false;
     let updated = false;
-    const newInspections = 0;
+    let newInspections = 0;
+    let facilityId: string;
 
     const [existingFacility] = await db.select()
       .from(facilities)
@@ -237,6 +238,8 @@ export class DSHSSyncService {
         acceptingInquiries: 'accepting'
       }).returning();
 
+      facilityId = newFacility.id;
+
       await db.insert(dshsHomeSync).values({
         facilityId: newFacility.id,
         licenseNumber: data.licenseNumber,
@@ -257,6 +260,8 @@ export class DSHSSyncService {
       created = true;
 
     } else if (dataChanged) {
+      facilityId = existingFacility.id;
+
       await db.update(facilities)
         .set({
           licenseStatus: data.licenseStatus,
@@ -284,9 +289,60 @@ export class DSHSSyncService {
       });
 
       updated = true;
+    } else {
+      facilityId = existingFacility.id;
+    }
+
+    // Sync inspections
+    if (data.inspections && data.inspections.length > 0) {
+      // Delete existing inspections for this facility and re-insert fresh data
+      await db.delete(dshsInspections).where(eq(dshsInspections.facilityId, facilityId));
+
+      for (const inspection of data.inspections) {
+        try {
+          const inspectionDate = this.parseInspectionDate(inspection.date);
+          if (inspectionDate) {
+            await db.insert(dshsInspections).values({
+              facilityId,
+              inspectionDate,
+              inspectionType: inspection.type,
+              violationCount: inspection.violations,
+              scrapedAt: new Date()
+            });
+            newInspections++;
+          }
+        } catch (err) {
+          console.error(`[DSHS Sync] Error inserting inspection for ${data.licenseNumber}:`, err);
+        }
+      }
     }
 
     return { created, updated, newInspections };
+  }
+
+  private parseInspectionDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    
+    // Try various date formats
+    const formats = [
+      /(\d{1,2})\/(\d{1,2})\/(\d{4})/,  // MM/DD/YYYY
+      /(\d{4})-(\d{2})-(\d{2})/,         // YYYY-MM-DD
+    ];
+    
+    for (const format of formats) {
+      const match = dateStr.match(format);
+      if (match) {
+        if (format === formats[0]) {
+          return new Date(parseInt(match[3]), parseInt(match[1]) - 1, parseInt(match[2]));
+        } else {
+          return new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+        }
+      }
+    }
+    
+    // Try direct parsing
+    const parsed = new Date(dateStr);
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
 
   private generateSlug(name: string, city: string, licenseNumber: string): string {
