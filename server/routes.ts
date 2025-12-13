@@ -1548,5 +1548,143 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================
+  // GOOGLE PLACES API PROXY
+  // ============================================
+  
+  // Autocomplete for location search (cities in Washington)
+  app.get("/api/google/places/autocomplete", async (req, res) => {
+    try {
+      const input = String(req.query.input || "");
+      if (!input || input.length < 2) {
+        return res.json({ predictions: [] });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured" });
+      }
+      
+      const params = new URLSearchParams({
+        input,
+        key: apiKey,
+        types: "(cities)",
+        components: "country:us",
+        locationbias: "rectangle:45.5435,-124.8488|49.0024,-116.9155", // Washington State bounds
+      });
+      
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?${params}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Google API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error in Google Places autocomplete:", error);
+      res.status(500).json({ error: "Failed to fetch location suggestions" });
+    }
+  });
+  
+  // Get place details for selected location
+  app.get("/api/google/places/details", async (req, res) => {
+    try {
+      const placeId = String(req.query.place_id || "");
+      if (!placeId) {
+        return res.status(400).json({ error: "place_id is required" });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured" });
+      }
+      
+      const params = new URLSearchParams({
+        place_id: placeId,
+        key: apiKey,
+        fields: "address_components,formatted_address,geometry,name",
+      });
+      
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?${params}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Google API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error in Google Places details:", error);
+      res.status(500).json({ error: "Failed to fetch place details" });
+    }
+  });
+  
+  // Search for a business place (for syncing Google data to facilities)
+  app.get("/api/google/places/search", async (req, res) => {
+    try {
+      const query = String(req.query.query || "");
+      if (!query) {
+        return res.status(400).json({ error: "query is required" });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured" });
+      }
+      
+      const params = new URLSearchParams({
+        input: query,
+        inputtype: "textquery",
+        key: apiKey,
+        fields: "place_id,name,formatted_address,rating,user_ratings_total,photos,geometry",
+        locationbias: "rectangle:45.5435,-124.8488|49.0024,-116.9155", // Washington State
+      });
+      
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?${params}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Google API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error in Google Places search:", error);
+      res.status(500).json({ error: "Failed to search places" });
+    }
+  });
+  
+  // Get photo URL for a Google place photo reference
+  app.get("/api/google/places/photo", async (req, res) => {
+    try {
+      const photoReference = String(req.query.photo_reference || "");
+      const maxWidth = parseInt(String(req.query.max_width || "400"));
+      
+      if (!photoReference) {
+        return res.status(400).json({ error: "photo_reference is required" });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Google Maps API key not configured" });
+      }
+      
+      const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${apiKey}`;
+      
+      // Redirect to the Google photo URL
+      res.redirect(photoUrl);
+    } catch (error) {
+      console.error("Error getting Google Places photo:", error);
+      res.status(500).json({ error: "Failed to get photo" });
+    }
+  });
+
   return httpServer;
 }

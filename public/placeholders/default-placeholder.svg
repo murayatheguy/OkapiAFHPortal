@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="sky5" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f4f0"/>
+      <stop offset="100%" style="stop-color:#c8ddd6"/>
+    </linearGradient>
+    <linearGradient id="home" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5f0e8"/>
+      <stop offset="100%" style="stop-color:#e8e0d4"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="400" height="300" fill="url(#sky5)"/>
+  
+  <ellipse cx="200" cy="280" rx="150" ry="20" fill="#a8c4b8" opacity="0.4"/>
+  
+  <path d="M200 70 L300 140 L300 250 L100 250 L100 140 Z" fill="url(#home)" stroke="#8b7355" stroke-width="2"/>
+  
+  <path d="M200 70 L100 140 L300 140 Z" fill="#8b7a6b" stroke="#7a695a" stroke-width="2"/>
+  
+  <rect x="165" y="175" width="70" height="75" rx="4" fill="#5c4a3a" stroke="#4a3a2d" stroke-width="2"/>
+  <circle cx="225" cy="215" r="4" fill="#c9a962"/>
+  
+  <rect x="120" y="160" width="30" height="40" rx="2" fill="#87a08b" stroke="#5c7a62" stroke-width="1.5"/>
+  <line x1="135" y1="160" x2="135" y2="200" stroke="#5c7a62" stroke-width="1"/>
+  
+  <rect x="250" y="160" width="30" height="40" rx="2" fill="#87a08b" stroke="#5c7a62" stroke-width="1.5"/>
+  <line x1="265" y1="160" x2="265" y2="200" stroke="#5c7a62" stroke-width="1"/>
+  
+  <circle cx="350" cy="50" r="25" fill="#c9a962" opacity="0.3"/>
+  
+  <text x="200" y="285" text-anchor="middle" fill="#5c7a62" font-family="serif" font-size="12" font-style="italic">Care Facility</text>
+</svg>

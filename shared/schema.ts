@@ -230,6 +230,13 @@ export const facilities = pgTable("facilities", {
   acceptingInquiries: text("accepting_inquiries").default("accepting"), // accepting, waitlist, not_accepting
   isDemo: boolean("is_demo").default(false), // Mark fictional/demo facilities
   
+  // Google Places Data
+  googlePlaceId: text("google_place_id"),
+  googleRating: decimal("google_rating", { precision: 2, scale: 1 }),
+  googleReviewCount: integer("google_review_count"),
+  googlePhotos: json("google_photos").$type<string[]>().default([]),
+  googleSyncedAt: timestamp("google_synced_at"),
+  
   // Metadata
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

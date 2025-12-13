@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="sky4" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0e8f0"/>
+      <stop offset="100%" style="stop-color:#d6c8d6"/>
+    </linearGradient>
+    <linearGradient id="comfort" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff8f5"/>
+      <stop offset="100%" style="stop-color:#f0e8e4"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="400" height="300" fill="url(#sky4)"/>
+  
+  <ellipse cx="200" cy="280" rx="160" ry="22" fill="#c4a8c4" opacity="0.3"/>
+  
+  <path d="M200 65 L310 130 L310 255 L90 255 L90 130 Z" fill="url(#comfort)" stroke="#8b6b7a" stroke-width="2"/>
+  
+  <path d="M200 65 L90 130 L310 130 Z" fill="#a87b8b" stroke="#8b6b7a" stroke-width="2"/>
+  
+  <path d="M200 85 C185 85 175 95 175 110 C175 130 200 145 200 145 C200 145 225 130 225 110 C225 95 215 85 200 85" fill="#c94a6a" stroke="#a83a58" stroke-width="1.5"/>
+  
+  <rect x="160" y="175" width="80" height="80" rx="4" fill="#5a4a4f" stroke="#4a3a40" stroke-width="2"/>
+  <rect x="175" y="190" width="20" height="25" fill="#a887a0" opacity="0.8"/>
+  <rect x="205" y="190" width="20" height="25" fill="#a887a0" opacity="0.8"/>
+  <circle cx="230" cy="220" r="4" fill="#c9a962"/>
+  
+  <rect x="108" y="155" width="35" height="45" rx="2" fill="#a887a0" stroke="#8b6b7a" stroke-width="1.5"/>
+  <line x1="125.5" y1="155" x2="125.5" y2="200" stroke="#8b6b7a" stroke-width="1"/>
+  <line x1="108" y1="177.5" x2="143" y2="177.5" stroke="#8b6b7a" stroke-width="1"/>
+  
+  <rect x="257" y="155" width="35" height="45" rx="2" fill="#a887a0" stroke="#8b6b7a" stroke-width="1.5"/>
+  <line x1="274.5" y1="155" x2="274.5" y2="200" stroke="#8b6b7a" stroke-width="1"/>
+  <line x1="257" y1="177.5" x2="292" y2="177.5" stroke="#8b6b7a" stroke-width="1"/>
+  
+  <ellipse cx="80" cy="250" rx="25" ry="15" fill="#9a7b9a"/>
+  <ellipse cx="75" cy="245" rx="18" ry="12" fill="#b090b0"/>
+  <ellipse cx="320" cy="250" rx="25" ry="15" fill="#9a7b9a"/>
+  <ellipse cx="325" cy="245" rx="18" ry="12" fill="#b090b0"/>
+  
+  <circle cx="350" cy="50" r="25" fill="#c9a962" opacity="0.3"/>
+  
+  <g opacity="0.6">
+    <circle cx="60" cy="80" r="2" fill="#b090b0"/>
+    <circle cx="340" cy="100" r="2" fill="#b090b0"/>
+    <circle cx="55" cy="120" r="1.5" fill="#b090b0"/>
+    <circle cx="355" cy="70" r="1.5" fill="#b090b0"/>
+  </g>
+  
+  <text x="200" y="285" text-anchor="middle" fill="#8b6b7a" font-family="serif" font-size="12" font-style="italic">Hospice Care</text>
+</svg>

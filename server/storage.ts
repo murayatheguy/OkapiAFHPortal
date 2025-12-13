@@ -73,7 +73,7 @@ export interface IStorage {
   }): Promise<Facility[]>;
   getAllFacilities(): Promise<Facility[]>;
   createFacility(facility: InsertFacility): Promise<Facility>;
-  updateFacility(id: string, facility: Partial<InsertFacility> & { claimedAt?: Date | null }): Promise<Facility | undefined>;
+  updateFacility(id: string, facility: Partial<InsertFacility> & { claimedAt?: Date | null; googlePlaceId?: string; googleRating?: string; googleReviewCount?: number; googlePhotos?: string[]; googleSyncedAt?: Date }): Promise<Facility | undefined>;
 
   // Team Members
   getTeamMember(id: string): Promise<TeamMember | undefined>;
@@ -300,14 +300,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createFacility(insertFacility: InsertFacility): Promise<Facility> {
-    const [facility] = await db.insert(facilities).values(insertFacility).returning();
+    const [facility] = await db.insert(facilities).values(insertFacility as any).returning();
     return facility;
   }
 
-  async updateFacility(id: string, updateData: Partial<InsertFacility> & { claimedAt?: Date | null }): Promise<Facility | undefined> {
+  async updateFacility(id: string, updateData: Partial<InsertFacility> & { claimedAt?: Date | null; googlePlaceId?: string; googleRating?: string; googleReviewCount?: number; googlePhotos?: string[]; googleSyncedAt?: Date }): Promise<Facility | undefined> {
     const [facility] = await db
       .update(facilities)
-      .set(updateData)
+      .set(updateData as any)
       .where(eq(facilities.id, id))
       .returning();
     return facility || undefined;
