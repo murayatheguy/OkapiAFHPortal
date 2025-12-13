@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import mapImage from '@assets/generated_images/clean_google_maps_style_street_map_of_a_residential_neighborhood.png';
 import { AddToCalendar } from "@/components/ui/add-to-calendar";
 import { createTourEvent } from "@/lib/calendar";
+import { getFacilityPhotos } from "@/lib/facility-photos";
 
 export default function FacilityDetails() {
   const [match, params] = useRoute("/facility/:id");
@@ -209,29 +210,46 @@ export default function FacilityDetails() {
 
         {/* SECTION 1: PHOTO GALLERY */}
         <div className="mb-8">
-          {facility.images && facility.images.length > 0 ? (
-            <Carousel className="w-full">
-              <CarouselContent>
-                {facility.images.map((img, index) => (
-                  <CarouselItem key={index}>
-                    <div className="relative aspect-video rounded-xl overflow-hidden bg-muted">
-                      <img src={img} alt={`${facility.name} - View ${index + 1}`} className="object-cover w-full h-full" />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="left-4" />
-              <CarouselNext className="right-4" />
-            </Carousel>
-          ) : (
-            <div className="aspect-video rounded-xl bg-muted/50 border-2 border-dashed border-border flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="font-medium">Photos coming soon</p>
-                <p className="text-sm">Contact facility for a tour</p>
-              </div>
-            </div>
-          )}
+          {(() => {
+            const photoData = getFacilityPhotos(facility);
+            const photos = photoData.photos;
+            const isPlaceholder = photoData.isPlaceholder;
+            
+            return (
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {photos.map((img, index) => (
+                    <CarouselItem key={index}>
+                      <div className={cn(
+                        "relative aspect-video rounded-xl overflow-hidden",
+                        isPlaceholder ? "bg-muted flex items-center justify-center" : "bg-muted"
+                      )}>
+                        <img 
+                          src={img} 
+                          alt={`${facility.name} - View ${index + 1}`} 
+                          className={cn(
+                            "w-full h-full",
+                            isPlaceholder ? "object-contain p-8" : "object-cover"
+                          )} 
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {photos.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-4" />
+                    <CarouselNext className="right-4" />
+                  </>
+                )}
+                {photoData.showAttribution && (
+                  <div className="text-xs text-muted-foreground text-center mt-2">
+                    Photos provided by Google
+                  </div>
+                )}
+              </Carousel>
+            );
+          })()}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
