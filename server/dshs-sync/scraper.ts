@@ -284,9 +284,14 @@ export class DSHSScraper {
       const html = await page.content();
       const homeDetail = this.parseHomeDetail(html, licenseNumber);
 
-      // Also scrape the forms page for inspection data
-      const inspections = await this.scrapeInspections(page, licenseNumber);
+      // Also scrape the forms page for inspection data and facility name
+      const { inspections, facilityName } = await this.scrapeInspections(page, licenseNumber);
       homeDetail.inspections = inspections;
+      
+      // Use facility name from forms page if detail page returned an error
+      if (facilityName && (homeDetail.name.includes('Server Error') || homeDetail.name === `AFH ${licenseNumber}`)) {
+        homeDetail.name = facilityName;
+      }
 
       // Recalculate hash with inspections included
       const data = { ...homeDetail };
@@ -306,8 +311,9 @@ export class DSHSScraper {
     }
   }
 
-  private async scrapeInspections(page: Page, licenseNumber: string): Promise<ScrapedInspection[]> {
+  private async scrapeInspections(page: Page, licenseNumber: string): Promise<{ inspections: ScrapedInspection[], facilityName: string | null }> {
     const inspections: ScrapedInspection[] = [];
+    let facilityName: string | null = null;
     
     try {
       const formsUrl = `https://fortress.wa.gov/dshs/adsaapps/lookup/AFHForms.aspx?Lic=${licenseNumber}`;
@@ -316,6 +322,13 @@ export class DSHSScraper {
       
       const html = await page.content();
       const $ = cheerio.load(html);
+      
+      // Extract facility name from the h1 header (e.g., "AFH Documents & Reports for: #1 AMEN ADULT FAMILY HOME LLC")
+      const h1Text = $('h1').first().text().trim();
+      const nameMatch = h1Text.match(/for:\s*(.+)$/i);
+      if (nameMatch) {
+        facilityName = nameMatch[1].trim();
+      }
       
       // Look for inspection links in the content_results div
       $('#content_results li a, #content_results a').each((_, link) => {
@@ -386,7 +399,7 @@ export class DSHSScraper {
       console.error(`[DSHS Scraper] Error scraping inspections for ${licenseNumber}:`, error);
     }
     
-    return inspections;
+    return { inspections, facilityName };
   }
 
   private parseHomeDetail(html: string, licenseNumber: string): ScrapedHomeDetail {
