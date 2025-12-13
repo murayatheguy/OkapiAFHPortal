@@ -5,6 +5,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { MapPin, Phone, Calendar, CheckCircle2, ShieldCheck, AlertCircle, Check, Home, Building2, Hospital, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getFacilityPhotos } from "@/lib/facility-photos";
 
 const FACILITY_TYPE_CONFIG = {
   afh: { label: 'Adult Family Home', icon: Home, color: 'bg-emerald-600/90' },
@@ -18,8 +19,8 @@ interface FacilityCardProps {
 }
 
 export function FacilityCard({ facility }: FacilityCardProps) {
-  const hasImage = facility.images && facility.images.length > 0;
-  const safeImages = facility.images || [];
+  const photoData = getFacilityPhotos(facility);
+  const primaryPhoto = photoData.photos[0];
   const facilityTypeKey = (facility.facilityType || 'afh') as keyof typeof FACILITY_TYPE_CONFIG;
   const typeConfig = FACILITY_TYPE_CONFIG[facilityTypeKey];
   const TypeIcon = typeConfig.icon;
@@ -27,13 +28,14 @@ export function FacilityCard({ facility }: FacilityCardProps) {
   return (
     <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 bg-card flex flex-col h-full">
       <div className="relative h-48 overflow-hidden shrink-0 bg-muted/30">
-        {hasImage && (
-          <img 
-            src={safeImages[0]} 
-            alt={facility.name} 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        )}
+        <img 
+          src={primaryPhoto} 
+          alt={facility.name} 
+          className={cn(
+            "w-full h-full transition-transform duration-500 group-hover:scale-105",
+            photoData.isPlaceholder ? "object-contain p-4" : "object-cover"
+          )}
+        />
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           <Badge className={cn(typeConfig.color, "text-white border-none shadow-sm flex items-center gap-1.5")}>
             <TypeIcon className="h-3 w-3" />

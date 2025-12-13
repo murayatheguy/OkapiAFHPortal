@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { getFeaturedFacilities, searchFacilities, autocompleteFacilities, type AutocompleteResult } from "@/lib/api";
+import { getFacilityPhotos } from "@/lib/facility-photos";
 import { Home as HomeIcon, Building2, Hospital, Heart } from "lucide-react";
 
 const FACILITY_TYPES = [
@@ -458,19 +459,19 @@ export default function Home() {
               >
                 {/* Image */}
                 <div className="relative h-48 md:h-56 overflow-hidden bg-stone-200">
-                  {facility.images && facility.images.length > 0 ? (
-                    <img 
-                      src={facility.images[0]} 
-                      alt={facility.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
-                      <svg className="w-16 h-16 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
-                    </div>
-                  )}
+                  {(() => {
+                    const photoData = getFacilityPhotos(facility);
+                    const primaryPhoto = photoData.photos[0];
+                    return (
+                      <img 
+                        src={primaryPhoto} 
+                        alt={facility.name}
+                        className={`w-full h-full group-hover:scale-105 transition-transform duration-700 ${
+                          photoData.isPlaceholder ? 'object-contain p-2' : 'object-cover'
+                        }`}
+                      />
+                    );
+                  })()}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   
                   {/* Availability Badge */}
