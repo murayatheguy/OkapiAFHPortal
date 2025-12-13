@@ -1,0 +1,613 @@
+## Task: Implement Photo Fallback System with Illustrated Placeholders
+
+### Overview
+
+Create a photo fallback system for facilities that don't have owner photos or Google Business photos. Use professional illustrated placeholders specific to each facility type.
+
+---
+
+### Photo Fallback Hierarchy
+
+Owner uploaded photos          ← Check first
+Google Business Profile photos ← Check second
+Illustrated placeholder        ← Final fallback (by facility type)
+
+
+---
+
+### Part 1: Create SVG Placeholder Illustrations
+
+Create 4 illustrated placeholder images that match the site's existing design style. Store in `/public/placeholders/` or equivalent static assets folder.
+
+#### AFH Placeholder (`afh-placeholder.svg`)
+```svg
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#faf8f5"/>
+  
+  <!-- Decorative pattern (subtle) -->
+  <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="1" fill="#e5e2dd"/>
+  </pattern>
+  <rect width="800" height="600" fill="url(#dots)"/>
+  
+  <!-- House Icon -->
+  <g transform="translate(400, 240)">
+    <!-- House body -->
+    <rect x="-60" y="-20" width="120" height="100" rx="4" fill="#0d9488" opacity="0.15"/>
+    <!-- Roof -->
+    <path d="M-80 -20 L0 -80 L80 -20 Z" fill="#0d9488" opacity="0.25"/>
+    <!-- Door -->
+    <rect x="-15" y="30" width="30" height="50" rx="2" fill="#0d9488" opacity="0.3"/>
+    <!-- Windows -->
+    <rect x="-50" y="10" width="25" height="25" rx="2" fill="#0d9488" opacity="0.3"/>
+    <rect x="25" y="10" width="25" height="25" rx="2" fill="#0d9488" opacity="0.3"/>
+    <!-- Chimney -->
+    <rect x="30" y="-60" width="20" height="30" fill="#0d9488" opacity="0.2"/>
+    <!-- Heart in door -->
+    <path d="M0 50 C-5 45 -10 50 -10 55 C-10 60 0 68 0 68 C0 68 10 60 10 55 C10 50 5 45 0 50" fill="#0d9488" opacity="0.5"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="380" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1a1a1a">Adult Family Home</text>
+  <text x="400" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">Photos coming soon</text>
+  
+  <!-- CTA -->
+  <rect x="300" y="460" width="200" height="40" rx="20" fill="#0d9488" opacity="0.1"/>
+  <text x="400" y="486" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#0d9488">Are you the owner?</text>
+</svg>
+```
+
+#### ALF Placeholder (`alf-placeholder.svg`)
+```svg
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#faf8f5"/>
+  
+  <!-- Decorative pattern -->
+  <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="1" fill="#e5e2dd"/>
+  </pattern>
+  <rect width="800" height="600" fill="url(#dots)"/>
+  
+  <!-- Building Icon -->
+  <g transform="translate(400, 250)">
+    <!-- Main building -->
+    <rect x="-70" y="-80" width="140" height="160" rx="4" fill="#0d9488" opacity="0.15"/>
+    
+    <!-- Windows grid (3x4) -->
+    <g fill="#0d9488" opacity="0.3">
+      <!-- Row 1 -->
+      <rect x="-55" y="-65" width="25" height="20" rx="2"/>
+      <rect x="-12" y="-65" width="25" height="20" rx="2"/>
+      <rect x="30" y="-65" width="25" height="20" rx="2"/>
+      <!-- Row 2 -->
+      <rect x="-55" y="-35" width="25" height="20" rx="2"/>
+      <rect x="-12" y="-35" width="25" height="20" rx="2"/>
+      <rect x="30" y="-35" width="25" height="20" rx="2"/>
+      <!-- Row 3 -->
+      <rect x="-55" y="-5" width="25" height="20" rx="2"/>
+      <rect x="-12" y="-5" width="25" height="20" rx="2"/>
+      <rect x="30" y="-5" width="25" height="20" rx="2"/>
+      <!-- Row 4 -->
+      <rect x="-55" y="25" width="25" height="20" rx="2"/>
+      <rect x="30" y="25" width="25" height="20" rx="2"/>
+    </g>
+    
+    <!-- Entrance -->
+    <rect x="-20" y="25" width="40" height="55" rx="2" fill="#0d9488" opacity="0.25"/>
+    <rect x="-15" y="30" width="30" height="50" rx="2" fill="#0d9488" opacity="0.35"/>
+    
+    <!-- Awning -->
+    <path d="M-30 25 L0 10 L30 25 Z" fill="#0d9488" opacity="0.2"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="390" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1a1a1a">Assisted Living Facility</text>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">Photos coming soon</text>
+  
+  <!-- CTA -->
+  <rect x="300" y="460" width="200" height="40" rx="20" fill="#0d9488" opacity="0.1"/>
+  <text x="400" y="486" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#0d9488">Are you the owner?</text>
+</svg>
+```
+
+#### SNF Placeholder (`snf-placeholder.svg`)
+```svg
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#faf8f5"/>
+  
+  <!-- Decorative pattern -->
+  <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="1" fill="#e5e2dd"/>
+  </pattern>
+  <rect width="800" height="600" fill="url(#dots)"/>
+  
+  <!-- Hospital/Medical Building Icon -->
+  <g transform="translate(400, 250)">
+    <!-- Main building -->
+    <rect x="-80" y="-60" width="160" height="140" rx="4" fill="#0d9488" opacity="0.15"/>
+    
+    <!-- Medical cross -->
+    <rect x="-15" y="-50" width="30" height="50" rx="2" fill="#0d9488" opacity="0.35"/>
+    <rect x="-30" y="-40" width="60" height="30" rx="2" fill="#0d9488" opacity="0.35"/>
+    
+    <!-- Windows -->
+    <g fill="#0d9488" opacity="0.25">
+      <rect x="-65" y="10" width="30" height="25" rx="2"/>
+      <rect x="35" y="10" width="30" height="25" rx="2"/>
+      <rect x="-65" y="45" width="30" height="25" rx="2"/>
+      <rect x="35" y="45" width="30" height="25" rx="2"/>
+    </g>
+    
+    <!-- Entrance -->
+    <rect x="-20" y="40" width="40" height="40" rx="2" fill="#0d9488" opacity="0.3"/>
+    
+    <!-- Emergency symbol -->
+    <circle cx="0" cy="55" r="10" fill="#0d9488" opacity="0.2"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="390" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1a1a1a">Skilled Nursing Facility</text>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">Photos coming soon</text>
+  
+  <!-- CTA -->
+  <rect x="300" y="460" width="200" height="40" rx="20" fill="#0d9488" opacity="0.1"/>
+  <text x="400" y="486" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#0d9488">Are you the owner?</text>
+</svg>
+```
+
+#### Hospice Placeholder (`hospice-placeholder.svg`)
+```svg
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#faf8f5"/>
+  
+  <!-- Decorative pattern -->
+  <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="1" fill="#e5e2dd"/>
+  </pattern>
+  <rect width="800" height="600" fill="url(#dots)"/>
+  
+  <!-- Heart with Hands Icon -->
+  <g transform="translate(400, 240)">
+    <!-- Hands cupping -->
+    <path d="M-70 30 Q-80 0 -50 -20 Q-30 -35 -10 -10 L0 0" fill="#0d9488" opacity="0.15" stroke="#0d9488" stroke-width="2" stroke-opacity="0.2"/>
+    <path d="M70 30 Q80 0 50 -20 Q30 -35 10 -10 L0 0" fill="#0d9488" opacity="0.15" stroke="#0d9488" stroke-width="2" stroke-opacity="0.2"/>
+    
+    <!-- Heart -->
+    <path d="M0 20 
+             C-5 10 -25 10 -25 -10 
+             C-25 -30 0 -35 0 -15 
+             C0 -35 25 -30 25 -10 
+             C25 10 5 10 0 20 Z" 
+          fill="#0d9488" opacity="0.3"/>
+    
+    <!-- Inner heart glow -->
+    <path d="M0 5 
+             C-3 0 -12 0 -12 -8 
+             C-12 -16 0 -18 0 -10 
+             C0 -18 12 -16 12 -8 
+             C12 0 3 0 0 5 Z" 
+          fill="#0d9488" opacity="0.2"/>
+    
+    <!-- Subtle rays -->
+    <g stroke="#0d9488" stroke-width="1.5" stroke-opacity="0.15">
+      <line x1="0" y1="-50" x2="0" y2="-65"/>
+      <line x1="30" y1="-40" x2="40" y2="-52"/>
+      <line x1="-30" y1="-40" x2="-40" y2="-52"/>
+      <line x1="45" y1="-15" x2="60" y2="-20"/>
+      <line x1="-45" y1="-15" x2="-60" y2="-20"/>
+    </g>
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="380" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1a1a1a">Hospice Care</text>
+  <text x="400" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">Photos coming soon</text>
+  
+  <!-- CTA -->
+  <rect x="300" y="460" width="200" height="40" rx="20" fill="#0d9488" opacity="0.1"/>
+  <text x="400" y="486" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#0d9488">Are you the owner?</text>
+</svg>
+```
+
+#### Default Placeholder (`default-placeholder.svg`)
+
+For any unknown facility type:
+```svg
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#faf8f5"/>
+  
+  <!-- Decorative pattern -->
+  <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="10" cy="10" r="1" fill="#e5e2dd"/>
+  </pattern>
+  <rect width="800" height="600" fill="url(#dots)"/>
+  
+  <!-- Generic care icon -->
+  <g transform="translate(400, 240)">
+    <circle cx="0" cy="-20" r="50" fill="#0d9488" opacity="0.15"/>
+    <circle cx="0" cy="-20" r="35" fill="#0d9488" opacity="0.1"/>
+    <text x="0" y="-10" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#0d9488" opacity="0.4">?</text>
+  </g>
+  
+  <!-- Text -->
+  <text x="400" y="380" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#1a1a1a">Care Facility</text>
+  <text x="400" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666666">Photos coming soon</text>
+  
+  <!-- CTA -->
+  <rect x="300" y="460" width="200" height="40" rx="20" fill="#0d9488" opacity="0.1"/>
+  <text x="400" y="486" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#0d9488">Are you the owner?</text>
+</svg>
+```
+
+---
+
+### Part 2: Photo Fallback Logic
+
+Create a utility function to get the appropriate photo for any facility:
+```javascript
+// utils/facilityPhotos.js
+
+const PLACEHOLDERS = {
+  afh: '/placeholders/afh-placeholder.svg',
+  alf: '/placeholders/alf-placeholder.svg',
+  snf: '/placeholders/snf-placeholder.svg',
+  hospice: '/placeholders/hospice-placeholder.svg',
+  default: '/placeholders/default-placeholder.svg'
+};
+
+export function getFacilityPhotos(facility) {
+  // Priority 1: Owner uploaded photos
+  if (facility.owner_photos && facility.owner_photos.length > 0) {
+    return {
+      photos: facility.owner_photos,
+      source: 'owner',
+      showAttribution: false,
+      showAddPhotosPrompt: false
+    };
+  }
+  
+  // Priority 2: Google Business Profile photos
+  if (facility.google_photos && facility.google_photos.length > 0) {
+    return {
+      photos: facility.google_photos.map(p => typeof p === 'string' ? p : p.url),
+      source: 'google',
+      showAttribution: true,
+      attributionText: 'Photos from Google',
+      showAddPhotosPrompt: facility.is_claimed === true
+    };
+  }
+  
+  // Priority 3: Illustrated placeholder by facility type
+  const placeholder = PLACEHOLDERS[facility.facilityType] || PLACEHOLDERS.default;
+  
+  return {
+    photos: [placeholder],
+    source: 'placeholder',
+    showAttribution: false,
+    showAddPhotosPrompt: facility.is_claimed === true,
+    isPlaceholder: true
+  };
+}
+
+export function getPlaceholderByType(facilityType) {
+  return PLACEHOLDERS[facilityType] || PLACEHOLDERS.default;
+}
+```
+
+---
+
+### Part 3: Facility Photo Component
+
+Create a reusable component that handles all photo display logic:
+```javascript
+// components/FacilityPhoto.jsx
+
+import { getFacilityPhotos } from '../utils/facilityPhotos';
+
+export function FacilityPhoto({ facility, className = '' }) {
+  const { 
+    photos, 
+    source, 
+    showAttribution, 
+    attributionText,
+    showAddPhotosPrompt,
+    isPlaceholder 
+  } = getFacilityPhotos(facility);
+  
+  return (
+    <div className={`facility-photo-container ${className}`}>
+      {/* Main photo */}
+      <img 
+        src={photos[0]} 
+        alt={`${facility.name} - ${facility.facilityType.toUpperCase()}`}
+        className={`facility-photo ${isPlaceholder ? 'placeholder-photo' : ''}`}
+        loading="lazy"
+      />
+      
+      {/* Photo count badge (if multiple photos) */}
+      {photos.length > 1 && (
+        <div className="photo-count-badge">
+          <span>1/{photos.length}</span>
+        </div>
+      )}
+      
+      {/* Attribution badge */}
+      {showAttribution && attributionText && (
+        <div className="photo-attribution-badge">
+          <span>{attributionText}</span>
+        </div>
+      )}
+      
+      {/* Add photos prompt for claimed listings */}
+      {showAddPhotosPrompt && (
+        <div className="add-photos-prompt">
+          <span>Add photos to attract more families</span>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### Part 4: Facility Card Integration
+
+Update the facility card to use the new photo component:
+```javascript
+// components/FacilityCard.jsx
+
+import { FacilityPhoto } from './FacilityPhoto';
+
+export function FacilityCard({ facility }) {
+  return (
+    <div className="facility-card">
+      {/* Photo section */}
+      <FacilityPhoto facility={facility} className="card-photo" />
+      
+      {/* Facility info */}
+      <div className="facility-info">
+        <div className="facility-header">
+          <h3>{facility.name}</h3>
+          {facility.rating && (
+            <span className="rating">⭐ {facility.rating}</span>
+          )}
+        </div>
+        
+        {/* Facility type badge */}
+        <span className={`facility-type-badge ${facility.facilityType}`}>
+          {getFacilityTypeLabel(facility.facilityType)}
+        </span>
+        
+        {/* Location */}
+        <p className="location">
+          {facility.city}, {facility.state} • {facility.distance || '—'} miles
+        </p>
+        
+        {/* Availability */}
+        {facility.beds_available !== undefined && (
+          <p className="availability">
+            {facility.beds_available} beds available
+          </p>
+        )}
+        
+        {/* Price */}
+        {facility.monthly_rate_min && (
+          <p className="price">
+            ${facility.monthly_rate_min.toLocaleString()}/mo
+          </p>
+        )}
+        
+        {/* Verification badges */}
+        <div className="badges">
+          {facility.verified && <span className="badge verified">✓ Verified</span>}
+          {facility.compliance_score === 100 && <span className="badge compliance">100% Compliance</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getFacilityTypeLabel(type) {
+  const labels = {
+    afh: 'Adult Family Home',
+    alf: 'Assisted Living',
+    snf: 'Skilled Nursing',
+    hospice: 'Hospice'
+  };
+  return labels[type] || 'Care Facility';
+}
+```
+
+---
+
+### Part 5: CSS Styles
+
+Add styles for the photo components (use existing design tokens):
+```css
+/* Facility Photo Styles */
+
+.facility-photo-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  border-radius: 12px; /* Match existing card radius */
+  background-color: #faf8f5;
+}
+
+.facility-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.facility-photo.placeholder-photo {
+  object-fit: contain;
+}
+
+.photo-count-badge {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+}
+
+.photo-attribution-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #666;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+}
+
+.add-photos-prompt {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+  color: white;
+  padding: 12px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+/* Facility Type Badges */
+.facility-type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 8px 0;
+}
+
+.facility-type-badge.afh {
+  background-color: rgba(13, 148, 136, 0.1); /* teal */
+  color: #0d9488;
+}
+
+.facility-type-badge.alf {
+  background-color: rgba(13, 148, 136, 0.1);
+  color: #0d9488;
+}
+
+.facility-type-badge.snf {
+  background-color: rgba(13, 148, 136, 0.1);
+  color: #0d9488;
+}
+
+.facility-type-badge.hospice {
+  background-color: rgba(13, 148, 136, 0.1);
+  color: #0d9488;
+}
+```
+
+---
+
+### Part 6: Database Schema
+
+Ensure the facilities table has these photo-related fields:
+```sql
+-- If not already present
+ALTER TABLE facilities ADD COLUMN owner_photos JSONB DEFAULT '[]';
+ALTER TABLE facilities ADD COLUMN google_photos JSONB DEFAULT '[]';
+ALTER TABLE facilities ADD COLUMN google_place_id VARCHAR(255);
+ALTER TABLE facilities ADD COLUMN photo_source VARCHAR(20) DEFAULT 'placeholder';
+-- photo_source values: 'owner', 'google', 'placeholder'
+```
+
+Or in Prisma:
+```prisma
+model Facility {
+  // ... existing fields
+  
+  owner_photos    Json      @default("[]")
+  google_photos   Json      @default("[]")
+  google_place_id String?
+  photo_source    String    @default("placeholder")
+}
+```
+
+---
+
+### Part 7: File Structure
+
+Create this folder structure:
+/public
+/placeholders
+afh-placeholder.svg
+alf-placeholder.svg
+snf-placeholder.svg
+hospice-placeholder.svg
+default-placeholder.svg
+/src
+/utils
+facilityPhotos.js
+/components
+FacilityPhoto.jsx
+FacilityCard.jsx
+
+---
+
+### Acceptance Criteria
+
+**Placeholder SVGs:**
+- [ ] 5 SVG files created (AFH, ALF, SNF, Hospice, Default)
+- [ ] SVGs use existing site colors (teal #0d9488, cream #faf8f5)
+- [ ] SVGs are clean and professional
+- [ ] Each SVG has appropriate icon for facility type
+- [ ] "Photos coming soon" text on each
+- [ ] "Are you the owner?" CTA on each
+
+**Photo Logic:**
+- [ ] `getFacilityPhotos()` function returns correct photos by priority
+- [ ] Owner photos shown first if available
+- [ ] Google photos shown second if available
+- [ ] Placeholder shown as fallback
+- [ ] Correct placeholder shown based on facility type
+
+**Display:**
+- [ ] Facility cards show appropriate photo
+- [ ] Attribution badge shows "Photos from Google" when using Google photos
+- [ ] Add photos prompt shows for claimed listings without owner photos
+- [ ] Placeholders display correctly (not stretched/cropped)
+- [ ] Photo count badge shows when multiple photos exist
+
+**Styling:**
+- [ ] Uses existing site design tokens
+- [ ] Matches current card styling
+- [ ] Responsive on mobile
+- [ ] Smooth loading (lazy load images)
+
+---
+
+### Testing Checklist
+
+Test with these scenarios:
+
+1. **Facility with owner photos** → Should show owner photos, no attribution
+2. **Facility with Google photos only** → Should show Google photos with attribution
+3. **AFH with no photos** → Should show AFH placeholder
+4. **ALF with no photos** → Should show ALF placeholder  
+5. **SNF with no photos** → Should show SNF placeholder
+6. **Hospice with no photos** → Should show Hospice placeholder
+7. **Unknown type with no photos** → Should show default placeholder
+8. **Claimed listing with placeholder** → Should show "Add photos" prompt
+
+This gives Replit everything needed to implement the illustrated placeholders and photo fallback system. Want me to add anything about the "Are you the owner?" click behavior or photo upload flow?
