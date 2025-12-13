@@ -1,42 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
-  <defs>
-    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#e8f4f0"/>
-      <stop offset="100%" style="stop-color:#c8ddd6"/>
-    </linearGradient>
-    <linearGradient id="house" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#f5f0e8"/>
-      <stop offset="100%" style="stop-color:#e8e0d4"/>
-    </linearGradient>
-  </defs>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#e6f7f5"/>
   
-  <rect width="400" height="300" fill="url(#sky)"/>
+  <g transform="translate(400, 260)">
+    
+    <path d="M-100 60 L-100 -20 L0 -80 L100 -20 L100 60 Z" 
+          fill="none" 
+          stroke="#0d9488" 
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    
+    <path d="M-120 -20 L0 -100 L120 -20" 
+          fill="none" 
+          stroke="#0d9488" 
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    
+    <rect x="-20" y="0" width="40" height="60" rx="3"
+          fill="none" 
+          stroke="#0d9488" 
+          stroke-width="2"/>
+    
+    <circle cx="12" cy="30" r="4" fill="#0d9488"/>
+    
+    <rect x="-75" y="-10" width="35" height="35" rx="2"
+          fill="none" 
+          stroke="#0d9488" 
+          stroke-width="2"/>
+    <line x1="-57.5" y1="-10" x2="-57.5" y2="25" stroke="#0d9488" stroke-width="1.5"/>
+    <line x1="-75" y1="7.5" x2="-40" y2="7.5" stroke="#0d9488" stroke-width="1.5"/>
+    
+    <rect x="40" y="-10" width="35" height="35" rx="2"
+          fill="none" 
+          stroke="#0d9488" 
+          stroke-width="2"/>
+    <line x1="57.5" y1="-10" x2="57.5" y2="25" stroke="#0d9488" stroke-width="1.5"/>
+    <line x1="40" y1="7.5" x2="75" y2="7.5" stroke="#0d9488" stroke-width="1.5"/>
+    
+    <path d="M0 -35 
+             C-4 -42 -15 -42 -15 -30 
+             C-15 -20 0 -10 0 -10 
+             C0 -10 15 -20 15 -30 
+             C15 -42 4 -42 0 -35 Z" 
+          fill="#0d9488" 
+          opacity="0.6"/>
+    
+    <g transform="translate(-140, 20)">
+      <circle cx="0" cy="-30" r="12" fill="none" stroke="#0d9488" stroke-width="2"/>
+      <path d="M0 -18 L0 20 M-15 0 L15 0 M0 20 L-12 50 M0 20 L12 50" 
+            stroke="#0d9488" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    
+    <g transform="translate(140, 20)">
+      <circle cx="0" cy="-30" r="12" fill="none" stroke="#0d9488" stroke-width="2"/>
+      <path d="M0 -18 L0 10" stroke="#0d9488" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-15 0 L10 0" stroke="#0d9488" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="0" cy="35" r="18" fill="none" stroke="#0d9488" stroke-width="2"/>
+      <path d="M-5 10 L-5 25 L10 25" stroke="#0d9488" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    
+  </g>
   
-  <ellipse cx="200" cy="280" rx="150" ry="20" fill="#a8c4b8" opacity="0.4"/>
+  <text x="400" y="420" text-anchor="middle" font-family="Georgia, serif" font-size="36" font-weight="500" fill="#0d9488">
+    Okapi Care Network
+  </text>
   
-  <path d="M200 60 L320 140 L320 260 L80 260 L80 140 Z" fill="url(#house)" stroke="#8b7355" stroke-width="2"/>
+  <text x="400" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#5f9ea0">
+    Adult Family Home
+  </text>
   
-  <path d="M200 60 L80 140 L320 140 Z" fill="#9b5c4c" stroke="#7a4a3d" stroke-width="2"/>
+  <line x1="300" y1="485" x2="500" y2="485" stroke="#0d9488" stroke-width="1" opacity="0.3"/>
   
-  <rect x="160" y="180" width="80" height="80" rx="4" fill="#5c4a3a" stroke="#4a3a2d" stroke-width="2"/>
-  <rect x="175" y="195" width="20" height="25" fill="#87a08b" opacity="0.8"/>
-  <rect x="205" y="195" width="20" height="25" fill="#87a08b" opacity="0.8"/>
-  <circle cx="230" cy="225" r="4" fill="#c9a962"/>
+  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#5f9ea0" letter-spacing="3">
+    WASHINGTON STATE
+  </text>
   
-  <rect x="100" y="160" width="40" height="50" rx="2" fill="#87a08b" stroke="#5c7a62" stroke-width="1.5"/>
-  <line x1="120" y1="160" x2="120" y2="210" stroke="#5c7a62" stroke-width="1"/>
-  <line x1="100" y1="185" x2="140" y2="185" stroke="#5c7a62" stroke-width="1"/>
-  
-  <rect x="260" y="160" width="40" height="50" rx="2" fill="#87a08b" stroke="#5c7a62" stroke-width="1.5"/>
-  <line x1="280" y1="160" x2="280" y2="210" stroke="#5c7a62" stroke-width="1"/>
-  <line x1="260" y1="185" x2="300" y2="185" stroke="#5c7a62" stroke-width="1"/>
-  
-  <ellipse cx="90" cy="255" rx="25" ry="15" fill="#7ba07f"/>
-  <ellipse cx="85" cy="250" rx="18" ry="12" fill="#8cb890"/>
-  <ellipse cx="310" cy="255" rx="25" ry="15" fill="#7ba07f"/>
-  <ellipse cx="315" cy="250" rx="18" ry="12" fill="#8cb890"/>
-  
-  <circle cx="350" cy="50" r="25" fill="#c9a962" opacity="0.3"/>
-  
-  <text x="200" y="285" text-anchor="middle" fill="#5c7a62" font-family="serif" font-size="12" font-style="italic">Adult Family Home</text>
 </svg>
