@@ -475,20 +475,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get single owner
-  app.get("/api/owners/:id", async (req, res) => {
-    try {
-      const owner = await storage.getOwner(req.params.id);
-      if (!owner) {
-        return res.status(404).json({ error: "Owner not found" });
-      }
-      res.json(owner);
-    } catch (error) {
-      console.error("Error getting owner:", error);
-      res.status(500).json({ error: "Failed to get owner" });
-    }
-  });
-
   // Owner login
   app.post("/api/owners/login", async (req, res) => {
     try {
@@ -592,6 +578,20 @@ export async function registerRoutes(
   app.post("/api/owners/logout", (req, res) => {
     (req.session as any).ownerId = null;
     res.json({ success: true });
+  });
+
+  // Get single owner by ID (must be after /me routes)
+  app.get("/api/owners/:id", async (req, res) => {
+    try {
+      const owner = await storage.getOwner(req.params.id);
+      if (!owner) {
+        return res.status(404).json({ error: "Owner not found" });
+      }
+      res.json(owner);
+    } catch (error) {
+      console.error("Error getting owner:", error);
+      res.status(500).json({ error: "Failed to get owner" });
+    }
   });
 
   // Create owner (admin)
