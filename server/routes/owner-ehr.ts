@@ -100,7 +100,7 @@ export function registerOwnerEhrRoutes(app: Express) {
         const { facilityId } = req.params;
         const staff = await storage.getStaffAuthByFacility(facilityId);
 
-        // Remove sensitive data
+        // Remove sensitive data but keep teamMemberId for linking
         const sanitizedStaff = staff.map((s) => ({
           id: s.id,
           email: s.email,
@@ -110,6 +110,7 @@ export function registerOwnerEhrRoutes(app: Express) {
           status: s.status,
           lastLoginAt: s.lastLoginAt,
           createdAt: s.createdAt,
+          teamMemberId: s.teamMemberId || null,
         }));
 
         res.json(sanitizedStaff);
@@ -810,10 +811,18 @@ export function registerOwnerEhrRoutes(app: Express) {
           return res.status(403).json({ error: "Access denied" });
         }
 
+        // Sanitize the data - convert empty strings to null for date fields
+        const { credentialType, credentialNumber, issuingAuthority, issueDate, expirationDate, notes } = req.body;
+
         const credentialData = {
-          ...req.body,
           teamMemberId,
           facilityId: teamMember.facilityId,
+          credentialType,
+          credentialNumber: credentialNumber || null,
+          issuingAuthority: issuingAuthority || null,
+          issueDate: issueDate || null,
+          expirationDate: expirationDate || null,
+          notes: notes || null,
         };
 
         const credential = await storage.createCredential(credentialData);
@@ -849,7 +858,19 @@ export function registerOwnerEhrRoutes(app: Express) {
           return res.status(403).json({ error: "Access denied" });
         }
 
-        const credential = await storage.updateCredential(credentialId, req.body);
+        // Sanitize the data - convert empty strings to null for date fields
+        const { credentialType, credentialNumber, issuingAuthority, issueDate, expirationDate, notes } = req.body;
+
+        const updateData = {
+          credentialType,
+          credentialNumber: credentialNumber || null,
+          issuingAuthority: issuingAuthority || null,
+          issueDate: issueDate || null,
+          expirationDate: expirationDate || null,
+          notes: notes || null,
+        };
+
+        const credential = await storage.updateCredential(credentialId, updateData);
         res.json(credential);
       } catch (error) {
         console.error("Error updating credential:", error);

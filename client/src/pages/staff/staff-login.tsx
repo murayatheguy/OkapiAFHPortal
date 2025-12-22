@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useStaffAuth } from "@/lib/staff-auth";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Home, Eye, EyeOff, KeyRound, Lock, Building2 } from "lucide-react";
+import { Loader2, Home, Eye, EyeOff, KeyRound, Lock, Building2, LogOut, ArrowRight } from "lucide-react";
 
 const TEAL = "#0d9488";
 
 export default function StaffLogin() {
   const [, setLocation] = useLocation();
-  const { login, loginWithPin, loginWithFacilityPin, isLoading, isAuthenticated } = useStaffAuth();
+  const { login, loginWithPin, loginWithFacilityPin, logout, isLoading, isAuthenticated, staff } = useStaffAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
@@ -23,16 +23,31 @@ export default function StaffLogin() {
   const [pinEmail, setPinEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Facility PIN login state
   const [facilityPin, setFacilityPin] = useState("");
   const [staffName, setStaffName] = useState("");
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      setLocation("/staff/dashboard");
+  // Handle logout to switch users
+  const handleLogoutAndSwitch = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You can now sign in as a different user.",
+      });
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingOut(false);
     }
-  }, [isAuthenticated, setLocation]);
+  };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +145,89 @@ export default function StaffLogin() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: TEAL }} />
+      </div>
+    );
+  }
+
+  // Show "already logged in" screen with options
+  if (isAuthenticated && staff) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <header className="px-4 py-3 flex items-center justify-between border-b bg-white">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: TEAL }}
+            >
+              <span className="text-white font-bold text-sm">O</span>
+            </div>
+            <div>
+              <span className="font-semibold text-gray-900">Okapi</span>
+              <span className="text-gray-600 ml-1">EHR</span>
+            </div>
+          </div>
+
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="text-gray-600">
+              <Home className="h-4 w-4 mr-1" />
+              Home
+            </Button>
+          </Link>
+        </header>
+
+        {/* Already Logged In Content */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl font-semibold text-gray-900">
+                Welcome Back
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                You're already signed in
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-teal-50 rounded-lg border border-teal-200 text-center">
+                <p className="text-teal-800 font-medium">
+                  {staff.firstName} {staff.lastName}
+                </p>
+                <p className="text-sm text-teal-600 capitalize">{staff.role}</p>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={() => setLocation("/staff/dashboard")}
+                  className="w-full text-white"
+                  style={{ backgroundColor: TEAL }}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Continue to Dashboard
+                </Button>
+
+                <Button
+                  onClick={handleLogoutAndSwitch}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4 mr-2" />
+                  )}
+                  Sign in as Different User
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Footer */}
+        <footer className="py-4 text-center text-sm text-gray-500">
+          <p>Okapi Care Network EHR</p>
+        </footer>
       </div>
     );
   }

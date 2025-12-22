@@ -37,6 +37,7 @@ import {
   Shield,
   Plus,
   Trash2,
+  Lock,
 } from "lucide-react";
 import {
   Dialog,
@@ -76,6 +77,7 @@ interface StaffMember {
   status: string;
   lastLoginAt: string | null;
   createdAt: string;
+  teamMemberId: string | null;
 }
 
 interface ResidentSummary {
@@ -297,9 +299,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
     enabled: !!facilityId,
   });
 
-  // Fetch team members for credentials
+  // Fetch team members for credentials (synced with owner-dashboard Team section)
   const { data: teamMembers = [] } = useQuery<TeamMember[]>({
-    queryKey: ["owner-facility-team-members", facilityId],
+    queryKey: ["facility-team-members", facilityId],
     queryFn: async () => {
       const response = await fetch(`/api/facilities/${facilityId}/team`, {
         credentials: "include",
@@ -521,15 +523,25 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
   const handleCredentialSubmit = () => {
     if (!selectedTeamMember) return;
 
+    // Convert empty strings to null for optional fields (prevents date parsing errors)
+    const cleanedData = {
+      credentialType: credentialForm.credentialType,
+      credentialNumber: credentialForm.credentialNumber || null,
+      issuingAuthority: credentialForm.issuingAuthority || null,
+      issueDate: credentialForm.issueDate || null,
+      expirationDate: credentialForm.expirationDate || null,
+      notes: credentialForm.notes || null,
+    };
+
     if (editingCredential) {
       updateCredentialMutation.mutate({
         credentialId: editingCredential.id,
-        credentialData: credentialForm,
+        credentialData: cleanedData,
       });
     } else {
       createCredentialMutation.mutate({
         teamMemberId: selectedTeamMember.id,
-        credentialData: credentialForm,
+        credentialData: cleanedData,
       });
     }
   };
@@ -543,6 +555,11 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
   const getTeamMemberName = (teamMemberId: string) => {
     const member = teamMembers.find((m) => m.id === teamMemberId);
     return member?.name || "Unknown";
+  };
+
+  // Check if a team member has portal access (linked staffAuth record)
+  const getTeamMemberPortalAccess = (teamMemberId: string) => {
+    return staff.find((s) => s.teamMemberId === teamMemberId);
   };
 
   const isLoading = statsLoading || staffLoading || censusLoading || incidentsLoading;
@@ -928,7 +945,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
               <div>
                 <CardTitle className="text-stone-200">Staff Users</CardTitle>
                 <CardDescription className="text-stone-500">
-                  {staff.filter((s) => s.status === "active").length} active staff members
+                  {staff.filter((s) => s.status === "active").length} active staff with login access
                 </CardDescription>
               </div>
               <Button
@@ -943,9 +960,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
               {staff.length === 0 ? (
                 <div className="text-center py-8">
                   <UserCheck className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400">No staff members yet</p>
+                  <p className="text-stone-400">No staff users with login access yet</p>
                   <p className="text-stone-500 text-sm mt-1">
-                    Invite your first staff member to get started
+                    Invite staff to give them login access to the Care Portal
                   </p>
                 </div>
               ) : (
@@ -1034,6 +1051,93 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Team Members Card - Unified view with portal access */}
+          <Card className="border-amber-900/20 bg-stone-900/30">
+            <CardHeader>
+              <div>
+                <CardTitle className="text-stone-200">Team Members</CardTitle>
+                <CardDescription className="text-stone-500">
+                  {teamMembers.filter((m) => m.status === "active").length} team members • {staff.filter((s) => s.teamMemberId).length} with portal access
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {teamMembers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-stone-600 mx-auto mb-3" />
+                  <p className="text-stone-400">No team members yet</p>
+                  <p className="text-stone-500 text-sm mt-1">
+                    Add team members from the Dashboard → Team section
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-amber-900/20">
+                        <TableHead className="text-stone-400">Name</TableHead>
+                        <TableHead className="text-stone-400">Email</TableHead>
+                        <TableHead className="text-stone-400">Role</TableHead>
+                        <TableHead className="text-stone-400">Portal Access</TableHead>
+                        <TableHead className="text-stone-400">Credentials</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {teamMembers.map((member) => {
+                        const memberCredentials = getTeamMemberCredentials(member.id);
+                        const portalAccess = getTeamMemberPortalAccess(member.id);
+                        return (
+                          <TableRow key={member.id} className="border-amber-900/20">
+                            <TableCell className="text-stone-200 font-medium">
+                              {member.name}
+                            </TableCell>
+                            <TableCell className="text-stone-400">{member.email || "—"}</TableCell>
+                            <TableCell className="text-stone-400 capitalize">{member.role}</TableCell>
+                            <TableCell>
+                              {portalAccess ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-teal-600">
+                                    <Lock className="h-3 w-3 mr-1" />
+                                    Active
+                                  </Badge>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-7 px-2 text-xs"
+                                    onClick={() => deleteStaffMutation.mutate(portalAccess.id)}
+                                  >
+                                    Revoke
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Badge className="bg-stone-600">
+                                  No Access
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 h-8 px-2 gap-1"
+                                onClick={() => {
+                                  setActiveTab("credentials");
+                                }}
+                              >
+                                <Shield className="h-4 w-4" />
+                                {memberCredentials.length} credential{memberCredentials.length !== 1 ? "s" : ""}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

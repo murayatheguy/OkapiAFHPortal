@@ -12,25 +12,48 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTeamMembers, getInquiries, updateInquiry } from "@/lib/api";
+import { getTeamMembers, getInquiries, updateInquiry, createTeamMember } from "@/lib/api";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import type { Facility, Inquiry, Review, TeamMember, TransportProvider, TransportBooking } from "@shared/schema";
 import {
   Home, Users, MessageSquare, Star, Settings, LogOut, Building2,
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
-  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil
+  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil, UserPlus
 } from "lucide-react";
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
+
+const TEAM_ROLES = [
+  { value: "caregiver", label: "Caregiver" },
+  { value: "med_tech", label: "Med Tech" },
+  { value: "shift_lead", label: "Shift Lead" },
+  { value: "nurse", label: "Nurse" },
+  { value: "administrator", label: "Administrator" },
+  { value: "owner", label: "Owner" },
+];
 
 export default function OwnerDashboardPage() {
   const [, setLocation] = useLocation();
   const { owner, facilities, claims, isLoading, isAuthenticated, logout } = useOwnerAuth();
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("overview");
   const [showEditDialog, setShowEditDialog] = useState(false);
+
+  // Add Team Member dialog state
+  const [showAddTeamMemberDialog, setShowAddTeamMemberDialog] = useState(false);
+  const [teamMemberForm, setTeamMemberForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "caregiver",
+    hireDate: "",
+  });
 
   useEffect(() => {
     if (facilities.length > 0 && !selectedFacilityId) {
@@ -40,10 +63,49 @@ export default function OwnerDashboardPage() {
 
   const selectedFacility = facilities.find(f => f.id === selectedFacilityId);
 
-  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
-    queryKey: ["team-members", selectedFacilityId],
+  const { data: teamMembers = [], refetch: refetchTeamMembers } = useQuery<TeamMember[]>({
+    queryKey: ["facility-team-members", selectedFacilityId],
     queryFn: () => getTeamMembers(selectedFacilityId!),
     enabled: !!selectedFacilityId,
+  });
+
+  // Create team member mutation
+  const createTeamMemberMutation = useMutation({
+    mutationFn: async (data: typeof teamMemberForm) => {
+      return createTeamMember({
+        facilityId: selectedFacilityId!,
+        name: `${data.firstName} ${data.lastName}`.trim(),
+        email: data.email || undefined,
+        role: data.role,
+        status: "active",
+        isManualEntry: true,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate all team member related queries
+      queryClient.invalidateQueries({ queryKey: ["facility-team-members", selectedFacilityId] });
+      queryClient.invalidateQueries({ queryKey: ["owner-facility-team-members", selectedFacilityId] });
+      setShowAddTeamMemberDialog(false);
+      setTeamMemberForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        role: "caregiver",
+        hireDate: "",
+      });
+      toast({
+        title: "Success",
+        description: "Team member added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add team member",
+        variant: "destructive",
+      });
+    },
   });
 
   const { data: inquiries = [] } = useQuery<Inquiry[]>({
@@ -363,15 +425,32 @@ export default function OwnerDashboardPage() {
 
               {activeSection === "team" && (
                 <div className="space-y-6">
-                  <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
-                    Team Members
-                  </h1>
-                  
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
+                      Team Members
+                    </h1>
+                    <Button
+                      onClick={() => setShowAddTeamMemberDialog(true)}
+                      className="bg-amber-600 hover:bg-amber-500 gap-2"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Add Team Member
+                    </Button>
+                  </div>
+
                   {teamMembers.length === 0 ? (
                     <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-8 text-center">
                         <Users className="h-12 w-12 text-stone-600 mx-auto mb-3" />
                         <p className="text-stone-400">No team members added yet.</p>
+                        <Button
+                          onClick={() => setShowAddTeamMemberDialog(true)}
+                          variant="outline"
+                          className="mt-4 border-amber-900/30 text-amber-200 hover:bg-amber-900/20"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Add Your First Team Member
+                        </Button>
                       </CardContent>
                     </Card>
                   ) : (
@@ -386,10 +465,13 @@ export default function OwnerDashboardPage() {
                                   {member.name.split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
+                              <div className="flex-1">
                                 <div className="text-stone-200 font-medium">{member.name}</div>
-                                <div className="text-stone-500 text-sm">{member.role}</div>
+                                <div className="text-stone-500 text-sm capitalize">{member.role.replace('_', ' ')}</div>
                               </div>
+                              <Badge className={member.status === 'active' ? 'bg-green-600' : 'bg-stone-600'}>
+                                {member.status}
+                              </Badge>
                             </div>
                           </CardContent>
                         </Card>
@@ -852,6 +934,116 @@ export default function OwnerDashboardPage() {
           }}
         />
       )}
+
+      {/* Add Team Member Dialog */}
+      <Dialog open={showAddTeamMemberDialog} onOpenChange={setShowAddTeamMemberDialog}>
+        <DialogContent className="bg-stone-900 border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-stone-200">Add Team Member</DialogTitle>
+            <DialogDescription className="text-stone-400">
+              Add a new team member to your facility
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-stone-300">First Name *</Label>
+                <Input
+                  value={teamMemberForm.firstName}
+                  onChange={(e) => setTeamMemberForm({ ...teamMemberForm, firstName: e.target.value })}
+                  placeholder="John"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-stone-300">Last Name *</Label>
+                <Input
+                  value={teamMemberForm.lastName}
+                  onChange={(e) => setTeamMemberForm({ ...teamMemberForm, lastName: e.target.value })}
+                  placeholder="Smith"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Email (optional)</Label>
+              <Input
+                type="email"
+                value={teamMemberForm.email}
+                onChange={(e) => setTeamMemberForm({ ...teamMemberForm, email: e.target.value })}
+                placeholder="john@example.com"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Phone (optional)</Label>
+              <Input
+                type="tel"
+                value={teamMemberForm.phone}
+                onChange={(e) => setTeamMemberForm({ ...teamMemberForm, phone: e.target.value })}
+                placeholder="(555) 123-4567"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Role *</Label>
+              <Select
+                value={teamMemberForm.role}
+                onValueChange={(value) => setTeamMemberForm({ ...teamMemberForm, role: value })}
+              >
+                <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent className="bg-stone-800 border-amber-900/30">
+                  {TEAM_ROLES.map((role) => (
+                    <SelectItem
+                      key={role.value}
+                      value={role.value}
+                      className="text-stone-200 focus:bg-amber-900/30"
+                    >
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Hire Date (optional)</Label>
+              <Input
+                type="date"
+                value={teamMemberForm.hireDate}
+                onChange={(e) => setTeamMemberForm({ ...teamMemberForm, hireDate: e.target.value })}
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAddTeamMemberDialog(false)}
+              className="border-amber-900/30 text-stone-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createTeamMemberMutation.mutate(teamMemberForm)}
+              disabled={!teamMemberForm.firstName || !teamMemberForm.lastName || createTeamMemberMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-500"
+            >
+              {createTeamMemberMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              Add Team Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
