@@ -83,7 +83,9 @@ export interface IStorage {
 
   // Facilities
   getFacility(id: string): Promise<Facility | undefined>;
-  getFacilityWithTeam(id: string): Promise<{ facility: Facility; team: Array<TeamMember & { credentials: Credential[] }> } | undefined>;
+  getFacilityBySlug(slug: string): Promise<Facility | undefined>;
+  getFacilityByIdOrSlug(idOrSlug: string): Promise<Facility | undefined>;
+  getFacilityWithTeam(idOrSlug: string): Promise<{ facility: Facility; team: Array<TeamMember & { credentials: Credential[] }> } | undefined>;
   searchFacilities(params: {
     city?: string;
     county?: string;
@@ -333,11 +335,28 @@ export class DatabaseStorage implements IStorage {
     return facility || undefined;
   }
 
-  async getFacilityWithTeam(id: string): Promise<{ facility: Facility; team: Array<TeamMember & { credentials: Credential[] }> } | undefined> {
-    const facility = await this.getFacility(id);
+  async getFacilityBySlug(slug: string): Promise<Facility | undefined> {
+    const [facility] = await db.select().from(facilities).where(eq(facilities.slug, slug));
+    return facility || undefined;
+  }
+
+  async getFacilityByIdOrSlug(idOrSlug: string): Promise<Facility | undefined> {
+    // Try by ID first (UUIDs are 36 chars with dashes)
+    if (idOrSlug.length === 36 && idOrSlug.includes('-')) {
+      const facility = await this.getFacility(idOrSlug);
+      if (facility) return facility;
+    }
+    // Try by slug
+    return this.getFacilityBySlug(idOrSlug);
+  }
+
+  async getFacilityWithTeam(idOrSlug: string): Promise<{ facility: Facility; team: Array<TeamMember & { credentials: Credential[] }> } | undefined> {
+    // Support both ID and slug
+    const facility = await this.getFacilityByIdOrSlug(idOrSlug);
     if (!facility) return undefined;
 
-    const team = await this.getTeamMembersByFacility(id);
+    // Use the actual facility ID for team lookup
+    const team = await this.getTeamMembersByFacility(facility.id);
     const teamWithCredentials = await Promise.all(
       team.map(async (member) => {
         const creds = await this.getCredentialsByTeamMember(member.id);

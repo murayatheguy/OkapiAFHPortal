@@ -76,10 +76,10 @@ export async function registerRoutes(
     }
   });
 
-  // Get single facility by ID
+  // Get single facility by ID or slug
   app.get("/api/facilities/:id", async (req, res) => {
     try {
-      const facility = await storage.getFacility(req.params.id);
+      const facility = await storage.getFacilityByIdOrSlug(req.params.id);
       if (!facility) {
         return res.status(404).json({ error: "Facility not found" });
       }
