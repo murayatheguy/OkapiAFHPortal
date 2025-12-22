@@ -159,7 +159,7 @@ export default function Home() {
           {[
             { label: 'Find Homes', href: '/search' },
             { label: 'How It Works', href: '#how-it-works' },
-            { label: 'For Providers', href: '/owner' },
+            { label: 'For Providers', href: '/owner/login' },
           ].map((item) => (
             <Link 
               key={item.label}
@@ -191,7 +191,7 @@ export default function Home() {
             {[
               { label: 'Find Homes', href: '/search' },
               { label: 'How It Works', href: '#how-it-works' },
-              { label: 'For Providers', href: '/owner' },
+              { label: 'For Providers', href: '/owner/login' },
             ].map((item) => (
               <Link 
                 key={item.label}

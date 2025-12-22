@@ -108,6 +108,8 @@ export interface IStorage {
   // Credentials
   getCredential(id: string): Promise<Credential | undefined>;
   getCredentialsByTeamMember(teamMemberId: string): Promise<Credential[]>;
+  getCredentialsByFacility(facilityId: string): Promise<Credential[]>;
+  getExpiringCredentials(facilityId: string, daysAhead: number): Promise<Credential[]>;
   createCredential(credential: InsertCredential): Promise<Credential>;
   updateCredential(id: string, credential: Partial<InsertCredential>): Promise<Credential | undefined>;
   deleteCredential(id: string): Promise<void>;
@@ -463,6 +465,25 @@ export class DatabaseStorage implements IStorage {
 
   async getCredentialsByTeamMember(teamMemberId: string): Promise<Credential[]> {
     return await db.select().from(credentials).where(eq(credentials.teamMemberId, teamMemberId));
+  }
+
+  async getCredentialsByFacility(facilityId: string): Promise<Credential[]> {
+    return await db.select().from(credentials).where(eq(credentials.facilityId, facilityId));
+  }
+
+  async getExpiringCredentials(facilityId: string, daysAhead: number): Promise<Credential[]> {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+    const today = new Date().toISOString().split('T')[0];
+    const futureDateStr = futureDate.toISOString().split('T')[0];
+
+    return await db.select().from(credentials)
+      .where(
+        and(
+          eq(credentials.facilityId, facilityId),
+          sql`(${credentials.expirationDate} IS NOT NULL AND ${credentials.expirationDate} <= ${futureDateStr} AND ${credentials.expirationDate} >= ${today})`
+        )
+      );
   }
 
   async createCredential(insertCredential: InsertCredential): Promise<Credential> {

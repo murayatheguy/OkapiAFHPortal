@@ -695,4 +695,199 @@ export function registerOwnerEhrRoutes(app: Express) {
       }
     }
   );
+
+  // ==================== CREDENTIALS ROUTES ====================
+
+  /**
+   * Get all credentials for a facility
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/credentials",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const owner = (req as any).owner;
+
+        // Verify facility ownership
+        const facilities = await storage.getFacilitiesByOwner(owner.id);
+        const facility = facilities.find((f) => f.id === facilityId);
+        if (!facility) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const credentials = await storage.getCredentialsByFacility(facilityId);
+        res.json(credentials);
+      } catch (error) {
+        console.error("Error fetching credentials:", error);
+        res.status(500).json({ error: "Failed to fetch credentials" });
+      }
+    }
+  );
+
+  /**
+   * Get expiring credentials for a facility (within next X days)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/credentials/expiring",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const days = parseInt(req.query.days as string) || 30;
+        const owner = (req as any).owner;
+
+        // Verify facility ownership
+        const facilities = await storage.getFacilitiesByOwner(owner.id);
+        const facility = facilities.find((f) => f.id === facilityId);
+        if (!facility) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const credentials = await storage.getExpiringCredentials(facilityId, days);
+        res.json(credentials);
+      } catch (error) {
+        console.error("Error fetching expiring credentials:", error);
+        res.status(500).json({ error: "Failed to fetch expiring credentials" });
+      }
+    }
+  );
+
+  /**
+   * Get credentials for a specific team member
+   */
+  app.get(
+    "/api/owners/team-members/:teamMemberId/credentials",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const { teamMemberId } = req.params;
+        const owner = (req as any).owner;
+
+        // Get the team member to verify ownership
+        const teamMember = await storage.getTeamMember(teamMemberId);
+        if (!teamMember) {
+          return res.status(404).json({ error: "Team member not found" });
+        }
+
+        // Verify facility ownership
+        const facilities = await storage.getFacilitiesByOwner(owner.id);
+        const facility = facilities.find((f) => f.id === teamMember.facilityId);
+        if (!facility) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const credentials = await storage.getCredentialsByTeamMember(teamMemberId);
+        res.json(credentials);
+      } catch (error) {
+        console.error("Error fetching team member credentials:", error);
+        res.status(500).json({ error: "Failed to fetch credentials" });
+      }
+    }
+  );
+
+  /**
+   * Add a credential to a team member
+   */
+  app.post(
+    "/api/owners/team-members/:teamMemberId/credentials",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const { teamMemberId } = req.params;
+        const owner = (req as any).owner;
+
+        // Get the team member to verify ownership
+        const teamMember = await storage.getTeamMember(teamMemberId);
+        if (!teamMember) {
+          return res.status(404).json({ error: "Team member not found" });
+        }
+
+        // Verify facility ownership
+        const facilities = await storage.getFacilitiesByOwner(owner.id);
+        const facility = facilities.find((f) => f.id === teamMember.facilityId);
+        if (!facility) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const credentialData = {
+          ...req.body,
+          teamMemberId,
+          facilityId: teamMember.facilityId,
+        };
+
+        const credential = await storage.createCredential(credentialData);
+        res.status(201).json(credential);
+      } catch (error) {
+        console.error("Error creating credential:", error);
+        res.status(500).json({ error: "Failed to create credential" });
+      }
+    }
+  );
+
+  /**
+   * Update a credential
+   */
+  app.put(
+    "/api/owners/credentials/:credentialId",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const { credentialId } = req.params;
+        const owner = (req as any).owner;
+
+        // Get the credential
+        const existingCredential = await storage.getCredential(credentialId);
+        if (!existingCredential) {
+          return res.status(404).json({ error: "Credential not found" });
+        }
+
+        // Verify facility ownership
+        const facilities = await storage.getFacilitiesByOwner(owner.id);
+        const facility = facilities.find((f) => f.id === existingCredential.facilityId);
+        if (!facility) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const credential = await storage.updateCredential(credentialId, req.body);
+        res.json(credential);
+      } catch (error) {
+        console.error("Error updating credential:", error);
+        res.status(500).json({ error: "Failed to update credential" });
+      }
+    }
+  );
+
+  /**
+   * Delete a credential
+   */
+  app.delete(
+    "/api/owners/credentials/:credentialId",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const { credentialId } = req.params;
+        const owner = (req as any).owner;
+
+        // Get the credential
+        const existingCredential = await storage.getCredential(credentialId);
+        if (!existingCredential) {
+          return res.status(404).json({ error: "Credential not found" });
+        }
+
+        // Verify facility ownership
+        const facilities = await storage.getFacilitiesByOwner(owner.id);
+        const facility = facilities.find((f) => f.id === existingCredential.facilityId);
+        if (!facility) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        await storage.deleteCredential(credentialId);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting credential:", error);
+        res.status(500).json({ error: "Failed to delete credential" });
+      }
+    }
+  );
 }

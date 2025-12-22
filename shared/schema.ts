@@ -355,27 +355,39 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 export const credentials = pgTable("credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teamMemberId: varchar("team_member_id").notNull(),
-  
-  // Credential Info
-  name: text("name").notNull(),
-  type: text("type").notNull(), // Required, Specialty, Optional
-  status: text("status").notNull(), // Current, Expiring Soon, Expired, Pending
-  
+  facilityId: varchar("facility_id").notNull(),
+
+  // Credential Info - credentialType is the type of certification
+  credentialType: text("credential_type").notNull(), // NAR, NAC, HCA, BBP, CPR, FirstAid, FoodHandler, Dementia, MentalHealth, MedAdmin, TBTest, BackgroundCheck
+  credentialNumber: text("credential_number"), // License/cert number
+  issuingAuthority: text("issuing_authority"), // WA DOH, American Red Cross, etc
+
+  // Legacy fields for backwards compatibility
+  name: text("name"), // Optional display name override
+  type: text("type"), // Required, Specialty, Optional (category)
+  status: text("status"), // Calculated: Active, Expiring Soon, Expired
+  source: text("source"), // "Okapi Academy" or "External"
+
   // Dates
+  issueDate: date("issue_date"),
+  expirationDate: date("expiration_date"),
+
+  // Legacy date fields
   issuedDate: date("issued_date"),
   expiryDate: date("expiry_date"),
-  
-  // Source
-  source: text("source").notNull(), // "Okapi Academy" or "External"
-  issuer: text("issuer"), // Organization that issued it
-  
+
   // Files
-  certificateUrl: text("certificate_url"),
-  
+  documentUrl: text("document_url"),
+  certificateUrl: text("certificate_url"), // Legacy alias
+
+  // Notes
+  notes: text("notes"),
+
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertCredentialSchema = createInsertSchema(credentials).omit({ id: true, createdAt: true });
+export const insertCredentialSchema = createInsertSchema(credentials).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCredential = z.infer<typeof insertCredentialSchema>;
 export type Credential = typeof credentials.$inferSelect;
 

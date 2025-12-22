@@ -34,7 +34,21 @@ import {
   Edit,
   UserMinus,
   Bed,
+  Shield,
+  Plus,
+  Trash2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CareManagementProps {
   facilityId: string;
@@ -87,6 +101,63 @@ interface IncidentSummary {
   dshsReportable: boolean;
 }
 
+interface Credential {
+  id: string;
+  teamMemberId: string;
+  facilityId: string;
+  credentialType: string;
+  credentialNumber?: string;
+  issuingAuthority?: string;
+  issueDate?: string;
+  expirationDate?: string;
+  documentUrl?: string;
+  notes?: string;
+  createdAt?: string;
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email?: string;
+  role: string;
+  status: string;
+}
+
+// Credential types for Washington State AFH staff
+const CREDENTIAL_TYPES = [
+  { value: "NAR", label: "Nursing Assistant Registered (NAR)" },
+  { value: "NAC", label: "Nursing Assistant Certified (NAC)" },
+  { value: "HCA", label: "Home Care Aide (HCA)" },
+  { value: "BBP", label: "Blood Borne Pathogens (BBP)" },
+  { value: "CPR", label: "CPR Certification" },
+  { value: "FirstAid", label: "First Aid Certification" },
+  { value: "FoodHandler", label: "Food Handler's Permit" },
+  { value: "Dementia", label: "Dementia/Alzheimer's Training" },
+  { value: "MentalHealth", label: "Mental Health Specialist" },
+  { value: "MedAdmin", label: "Medication Administration Training" },
+  { value: "TBTest", label: "TB Test" },
+  { value: "BackgroundCheck", label: "Background Check" },
+];
+
+// Get credential status based on expiration date
+function getCredentialStatus(expirationDate?: string): { status: string; color: string; bgColor: string } {
+  if (!expirationDate) {
+    return { status: "No Expiration", color: "text-stone-400", bgColor: "bg-stone-600" };
+  }
+
+  const expDate = new Date(expirationDate);
+  const today = new Date();
+  const daysUntilExpiry = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysUntilExpiry < 0) {
+    return { status: "Expired", color: "text-red-400", bgColor: "bg-red-600" };
+  } else if (daysUntilExpiry <= 30) {
+    return { status: "Expiring Soon", color: "text-amber-400", bgColor: "bg-amber-600" };
+  } else {
+    return { status: "Active", color: "text-green-400", bgColor: "bg-green-600" };
+  }
+}
+
 export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 }: CareManagementProps) {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -98,6 +169,19 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
   const [editingClient, setEditingClient] = useState<ResidentSummary | null>(null);
   const [dischargingClientId, setDischargingClientId] = useState<string | null>(null);
   const [medicationsResident, setMedicationsResident] = useState<ResidentSummary | null>(null);
+
+  // Credentials state
+  const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
+  const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
+  const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
+  const [credentialForm, setCredentialForm] = useState({
+    credentialType: "",
+    credentialNumber: "",
+    issuingAuthority: "",
+    issueDate: "",
+    expirationDate: "",
+    notes: "",
+  });
 
   // Fetch EHR dashboard stats
   const { data: stats, isLoading: statsLoading } = useQuery<EhrDashboardStats>({
@@ -213,6 +297,45 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
     enabled: !!facilityId,
   });
 
+  // Fetch team members for credentials
+  const { data: teamMembers = [] } = useQuery<TeamMember[]>({
+    queryKey: ["owner-facility-team-members", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/facilities/${facilityId}/team`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Fetch all credentials for facility
+  const { data: allCredentials = [], refetch: refetchCredentials } = useQuery<Credential[]>({
+    queryKey: ["owner-facility-credentials", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/credentials`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Fetch expiring credentials (within 30 days)
+  const { data: expiringCredentials = [] } = useQuery<Credential[]>({
+    queryKey: ["owner-facility-expiring-credentials", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/credentials/expiring?days=30`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
   // Discharge client mutation
   const dischargeMutation = useMutation({
     mutationFn: async ({ residentId, reason }: { residentId: string; reason: string }) => {
@@ -281,6 +404,147 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
     },
   });
 
+  // Create credential mutation
+  const createCredentialMutation = useMutation({
+    mutationFn: async (data: { teamMemberId: string; credentialData: typeof credentialForm }) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/owners/team-members/${data.teamMemberId}/credentials`,
+        data.credentialData
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchCredentials();
+      queryClient.invalidateQueries({ queryKey: ["owner-facility-expiring-credentials", facilityId] });
+      setCredentialDialogOpen(false);
+      resetCredentialForm();
+      toast({
+        title: "Success",
+        description: "Credential added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add credential",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update credential mutation
+  const updateCredentialMutation = useMutation({
+    mutationFn: async (data: { credentialId: string; credentialData: typeof credentialForm }) => {
+      const response = await apiRequest(
+        "PUT",
+        `/api/owners/credentials/${data.credentialId}`,
+        data.credentialData
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchCredentials();
+      queryClient.invalidateQueries({ queryKey: ["owner-facility-expiring-credentials", facilityId] });
+      setCredentialDialogOpen(false);
+      setEditingCredential(null);
+      resetCredentialForm();
+      toast({
+        title: "Success",
+        description: "Credential updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update credential",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete credential mutation
+  const deleteCredentialMutation = useMutation({
+    mutationFn: async (credentialId: string) => {
+      await apiRequest("DELETE", `/api/owners/credentials/${credentialId}`, undefined);
+    },
+    onSuccess: () => {
+      refetchCredentials();
+      queryClient.invalidateQueries({ queryKey: ["owner-facility-expiring-credentials", facilityId] });
+      toast({
+        title: "Success",
+        description: "Credential deleted",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete credential",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Helper functions for credentials
+  const resetCredentialForm = () => {
+    setCredentialForm({
+      credentialType: "",
+      credentialNumber: "",
+      issuingAuthority: "",
+      issueDate: "",
+      expirationDate: "",
+      notes: "",
+    });
+  };
+
+  const openAddCredentialDialog = (teamMember: TeamMember) => {
+    setSelectedTeamMember(teamMember);
+    setEditingCredential(null);
+    resetCredentialForm();
+    setCredentialDialogOpen(true);
+  };
+
+  const openEditCredentialDialog = (credential: Credential, teamMember: TeamMember) => {
+    setSelectedTeamMember(teamMember);
+    setEditingCredential(credential);
+    setCredentialForm({
+      credentialType: credential.credentialType || "",
+      credentialNumber: credential.credentialNumber || "",
+      issuingAuthority: credential.issuingAuthority || "",
+      issueDate: credential.issueDate || "",
+      expirationDate: credential.expirationDate || "",
+      notes: credential.notes || "",
+    });
+    setCredentialDialogOpen(true);
+  };
+
+  const handleCredentialSubmit = () => {
+    if (!selectedTeamMember) return;
+
+    if (editingCredential) {
+      updateCredentialMutation.mutate({
+        credentialId: editingCredential.id,
+        credentialData: credentialForm,
+      });
+    } else {
+      createCredentialMutation.mutate({
+        teamMemberId: selectedTeamMember.id,
+        credentialData: credentialForm,
+      });
+    }
+  };
+
+  // Get credentials for a specific team member
+  const getTeamMemberCredentials = (teamMemberId: string) => {
+    return allCredentials.filter((c) => c.teamMemberId === teamMemberId);
+  };
+
+  // Get team member name from ID
+  const getTeamMemberName = (teamMemberId: string) => {
+    const member = teamMembers.find((m) => m.id === teamMemberId);
+    return member?.name || "Unknown";
+  };
+
   const isLoading = statsLoading || staffLoading || censusLoading || incidentsLoading;
 
   // Handler to enable portal access and navigate to staff dashboard
@@ -331,18 +595,19 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
       bgColor: "bg-green-900/20",
     },
     {
+      label: "Expiring Soon",
+      value: expiringCredentials.length,
+      icon: Shield,
+      color: expiringCredentials.length > 0 ? "text-amber-400" : "text-green-400",
+      bgColor: expiringCredentials.length > 0 ? "bg-amber-900/20" : "bg-green-900/20",
+      onClick: () => setActiveTab("credentials"),
+    },
+    {
       label: "Open Incidents",
       value: stats?.openIncidents || incidentSummary?.byStatus?.open || 0,
       icon: AlertTriangle,
       color: "text-amber-400",
       bgColor: "bg-amber-900/20",
-    },
-    {
-      label: "DSHS Reportable",
-      value: stats?.dshsReportableIncidents || incidentSummary?.dshsReportable || 0,
-      icon: FileText,
-      color: "text-red-400",
-      bgColor: "bg-red-900/20",
     },
   ];
 
@@ -408,19 +673,26 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {overviewStats.map((stat) => {
           const Icon = stat.icon;
-          return (
-            <Card key={stat.label} className="border-amber-900/20 bg-stone-900/30">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`h-5 w-5 ${stat.color}`} />
-                  </div>
-                  <div>
-                    <p className="text-2xl text-amber-100 font-semibold">{stat.value}</p>
-                    <p className="text-stone-500 text-xs">{stat.label}</p>
-                  </div>
+          const cardContent = (
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <Icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
-              </CardContent>
+                <div>
+                  <p className="text-2xl text-amber-100 font-semibold">{stat.value}</p>
+                  <p className="text-stone-500 text-xs">{stat.label}</p>
+                </div>
+              </div>
+            </CardContent>
+          );
+          return (
+            <Card
+              key={stat.label}
+              className={`border-amber-900/20 bg-stone-900/30 ${stat.onClick ? "cursor-pointer hover:border-amber-700/40 transition-colors" : ""}`}
+              onClick={stat.onClick}
+            >
+              {cardContent}
             </Card>
           );
         })}
@@ -428,7 +700,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
 
       {/* Sub-tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-stone-900/50 border border-amber-900/20 w-full md:w-auto grid grid-cols-4 md:inline-flex">
+        <TabsList className="bg-stone-900/50 border border-amber-900/20 w-full md:w-auto grid grid-cols-5 md:inline-flex">
           <TabsTrigger value="residents" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
             <Users className="h-4 w-4 hidden md:block" />
             Residents
@@ -436,6 +708,15 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
           <TabsTrigger value="staff" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
             <UserCheck className="h-4 w-4 hidden md:block" />
             Staff
+          </TabsTrigger>
+          <TabsTrigger value="credentials" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1 relative">
+            <Shield className="h-4 w-4 hidden md:block" />
+            Credentials
+            {expiringCredentials.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                {expiringCredentials.length}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="incidents" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
             <AlertTriangle className="h-4 w-4 hidden md:block" />
@@ -761,6 +1042,158 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
           </Card>
         </TabsContent>
 
+        {/* Credentials Tab */}
+        <TabsContent value="credentials" className="mt-6 space-y-6">
+          {/* Expiring Soon Alert */}
+          {expiringCredentials.length > 0 && (
+            <Card className="border-amber-600/30 bg-amber-900/10">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-amber-400" />
+                  <CardTitle className="text-amber-200">Credentials Expiring Soon</CardTitle>
+                </div>
+                <CardDescription className="text-amber-400/80">
+                  {expiringCredentials.length} credential(s) expiring within 30 days
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {expiringCredentials.map((cred) => {
+                    const statusInfo = getCredentialStatus(cred.expirationDate);
+                    return (
+                      <div
+                        key={cred.id}
+                        className="flex items-center justify-between p-3 bg-stone-900/50 rounded-lg"
+                      >
+                        <div>
+                          <p className="text-stone-200 font-medium">
+                            {CREDENTIAL_TYPES.find((t) => t.value === cred.credentialType)?.label || cred.credentialType}
+                          </p>
+                          <p className="text-stone-400 text-sm">{getTeamMemberName(cred.teamMemberId)}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={statusInfo.bgColor}>{statusInfo.status}</Badge>
+                          <p className="text-stone-500 text-xs mt-1">
+                            Expires: {cred.expirationDate}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Team Members Credentials */}
+          <Card className="border-amber-900/20 bg-stone-900/30">
+            <CardHeader>
+              <CardTitle className="text-stone-200">Staff Credentials</CardTitle>
+              <CardDescription className="text-stone-500">
+                Manage certifications and training records for your team
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {teamMembers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Shield className="h-12 w-12 text-stone-600 mx-auto mb-3" />
+                  <p className="text-stone-400">No team members yet</p>
+                  <p className="text-stone-500 text-sm mt-1">
+                    Add team members to track their credentials
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {teamMembers.map((member) => {
+                    const memberCredentials = getTeamMemberCredentials(member.id);
+                    return (
+                      <div key={member.id} className="border border-amber-900/20 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-stone-200 font-medium">{member.name}</h3>
+                            <p className="text-stone-500 text-sm capitalize">{member.role}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => openAddCredentialDialog(member)}
+                            className="bg-amber-600 hover:bg-amber-500 gap-1"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add Credential
+                          </Button>
+                        </div>
+
+                        {memberCredentials.length === 0 ? (
+                          <p className="text-stone-500 text-sm">No credentials on file</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow className="border-amber-900/20">
+                                  <TableHead className="text-stone-400">Type</TableHead>
+                                  <TableHead className="text-stone-400">Number</TableHead>
+                                  <TableHead className="text-stone-400">Issued By</TableHead>
+                                  <TableHead className="text-stone-400">Expiration</TableHead>
+                                  <TableHead className="text-stone-400">Status</TableHead>
+                                  <TableHead className="text-stone-400">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {memberCredentials.map((cred) => {
+                                  const statusInfo = getCredentialStatus(cred.expirationDate);
+                                  return (
+                                    <TableRow key={cred.id} className="border-amber-900/20">
+                                      <TableCell className="text-stone-200">
+                                        {CREDENTIAL_TYPES.find((t) => t.value === cred.credentialType)?.label || cred.credentialType}
+                                      </TableCell>
+                                      <TableCell className="text-stone-400">
+                                        {cred.credentialNumber || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-stone-400">
+                                        {cred.issuingAuthority || "-"}
+                                      </TableCell>
+                                      <TableCell className="text-stone-400">
+                                        {cred.expirationDate || "No expiration"}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge className={statusInfo.bgColor}>{statusInfo.status}</Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-stone-400 hover:text-stone-200 hover:bg-stone-800 h-8 px-2"
+                                            onClick={() => openEditCredentialDialog(cred, member)}
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 px-2"
+                                            onClick={() => deleteCredentialMutation.mutate(cred.id)}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Incidents Tab */}
         <TabsContent value="incidents" className="mt-6">
           <Card className="border-amber-900/20 bg-stone-900/30">
@@ -1002,6 +1435,135 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
           resident={medicationsResident}
         />
       )}
+
+      {/* Add/Edit Credential Dialog */}
+      <Dialog open={credentialDialogOpen} onOpenChange={setCredentialDialogOpen}>
+        <DialogContent className="bg-stone-900 border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-stone-200">
+              {editingCredential ? "Edit Credential" : "Add Credential"}
+            </DialogTitle>
+            <DialogDescription className="text-stone-400">
+              {selectedTeamMember && (
+                <>Add certification for {selectedTeamMember.name}</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-stone-300">Credential Type</Label>
+              <Select
+                value={credentialForm.credentialType}
+                onValueChange={(value) =>
+                  setCredentialForm({ ...credentialForm, credentialType: value })
+                }
+              >
+                <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
+                  <SelectValue placeholder="Select credential type" />
+                </SelectTrigger>
+                <SelectContent className="bg-stone-800 border-amber-900/30">
+                  {CREDENTIAL_TYPES.map((type) => (
+                    <SelectItem
+                      key={type.value}
+                      value={type.value}
+                      className="text-stone-200 focus:bg-amber-900/30"
+                    >
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Credential Number (optional)</Label>
+              <Input
+                value={credentialForm.credentialNumber}
+                onChange={(e) =>
+                  setCredentialForm({ ...credentialForm, credentialNumber: e.target.value })
+                }
+                placeholder="e.g., NAC-123456"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Issuing Authority (optional)</Label>
+              <Input
+                value={credentialForm.issuingAuthority}
+                onChange={(e) =>
+                  setCredentialForm({ ...credentialForm, issuingAuthority: e.target.value })
+                }
+                placeholder="e.g., WA DOH, American Red Cross"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-stone-300">Issue Date (optional)</Label>
+                <Input
+                  type="date"
+                  value={credentialForm.issueDate}
+                  onChange={(e) =>
+                    setCredentialForm({ ...credentialForm, issueDate: e.target.value })
+                  }
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-stone-300">Expiration Date</Label>
+                <Input
+                  type="date"
+                  value={credentialForm.expirationDate}
+                  onChange={(e) =>
+                    setCredentialForm({ ...credentialForm, expirationDate: e.target.value })
+                  }
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-stone-300">Notes (optional)</Label>
+              <Textarea
+                value={credentialForm.notes}
+                onChange={(e) =>
+                  setCredentialForm({ ...credentialForm, notes: e.target.value })
+                }
+                placeholder="Any additional notes about this credential"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCredentialDialogOpen(false);
+                setEditingCredential(null);
+                resetCredentialForm();
+              }}
+              className="border-amber-900/30 text-stone-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCredentialSubmit}
+              disabled={!credentialForm.credentialType || createCredentialMutation.isPending || updateCredentialMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-500"
+            >
+              {createCredentialMutation.isPending || updateCredentialMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              {editingCredential ? "Update" : "Add"} Credential
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
