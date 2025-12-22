@@ -117,7 +117,7 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          residentId: selectedResidentId || null,
+          residentId: selectedResidentId && selectedResidentId !== "none" ? selectedResidentId : null,
           type: incidentType,
           description,
           incidentDate,
@@ -149,7 +149,7 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
       // Store saved incident for printing
       setSavedIncident({
         id: data.id,
-        residentId: selectedResidentId,
+        residentId: selectedResidentId !== "none" ? selectedResidentId : undefined,
         type: incidentType,
         description,
         incidentDate,
@@ -214,7 +214,9 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
     setShowPrintView(true);
   };
 
-  const selectedResident = residents.find((r) => r.id === selectedResidentId);
+  const selectedResident = selectedResidentId && selectedResidentId !== "none"
+    ? residents.find((r) => r.id === selectedResidentId)
+    : undefined;
 
   // Show print view
   if (showPrintView && savedIncident) {
@@ -303,7 +305,7 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
                   <SelectValue placeholder="Select resident (if applicable)..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific resident</SelectItem>
+                  <SelectItem value="none">No specific resident</SelectItem>
                   {residents.map((resident) => (
                     <SelectItem key={resident.id} value={resident.id}>
                       {resident.firstName} {resident.lastName}
