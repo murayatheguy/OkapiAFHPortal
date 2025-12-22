@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InviteStaffDialog } from "@/components/owner/invite-staff-dialog";
 import { AddClientDialog } from "@/components/owner/add-client-dialog";
 import { ResidentMedicationsDialog } from "@/components/owner/resident-medications-dialog";
+import { ResidentProfileDialog } from "@/components/owner/resident-profile-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Users,
@@ -171,6 +172,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
   const [editingClient, setEditingClient] = useState<ResidentSummary | null>(null);
   const [dischargingClientId, setDischargingClientId] = useState<string | null>(null);
   const [medicationsResident, setMedicationsResident] = useState<ResidentSummary | null>(null);
+  const [profileResident, setProfileResident] = useState<ResidentSummary | null>(null);
 
   // Credentials state
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
@@ -797,13 +799,18 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                     <TableBody>
                       {residents.filter(r => r.status === "active").map((resident) => (
                         <TableRow key={resident.id} className="border-amber-900/20">
-                          <TableCell className="text-stone-200 font-medium">
-                            {resident.firstName} {resident.lastName}
-                            {resident.preferredName && (
-                              <span className="text-stone-500 text-sm ml-1">
-                                ({resident.preferredName})
-                              </span>
-                            )}
+                          <TableCell>
+                            <button
+                              onClick={() => setProfileResident(resident)}
+                              className="text-stone-200 font-medium hover:text-amber-400 hover:underline text-left transition-colors"
+                            >
+                              {resident.firstName} {resident.lastName}
+                              {resident.preferredName && (
+                                <span className="text-stone-500 text-sm ml-1">
+                                  ({resident.preferredName})
+                                </span>
+                              )}
+                            </button>
                           </TableCell>
                           <TableCell className="text-stone-400">{resident.roomNumber || "—"}</TableCell>
                           <TableCell>
@@ -1537,6 +1544,16 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
           onOpenChange={(open) => !open && setMedicationsResident(null)}
           facilityId={facilityId}
           resident={medicationsResident}
+        />
+      )}
+
+      {/* Resident Profile Dialog */}
+      {profileResident && (
+        <ResidentProfileDialog
+          open={!!profileResident}
+          onOpenChange={(open) => !open && setProfileResident(null)}
+          resident={profileResident}
+          facilityId={facilityId}
         />
       )}
 

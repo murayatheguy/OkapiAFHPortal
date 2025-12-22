@@ -778,6 +778,119 @@ export async function registerRoutes(
     }
   });
 
+  // Get notes for a resident (owner access)
+  app.get("/api/owners/facilities/:facilityId/residents/:residentId/notes", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId, residentId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const resident = await storage.getResident(residentId);
+      if (!resident || resident.facilityId !== facilityId) {
+        return res.status(404).json({ error: "Resident not found" });
+      }
+
+      // Get all notes with staff name
+      const notes = await storage.getDailyNotesByResidentWithStaff(residentId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error getting resident notes:", error);
+      res.status(500).json({ error: "Failed to get notes" });
+    }
+  });
+
+  // Get medications for a resident (owner access)
+  app.get("/api/owners/facilities/:facilityId/residents/:residentId/medications", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId, residentId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const resident = await storage.getResident(residentId);
+      if (!resident || resident.facilityId !== facilityId) {
+        return res.status(404).json({ error: "Resident not found" });
+      }
+
+      const medications = await storage.getMedicationsByResident(residentId);
+      res.json(medications);
+    } catch (error) {
+      console.error("Error getting resident medications:", error);
+      res.status(500).json({ error: "Failed to get medications" });
+    }
+  });
+
+  // Get vitals for a resident (owner access)
+  app.get("/api/owners/facilities/:facilityId/residents/:residentId/vitals", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId, residentId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const resident = await storage.getResident(residentId);
+      if (!resident || resident.facilityId !== facilityId) {
+        return res.status(404).json({ error: "Resident not found" });
+      }
+
+      const vitals = await storage.getVitalsByResident(residentId);
+      res.json(vitals);
+    } catch (error) {
+      console.error("Error getting resident vitals:", error);
+      res.status(500).json({ error: "Failed to get vitals" });
+    }
+  });
+
+  // Get incidents for a resident (owner access)
+  app.get("/api/owners/facilities/:facilityId/residents/:residentId/incidents", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId, residentId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const resident = await storage.getResident(residentId);
+      if (!resident || resident.facilityId !== facilityId) {
+        return res.status(404).json({ error: "Resident not found" });
+      }
+
+      const incidents = await storage.getIncidentReportsByResident(residentId);
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error getting resident incidents:", error);
+      res.status(500).json({ error: "Failed to get incidents" });
+    }
+  });
+
   // Get current owner's claims
   app.get("/api/owners/me/claims", async (req, res) => {
     try {

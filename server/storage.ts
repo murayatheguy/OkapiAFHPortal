@@ -282,6 +282,7 @@ export interface IStorage {
   // Daily Notes
   getDailyNote(id: string): Promise<DailyNote | undefined>;
   getDailyNotesByResident(residentId: string, limit?: number): Promise<DailyNote[]>;
+  getDailyNotesByResidentWithStaff(residentId: string, limit?: number): Promise<(DailyNote & { staffName?: string })[]>;
   getDailyNotesByFacility(facilityId: string, date: string): Promise<DailyNote[]>;
   createDailyNote(note: InsertDailyNote): Promise<DailyNote>;
   updateDailyNote(id: string, data: Partial<InsertDailyNote>): Promise<DailyNote | undefined>;
@@ -1390,6 +1391,50 @@ export class DatabaseStorage implements IStorage {
       .where(eq(dailyNotes.residentId, residentId))
       .orderBy(desc(dailyNotes.date))
       .limit(limit);
+  }
+
+  async getDailyNotesByResidentWithStaff(residentId: string, limit?: number): Promise<(DailyNote & { staffName?: string })[]> {
+    const query = db
+      .select({
+        id: dailyNotes.id,
+        residentId: dailyNotes.residentId,
+        facilityId: dailyNotes.facilityId,
+        staffId: dailyNotes.staffId,
+        date: dailyNotes.date,
+        shift: dailyNotes.shift,
+        adls: dailyNotes.adls,
+        mood: dailyNotes.mood,
+        notes: dailyNotes.notes,
+        hasConcerns: dailyNotes.hasConcerns,
+        createdAt: dailyNotes.createdAt,
+        updatedAt: dailyNotes.updatedAt,
+        staffFirstName: staffAuth.firstName,
+        staffLastName: staffAuth.lastName,
+      })
+      .from(dailyNotes)
+      .leftJoin(staffAuth, eq(dailyNotes.staffId, staffAuth.id))
+      .where(eq(dailyNotes.residentId, residentId))
+      .orderBy(desc(dailyNotes.date), desc(dailyNotes.createdAt));
+
+    const results = limit ? await query.limit(limit) : await query;
+
+    return results.map((row) => ({
+      id: row.id,
+      residentId: row.residentId,
+      facilityId: row.facilityId,
+      staffId: row.staffId,
+      date: row.date,
+      shift: row.shift,
+      adls: row.adls,
+      mood: row.mood,
+      notes: row.notes,
+      hasConcerns: row.hasConcerns,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      staffName: row.staffFirstName && row.staffLastName
+        ? `${row.staffFirstName} ${row.staffLastName}`
+        : undefined,
+    }));
   }
 
   async getDailyNotesByFacility(facilityId: string, date: string): Promise<DailyNote[]> {
