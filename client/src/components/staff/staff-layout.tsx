@@ -10,6 +10,7 @@ import {
   Pill,
   FileText,
   AlertTriangle,
+  Activity,
   Menu,
   ArrowLeft,
   LogOut,
@@ -28,8 +29,8 @@ const TEAL = "#0d9488";
 
 const navItems = [
   { href: "/staff/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/staff/residents", icon: Users, label: "Residents" },
   { href: "/staff/mar", icon: Pill, label: "MAR" },
+  { href: "/staff/vitals", icon: Activity, label: "Vitals" },
   { href: "/staff/notes", icon: FileText, label: "Notes" },
   { href: "/staff/incidents", icon: AlertTriangle, label: "Incidents" },
 ];

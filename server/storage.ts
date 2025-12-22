@@ -24,6 +24,7 @@ import {
   medicationLogs,
   dailyNotes,
   incidentReports,
+  vitals,
   type User,
   type InsertUser,
   type Facility,
@@ -69,7 +70,9 @@ import {
   type DailyNote,
   type InsertDailyNote,
   type IncidentReport,
-  type InsertIncidentReport
+  type InsertIncidentReport,
+  type Vitals,
+  type InsertVitals
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
@@ -1557,6 +1560,101 @@ export class DatabaseStorage implements IStorage {
       recentIncidents: recentIncidents.slice(0, 10), // Limit to 10 most recent
       recentMar,
     };
+  }
+
+  // ============================================================================
+  // VITALS METHODS
+  // ============================================================================
+
+  async createVitals(data: InsertVitals): Promise<Vitals> {
+    const [vital] = await db.insert(vitals).values(data).returning();
+    return vital;
+  }
+
+  async getVitalsByResident(
+    residentId: string,
+    dateRange?: { start: Date; end: Date }
+  ): Promise<Vitals[]> {
+    if (dateRange) {
+      return db
+        .select()
+        .from(vitals)
+        .where(
+          and(
+            eq(vitals.residentId, residentId),
+            gte(vitals.recordedAt, dateRange.start),
+            lt(vitals.recordedAt, dateRange.end)
+          )
+        )
+        .orderBy(desc(vitals.recordedAt));
+    }
+
+    // Default to last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return db
+      .select()
+      .from(vitals)
+      .where(
+        and(
+          eq(vitals.residentId, residentId),
+          gte(vitals.recordedAt, sevenDaysAgo)
+        )
+      )
+      .orderBy(desc(vitals.recordedAt));
+  }
+
+  async getVitalsByFacility(facilityId: string, date: string): Promise<Vitals[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return db
+      .select()
+      .from(vitals)
+      .where(
+        and(
+          eq(vitals.facilityId, facilityId),
+          gte(vitals.recordedAt, startOfDay),
+          lt(vitals.recordedAt, endOfDay)
+        )
+      )
+      .orderBy(desc(vitals.recordedAt));
+  }
+
+  async getAbnormalVitals(facilityId: string): Promise<Vitals[]> {
+    // Get vitals from last 24 hours that are outside normal ranges
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+    const recentVitals = await db
+      .select()
+      .from(vitals)
+      .where(
+        and(
+          eq(vitals.facilityId, facilityId),
+          gte(vitals.recordedAt, oneDayAgo)
+        )
+      )
+      .orderBy(desc(vitals.recordedAt));
+
+    // Filter for abnormal values
+    return recentVitals.filter((v) => {
+      // BP > 140/90 or < 90/60
+      if (v.bloodPressureSystolic && (v.bloodPressureSystolic > 140 || v.bloodPressureSystolic < 90)) return true;
+      if (v.bloodPressureDiastolic && (v.bloodPressureDiastolic > 90 || v.bloodPressureDiastolic < 60)) return true;
+      // HR > 100 or < 60
+      if (v.heartRate && (v.heartRate > 100 || v.heartRate < 60)) return true;
+      // Temp > 100.4 or < 97
+      if (v.temperature && (Number(v.temperature) > 100.4 || Number(v.temperature) < 97)) return true;
+      // O2 < 95
+      if (v.oxygenSaturation && v.oxygenSaturation < 95) return true;
+      // Pain > 5
+      if (v.painLevel && v.painLevel > 5) return true;
+      return false;
+    });
   }
 }
 

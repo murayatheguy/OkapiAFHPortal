@@ -1767,4 +1767,131 @@ export function registerEhrRoutes(app: Express) {
       }
     }
   );
+
+  // ============================================================================
+  // VITALS ROUTES
+  // ============================================================================
+
+  /**
+   * Get vitals history for a resident
+   */
+  app.get(
+    "/api/ehr/residents/:residentId/vitals",
+    requireStaffAuth,
+    async (req, res) => {
+      try {
+        const { residentId } = req.params;
+        const { startDate, endDate } = req.query;
+
+        const resident = await storage.getResident(residentId);
+        if (!resident) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        if (resident.facilityId !== req.staff!.facilityId) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const dateRange = startDate && endDate
+          ? { start: new Date(startDate as string), end: new Date(endDate as string) }
+          : undefined;
+
+        const vitals = await storage.getVitalsByResident(residentId, dateRange);
+        res.json(vitals);
+      } catch (error) {
+        console.error("Error getting vitals:", error);
+        res.status(500).json({ error: "Failed to get vitals" });
+      }
+    }
+  );
+
+  /**
+   * Log new vitals for a resident
+   */
+  app.post(
+    "/api/ehr/residents/:residentId/vitals",
+    requireStaffAuth,
+    async (req, res) => {
+      try {
+        const { residentId } = req.params;
+        const facilityId = req.staff!.facilityId;
+        const recordedBy = req.staff!.firstName + " " + req.staff!.lastName;
+
+        const resident = await storage.getResident(residentId);
+        if (!resident) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        if (resident.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const {
+          bloodPressureSystolic,
+          bloodPressureDiastolic,
+          heartRate,
+          temperature,
+          respiratoryRate,
+          oxygenSaturation,
+          weight,
+          bloodSugar,
+          painLevel,
+          notes,
+        } = req.body;
+
+        const vitals = await storage.createVitals({
+          residentId,
+          facilityId,
+          recordedBy,
+          recordedAt: new Date(),
+          bloodPressureSystolic: bloodPressureSystolic || null,
+          bloodPressureDiastolic: bloodPressureDiastolic || null,
+          heartRate: heartRate || null,
+          temperature: temperature || null,
+          respiratoryRate: respiratoryRate || null,
+          oxygenSaturation: oxygenSaturation || null,
+          weight: weight || null,
+          bloodSugar: bloodSugar || null,
+          painLevel: painLevel || null,
+          notes: notes || null,
+        });
+
+        res.status(201).json(vitals);
+      } catch (error) {
+        console.error("Error logging vitals:", error);
+        res.status(500).json({ error: "Failed to log vitals" });
+      }
+    }
+  );
+
+  /**
+   * Get all vitals logged today for facility
+   */
+  app.get("/api/ehr/vitals/today", requireStaffAuth, async (req, res) => {
+    try {
+      const facilityId = req.staff!.facilityId;
+      const today = new Date().toISOString().split("T")[0];
+
+      const vitals = await storage.getVitalsByFacility(facilityId, today);
+      res.json(vitals);
+    } catch (error) {
+      console.error("Error getting today's vitals:", error);
+      res.status(500).json({ error: "Failed to get today's vitals" });
+    }
+  });
+
+  /**
+   * Get vitals outside normal ranges (alerts)
+   */
+  app.get("/api/ehr/vitals/alerts", requireStaffAuth, async (req, res) => {
+    try {
+      const facilityId = req.staff!.facilityId;
+
+      const abnormalVitals = await storage.getAbnormalVitals(facilityId);
+      res.json(abnormalVitals);
+    } catch (error) {
+      console.error("Error getting vitals alerts:", error);
+      res.status(500).json({ error: "Failed to get vitals alerts" });
+    }
+  });
 }

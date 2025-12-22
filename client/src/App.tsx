@@ -19,6 +19,7 @@ import PrivacyPage from "@/pages/privacy";
 import StaffLogin from "@/pages/staff/staff-login";
 import StaffDashboard from "@/pages/staff/staff-dashboard";
 import StaffMAR from "@/pages/staff/staff-mar";
+import StaffVitals from "@/pages/staff/staff-vitals";
 import { Loader2 } from "lucide-react";
 
 // Protected route wrapper for staff pages
@@ -62,6 +63,9 @@ function Router() {
       </Route>
       <Route path="/staff/mar">
         {() => <ProtectedStaffRoute component={StaffMAR} />}
+      </Route>
+      <Route path="/staff/vitals">
+        {() => <ProtectedStaffRoute component={StaffVitals} />}
       </Route>
       <Route path="/staff/:rest*">
         {() => <ProtectedStaffRoute component={StaffDashboard} />}

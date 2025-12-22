@@ -1124,6 +1124,7 @@ export const residentsRelations = relations(residents, ({ one, many }) => ({
   medicationLogs: many(medicationLogs),
   dailyNotes: many(dailyNotes),
   incidentReports: many(incidentReports),
+  vitals: many(vitals),
 }));
 
 export const medicationsRelations = relations(medications, ({ one, many }) => ({
@@ -1188,5 +1189,52 @@ export const incidentReportsRelations = relations(incidentReports, ({ one }) => 
   reportedByStaff: one(staffAuth, {
     fields: [incidentReports.reportedBy],
     references: [staffAuth.id],
+  }),
+}));
+
+// Vitals table - vital signs logging
+export const vitals = pgTable("vitals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  residentId: varchar("resident_id").references(() => residents.id, { onDelete: "cascade" }).notNull(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  recordedBy: text("recorded_by").notNull(),
+  recordedAt: timestamp("recorded_at").notNull(),
+
+  // Vital signs
+  bloodPressureSystolic: integer("blood_pressure_systolic"),
+  bloodPressureDiastolic: integer("blood_pressure_diastolic"),
+  heartRate: integer("heart_rate"),
+  temperature: decimal("temperature", { precision: 4, scale: 1 }),
+  respiratoryRate: integer("respiratory_rate"),
+  oxygenSaturation: integer("oxygen_saturation"),
+  weight: decimal("weight", { precision: 5, scale: 1 }),
+  bloodSugar: integer("blood_sugar"),
+  painLevel: integer("pain_level"),
+
+  notes: text("notes"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  residentIdx: index("vitals_resident_idx").on(table.residentId),
+  facilityIdx: index("vitals_facility_idx").on(table.facilityId),
+  recordedAtIdx: index("vitals_recorded_at_idx").on(table.recordedAt),
+}));
+
+export const insertVitalsSchema = createInsertSchema(vitals).omit({
+  id: true, createdAt: true, updatedAt: true
+});
+export type InsertVitals = z.infer<typeof insertVitalsSchema>;
+export type Vitals = typeof vitals.$inferSelect;
+
+// Vitals relations
+export const vitalsRelations = relations(vitals, ({ one }) => ({
+  resident: one(residents, {
+    fields: [vitals.residentId],
+    references: [residents.id],
+  }),
+  facility: one(facilities, {
+    fields: [vitals.facilityId],
+    references: [facilities.id],
   }),
 }));
