@@ -891,6 +891,55 @@ export async function registerRoutes(
     }
   });
 
+  // Get all incidents for a facility (owner access - for reports)
+  app.get("/api/owners/facilities/:facilityId/ehr/incidents", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const incidents = await storage.getIncidentReportsByFacility(facilityId);
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error getting facility incidents:", error);
+      res.status(500).json({ error: "Failed to get incidents" });
+    }
+  });
+
+  // Get medication logs for a facility (owner access - for reports)
+  app.get("/api/owners/facilities/:facilityId/ehr/medication-logs", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const days = parseInt(req.query.days as string) || 30;
+      const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+      const logs = await storage.getMedicationLogsByFacilityDateRange(facilityId, startDate);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error getting medication logs:", error);
+      res.status(500).json({ error: "Failed to get medication logs" });
+    }
+  });
+
   // Get current owner's claims
   app.get("/api/owners/me/claims", async (req, res) => {
     try {

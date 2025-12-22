@@ -276,6 +276,7 @@ export interface IStorage {
   getMedicationLog(id: string): Promise<MedicationLog | undefined>;
   getMedicationLogsByResident(residentId: string, startDate?: Date, endDate?: Date): Promise<MedicationLog[]>;
   getMedicationLogsByFacility(facilityId: string, date: string): Promise<MedicationLog[]>;
+  getMedicationLogsByFacilityDateRange(facilityId: string, startDate: string, endDate?: string): Promise<MedicationLog[]>;
   createMedicationLog(log: InsertMedicationLog): Promise<MedicationLog>;
   updateMedicationLog(id: string, data: Partial<InsertMedicationLog>): Promise<MedicationLog | undefined>;
 
@@ -1362,6 +1363,24 @@ export class DatabaseStorage implements IStorage {
         lt(medicationLogs.scheduledTime, endOfDay)
       ))
       .orderBy(medicationLogs.scheduledTime);
+  }
+
+  async getMedicationLogsByFacilityDateRange(facilityId: string, startDate: string, endDate?: string): Promise<MedicationLog[]> {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = endDate ? new Date(endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
+
+    return await db
+      .select()
+      .from(medicationLogs)
+      .where(and(
+        eq(medicationLogs.facilityId, facilityId),
+        gte(medicationLogs.scheduledTime, start),
+        lt(medicationLogs.scheduledTime, end)
+      ))
+      .orderBy(desc(medicationLogs.scheduledTime));
   }
 
   async createMedicationLog(log: InsertMedicationLog): Promise<MedicationLog> {

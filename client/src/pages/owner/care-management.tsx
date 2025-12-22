@@ -12,6 +12,12 @@ import { InviteStaffDialog } from "@/components/owner/invite-staff-dialog";
 import { AddClientDialog } from "@/components/owner/add-client-dialog";
 import { ResidentMedicationsDialog } from "@/components/owner/resident-medications-dialog";
 import { ResidentProfileDialog } from "@/components/owner/resident-profile-dialog";
+import { ReportViewerDialog } from "@/components/owner/report-viewer-dialog";
+import { IncidentSummaryReport } from "@/components/owner/reports/incident-summary-report";
+import { MedicationComplianceReport } from "@/components/owner/reports/medication-compliance-report";
+import { CensusReport } from "@/components/owner/reports/census-report";
+import { StaffActivityReport } from "@/components/owner/reports/staff-activity-report";
+import { MedicationListReport } from "@/components/owner/reports/medication-list-report";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Users,
@@ -174,6 +180,11 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
   const [medicationsResident, setMedicationsResident] = useState<ResidentSummary | null>(null);
   const [profileResident, setProfileResident] = useState<ResidentSummary | null>(null);
 
+  // Reports state
+  type ReportType = "incident" | "medCompliance" | "census" | "staffActivity" | "medList" | null;
+  const [activeReport, setActiveReport] = useState<ReportType>(null);
+  const [medListResident, setMedListResident] = useState<ResidentSummary | null>(null);
+
   // Credentials state
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
   const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
@@ -273,6 +284,74 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
       return response.json();
     },
     enabled: !!facilityId,
+  });
+
+  // Fetch full incident reports for reports
+  const { data: fullIncidents = [] } = useQuery<Array<{
+    id: string;
+    residentId?: string;
+    type: string;
+    description: string;
+    incidentDate: string;
+    incidentTime: string;
+    status: string;
+    dshsReportable: boolean;
+    reportedBy: string;
+  }>>({
+    queryKey: ["owner-facility-full-incidents", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/ehr/incidents`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId && activeReport === "incident",
+  });
+
+  // Fetch medication logs for compliance report
+  const { data: medicationLogs = [] } = useQuery<Array<{
+    id: string;
+    residentId: string;
+    medicationId: string;
+    status: string;
+    scheduledTime: string;
+    administeredAt?: string;
+  }>>({
+    queryKey: ["owner-facility-med-logs", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/ehr/medication-logs?days=30`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId && activeReport === "medCompliance",
+  });
+
+  // Fetch medications for selected resident (for med list report)
+  const { data: residentMedications = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    genericName?: string;
+    dosage: string;
+    route: string;
+    frequency?: { times: string[]; interval?: string } | null;
+    instructions?: string;
+    prescribedBy?: string;
+    startDate?: string;
+    status: string;
+  }>>({
+    queryKey: ["owner-resident-medications", medListResident?.id],
+    queryFn: async () => {
+      if (!medListResident) return [];
+      const response = await fetch(`/api/owners/facilities/${facilityId}/residents/${medListResident.id}/medications`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId && !!medListResident,
   });
 
   // Fetch facility PIN
@@ -1393,9 +1472,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
           {/* DSHS Reports Card */}
           <Card className="border-amber-900/20 bg-stone-900/30">
             <CardHeader>
-              <CardTitle className="text-stone-200">DSHS Reports</CardTitle>
+              <CardTitle className="text-stone-200">Facility Reports</CardTitle>
               <CardDescription className="text-stone-500">
-                Generate and download regulatory reports
+                Generate and print regulatory and operational reports
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1405,12 +1484,13 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-stone-200 font-medium">Monthly Incident Summary</h4>
-                        <p className="text-stone-500 text-sm">Required DSHS incident report</p>
+                        <p className="text-stone-500 text-sm">DSHS incident report</p>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
                         className="border-amber-900/30 text-stone-300 gap-2"
+                        onClick={() => setActiveReport("incident")}
                       >
                         <Download className="h-4 w-4" />
                         Generate
@@ -1430,6 +1510,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                         variant="outline"
                         size="sm"
                         className="border-amber-900/30 text-stone-300 gap-2"
+                        onClick={() => setActiveReport("medCompliance")}
                       >
                         <Download className="h-4 w-4" />
                         Generate
@@ -1449,6 +1530,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                         variant="outline"
                         size="sm"
                         className="border-amber-900/30 text-stone-300 gap-2"
+                        onClick={() => setActiveReport("census")}
                       >
                         <Download className="h-4 w-4" />
                         Generate
@@ -1468,6 +1550,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                         variant="outline"
                         size="sm"
                         className="border-amber-900/30 text-stone-300 gap-2"
+                        onClick={() => setActiveReport("staffActivity")}
                       >
                         <Download className="h-4 w-4" />
                         Generate
@@ -1475,6 +1558,51 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Medication List Report Card */}
+          <Card className="border-amber-900/20 bg-stone-900/30">
+            <CardHeader>
+              <CardTitle className="text-stone-200">Client Medication Sheet</CardTitle>
+              <CardDescription className="text-stone-500">
+                Generate a printable medication list for a specific resident
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                <Select
+                  value={medListResident?.id || ""}
+                  onValueChange={(value) => {
+                    const resident = residents.find((r) => r.id === value);
+                    setMedListResident(resident || null);
+                  }}
+                >
+                  <SelectTrigger className="w-full md:w-72 bg-stone-800 border-amber-900/30 text-stone-200">
+                    <SelectValue placeholder="Select a resident..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-stone-800 border-amber-900/30">
+                    {residents.filter((r) => r.status === "active").map((resident) => (
+                      <SelectItem
+                        key={resident.id}
+                        value={resident.id}
+                        className="text-stone-200 focus:bg-amber-900/30"
+                      >
+                        {resident.firstName} {resident.lastName}
+                        {resident.roomNumber && ` (Room ${resident.roomNumber})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  className="bg-amber-600 hover:bg-amber-500 gap-2"
+                  disabled={!medListResident}
+                  onClick={() => setActiveReport("medList")}
+                >
+                  <Download className="h-4 w-4" />
+                  Generate Medication Sheet
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1555,6 +1683,100 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
           resident={profileResident}
           facilityId={facilityId}
         />
+      )}
+
+      {/* Report Dialogs */}
+      {/* Incident Summary Report */}
+      <ReportViewerDialog
+        open={activeReport === "incident"}
+        onOpenChange={(open) => !open && setActiveReport(null)}
+        title="Monthly Incident Summary"
+      >
+        <IncidentSummaryReport
+          facilityName={facilityData?.name || "Facility"}
+          facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+          facilityPhone={facilityData?.phone}
+          incidents={fullIncidents}
+          residents={residents}
+          startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+          endDate={new Date().toISOString().split("T")[0]}
+        />
+      </ReportViewerDialog>
+
+      {/* Medication Compliance Report */}
+      <ReportViewerDialog
+        open={activeReport === "medCompliance"}
+        onOpenChange={(open) => !open && setActiveReport(null)}
+        title="Medication Compliance Report"
+      >
+        <MedicationComplianceReport
+          facilityName={facilityData?.name || "Facility"}
+          facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+          facilityPhone={facilityData?.phone}
+          logs={medicationLogs}
+          residents={residents}
+          startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+          endDate={new Date().toISOString().split("T")[0]}
+        />
+      </ReportViewerDialog>
+
+      {/* Census Report */}
+      <ReportViewerDialog
+        open={activeReport === "census"}
+        onOpenChange={(open) => !open && setActiveReport(null)}
+        title="Resident Census Report"
+      >
+        <CensusReport
+          facilityName={facilityData?.name || "Facility"}
+          facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+          facilityPhone={facilityData?.phone}
+          residents={residents}
+          capacity={facilityData?.capacity || 6}
+        />
+      </ReportViewerDialog>
+
+      {/* Staff Activity Report */}
+      <ReportViewerDialog
+        open={activeReport === "staffActivity"}
+        onOpenChange={(open) => !open && setActiveReport(null)}
+        title="Staff Activity Report"
+      >
+        <StaffActivityReport
+          facilityName={facilityData?.name || "Facility"}
+          facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+          facilityPhone={facilityData?.phone}
+          staff={staffList.map((s) => ({
+            id: s.id,
+            firstName: s.firstName,
+            lastName: s.lastName,
+            role: s.role,
+            lastLoginAt: s.lastLoginAt,
+          }))}
+          activityData={[]}
+          startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+          endDate={new Date().toISOString().split("T")[0]}
+        />
+      </ReportViewerDialog>
+
+      {/* Medication List Report */}
+      {medListResident && (
+        <ReportViewerDialog
+          open={activeReport === "medList"}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActiveReport(null);
+            }
+          }}
+          title={`Medication Sheet - ${medListResident.firstName} ${medListResident.lastName}`}
+        >
+          <MedicationListReport
+            facilityName={facilityData?.name || "Facility"}
+            facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+            facilityPhone={facilityData?.phone}
+            resident={medListResident}
+            medications={residentMedications}
+          />
+        </ReportViewerDialog>
       )}
 
       {/* Add/Edit Credential Dialog */}
