@@ -50,6 +50,40 @@ export async function requireStaffAuth(
       return res.status(401).json({ error: "Not authenticated" });
     }
 
+    // Handle temporary staff sessions (facility PIN login)
+    if (req.session.isTempStaff) {
+      const staffName = req.session.staffName || "Staff";
+      const nameParts = staffName.split(" ");
+
+      // Create a virtual staff object for temp sessions
+      req.staff = {
+        id: staffId,
+        facilityId: staffFacilityId,
+        teamMemberId: null,
+        linkedOwnerId: null,
+        email: "",
+        passwordHash: null,
+        pin: null,
+        firstName: nameParts[0] || staffName,
+        lastName: nameParts.slice(1).join(" ") || "",
+        role: req.session.staffRole || "caregiver",
+        permissions: {
+          canAdministerMeds: true,
+          canAdministerControlled: false,
+          canFileIncidents: true,
+          canEditResidents: false,
+        },
+        status: "active",
+        inviteToken: null,
+        inviteExpiresAt: null,
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+      req.staffPermissions = req.staff.permissions;
+      return next();
+    }
+
     const staff = await storage.getStaffAuth(staffId);
     if (!staff) {
       // Clear invalid session

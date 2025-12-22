@@ -9,5 +9,7 @@ declare module "express-session" {
     staffId?: string | null;
     staffFacilityId?: string | null;
     staffRole?: string | null;
+    staffName?: string | null;
+    isTempStaff?: boolean;
   }
 }

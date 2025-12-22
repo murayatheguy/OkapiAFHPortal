@@ -102,6 +102,61 @@ export function registerEhrRoutes(app: Express) {
   });
 
   /**
+   * Staff quick login with facility PIN + name (no account needed)
+   * This creates a temporary session for the staff member
+   */
+  app.post("/api/ehr/auth/facility-pin-login", async (req, res) => {
+    try {
+      const { facilityPin, staffName } = req.body;
+
+      if (!facilityPin || !staffName) {
+        return res.status(400).json({ error: "Facility PIN and staff name are required" });
+      }
+
+      if (facilityPin.length !== 4 || !/^\d{4}$/.test(facilityPin)) {
+        return res.status(400).json({ error: "Invalid PIN format" });
+      }
+
+      // Find facility by PIN
+      const facility = await storage.getFacilityByPin(facilityPin);
+      if (!facility) {
+        return res.status(401).json({ error: "Invalid facility PIN" });
+      }
+
+      // Create a temporary staff session (no persistent staff record needed)
+      // We'll store the staff name in the session for display purposes
+      req.session.staffId = `temp-${Date.now()}`;
+      req.session.staffFacilityId = facility.id;
+      req.session.staffRole = "caregiver";
+      req.session.staffName = staffName;
+      req.session.isTempStaff = true;
+
+      res.json({
+        staff: {
+          id: req.session.staffId,
+          facilityId: facility.id,
+          firstName: staffName.split(" ")[0] || staffName,
+          lastName: staffName.split(" ").slice(1).join(" ") || "",
+          role: "caregiver",
+          permissions: {
+            canAdministerMeds: true,
+            canAdministerControlled: false,
+            canFileIncidents: true,
+            canEditResidents: false,
+          },
+        },
+        facility: {
+          id: facility.id,
+          name: facility.name,
+        },
+      });
+    } catch (error) {
+      console.error("Error during facility PIN login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  /**
    * Get current authenticated staff member
    */
   app.get("/api/ehr/auth/me", requireStaffAuth, async (req, res) => {

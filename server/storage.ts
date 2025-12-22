@@ -85,6 +85,7 @@ export interface IStorage {
   getFacility(id: string): Promise<Facility | undefined>;
   getFacilityBySlug(slug: string): Promise<Facility | undefined>;
   getFacilityByIdOrSlug(idOrSlug: string): Promise<Facility | undefined>;
+  getFacilityByPin(pin: string): Promise<Facility | undefined>;
   getFacilityWithTeam(idOrSlug: string): Promise<{ facility: Facility; team: Array<TeamMember & { credentials: Credential[] }> } | undefined>;
   searchFacilities(params: {
     city?: string;
@@ -348,6 +349,11 @@ export class DatabaseStorage implements IStorage {
     }
     // Try by slug
     return this.getFacilityBySlug(idOrSlug);
+  }
+
+  async getFacilityByPin(pin: string): Promise<Facility | undefined> {
+    const [facility] = await db.select().from(facilities).where(eq(facilities.facilityPin, pin));
+    return facility || undefined;
   }
 
   async getFacilityWithTeam(idOrSlug: string): Promise<{ facility: Facility; team: Array<TeamMember & { credentials: Credential[] }> } | undefined> {

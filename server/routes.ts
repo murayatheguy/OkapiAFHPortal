@@ -600,6 +600,61 @@ export async function registerRoutes(
     }
   });
 
+  // Generate staff PIN for facility
+  app.post("/api/owners/facilities/:facilityId/generate-pin", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+
+      // Verify the facility belongs to this owner
+      const facility = await storage.getFacility(facilityId);
+      if (!facility) {
+        return res.status(404).json({ error: "Facility not found" });
+      }
+      if (facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Generate a random 4-digit PIN
+      const pin = Math.floor(1000 + Math.random() * 9000).toString();
+
+      const updatedFacility = await storage.updateFacility(facilityId, { facilityPin: pin });
+      res.json({ pin: updatedFacility?.facilityPin, message: "Staff PIN generated successfully" });
+    } catch (error) {
+      console.error("Error generating PIN:", error);
+      res.status(500).json({ error: "Failed to generate PIN" });
+    }
+  });
+
+  // Get facility PIN (for owner only)
+  app.get("/api/owners/facilities/:facilityId/pin", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+
+      const facility = await storage.getFacility(facilityId);
+      if (!facility) {
+        return res.status(404).json({ error: "Facility not found" });
+      }
+      if (facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      res.json({ pin: facility.facilityPin || null });
+    } catch (error) {
+      console.error("Error getting PIN:", error);
+      res.status(500).json({ error: "Failed to get PIN" });
+    }
+  });
+
   // Get current owner's claims
   app.get("/api/owners/me/claims", async (req, res) => {
     try {

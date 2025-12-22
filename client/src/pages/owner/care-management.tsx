@@ -26,6 +26,9 @@ import {
   Download,
   Calendar,
   Activity,
+  KeyRound,
+  Copy,
+  RefreshCw,
 } from "lucide-react";
 
 interface CareManagementProps {
@@ -168,6 +171,41 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
     enabled: !!facilityId,
   });
 
+  // Fetch facility PIN
+  const { data: facilityPinData, refetch: refetchPin } = useQuery<{ pin: string | null }>({
+    queryKey: ["owner-facility-pin", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/pin`, {
+        credentials: "include",
+      });
+      if (!response.ok) return { pin: null };
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Generate PIN mutation
+  const generatePinMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/owners/facilities/${facilityId}/generate-pin`, {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      refetchPin();
+      toast({
+        title: "Staff PIN Generated",
+        description: `New PIN: ${data.pin}. Share this with your staff for quick login.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to generate PIN. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update staff status mutation
   const updateStaffStatusMutation = useMutation({
     mutationFn: async ({ staffId, status }: { staffId: string; status: string }) => {
@@ -269,6 +307,16 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
       hour: "numeric",
       minute: "2-digit",
     });
+  };
+
+  const copyPinToClipboard = () => {
+    if (facilityPinData?.pin) {
+      navigator.clipboard.writeText(facilityPinData.pin);
+      toast({
+        title: "PIN Copied",
+        description: "Staff PIN copied to clipboard.",
+      });
+    }
   };
 
   return (
@@ -405,7 +453,71 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
         </TabsContent>
 
         {/* Staff Tab */}
-        <TabsContent value="staff" className="mt-6">
+        <TabsContent value="staff" className="mt-6 space-y-6">
+          {/* Staff Quick Login PIN Card */}
+          <Card className="border-amber-900/20 bg-stone-900/30">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-amber-400" />
+                <CardTitle className="text-stone-200">Staff Quick Login PIN</CardTitle>
+              </div>
+              <CardDescription className="text-stone-500">
+                Share this 4-digit PIN with your staff for quick login at <span className="text-amber-400">/staff/login</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                {facilityPinData?.pin ? (
+                  <>
+                    <div className="flex items-center gap-2 bg-stone-800/50 px-4 py-3 rounded-lg">
+                      <span className="text-3xl font-mono text-amber-200 tracking-widest">
+                        {facilityPinData.pin}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={copyPinToClipboard}
+                        className="text-stone-400 hover:text-amber-200"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => generatePinMutation.mutate()}
+                      disabled={generatePinMutation.isPending}
+                      className="border-amber-900/30 text-stone-300 hover:text-amber-200 gap-2"
+                    >
+                      {generatePinMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      Regenerate
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={() => generatePinMutation.mutate()}
+                    disabled={generatePinMutation.isPending}
+                    className="bg-amber-600 hover:bg-amber-500 gap-2"
+                  >
+                    {generatePinMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <KeyRound className="h-4 w-4" />
+                    )}
+                    Generate Staff PIN
+                  </Button>
+                )}
+              </div>
+              <p className="text-stone-500 text-sm mt-3">
+                Staff can use this PIN with their name to quickly access the Care Portal. No password required.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Staff Users Card */}
           <Card className="border-amber-900/20 bg-stone-900/30">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>

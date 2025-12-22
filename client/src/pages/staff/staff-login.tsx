@@ -8,13 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Home, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
+import { Loader2, Home, Eye, EyeOff, KeyRound, Lock, Building2 } from "lucide-react";
 
 const TEAL = "#0d9488";
 
 export default function StaffLogin() {
   const [, setLocation] = useLocation();
-  const { login, loginWithPin, isLoading, isAuthenticated } = useStaffAuth();
+  const { login, loginWithPin, loginWithFacilityPin, isLoading, isAuthenticated } = useStaffAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
@@ -23,6 +23,10 @@ export default function StaffLogin() {
   const [pinEmail, setPinEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Facility PIN login state
+  const [facilityPin, setFacilityPin] = useState("");
+  const [staffName, setStaffName] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -85,6 +89,43 @@ export default function StaffLogin() {
     }
   };
 
+  const handleFacilityPinLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (facilityPin.length !== 4) {
+      toast({
+        title: "Invalid PIN",
+        description: "Please enter the 4-digit facility PIN.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!staffName.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await loginWithFacilityPin(facilityPin, staffName.trim());
+      setLocation("/staff/dashboard");
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Invalid facility PIN. Please try again.",
+        variant: "destructive",
+      });
+      setFacilityPin("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -131,17 +172,80 @@ export default function StaffLogin() {
           </CardHeader>
 
           <CardContent>
-            <Tabs defaultValue="password" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="password" className="gap-2">
+            <Tabs defaultValue="facility" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="facility" className="gap-1 text-xs sm:text-sm">
+                  <Building2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Facility</span> PIN
+                </TabsTrigger>
+                <TabsTrigger value="password" className="gap-1 text-xs sm:text-sm">
                   <Lock className="h-4 w-4" />
                   Password
                 </TabsTrigger>
-                <TabsTrigger value="pin" className="gap-2">
+                <TabsTrigger value="pin" className="gap-1 text-xs sm:text-sm">
                   <KeyRound className="h-4 w-4" />
-                  Quick PIN
+                  <span className="hidden sm:inline">Quick</span> PIN
                 </TabsTrigger>
               </TabsList>
+
+              {/* Facility PIN Login Tab - Quick staff access */}
+              <TabsContent value="facility">
+                <form onSubmit={handleFacilityPinLogin} className="space-y-4">
+                  <div className="p-3 bg-teal-50 rounded-lg border border-teal-200">
+                    <p className="text-sm text-teal-800">
+                      Quick access for staff. Get your facility's 4-digit PIN from your administrator.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Facility PIN</Label>
+                    <div className="flex justify-center py-2">
+                      <InputOTP
+                        maxLength={4}
+                        value={facilityPin}
+                        onChange={setFacilityPin}
+                        disabled={isSubmitting}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} className="h-14 w-14 text-xl" />
+                          <InputOTPSlot index={1} className="h-14 w-14 text-xl" />
+                          <InputOTPSlot index={2} className="h-14 w-14 text-xl" />
+                          <InputOTPSlot index={3} className="h-14 w-14 text-xl" />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="staff-name">Your Name</Label>
+                    <Input
+                      id="staff-name"
+                      type="text"
+                      placeholder="Enter your name"
+                      value={staffName}
+                      onChange={(e) => setStaffName(e.target.value)}
+                      disabled={isSubmitting}
+                      autoComplete="name"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full text-white"
+                    style={{ backgroundColor: TEAL }}
+                    disabled={isSubmitting || facilityPin.length !== 4 || !staffName.trim()}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
 
               {/* Password Login Tab */}
               <TabsContent value="password">

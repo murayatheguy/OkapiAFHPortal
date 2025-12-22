@@ -219,7 +219,10 @@ export const facilities = pgTable("facilities", {
   // Business Info
   yearEstablished: integer("year_established"),
   ownerId: varchar("owner_id"),
-  
+
+  // Staff Access
+  facilityPin: text("facility_pin"), // 4-digit PIN for staff quick login
+
   // Claim Status
   claimStatus: text("claim_status").notNull().default("unclaimed"), // unclaimed, pending, claimed
   claimedAt: timestamp("claimed_at"),
