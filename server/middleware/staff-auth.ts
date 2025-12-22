@@ -15,6 +15,7 @@ declare global {
 /**
  * Middleware to require staff authentication
  * Verifies session has valid staffId and loads staff data
+ * Also recognizes owner sessions and auto-links to staff records
  */
 export async function requireStaffAuth(
   req: Request,
@@ -22,8 +23,28 @@ export async function requireStaffAuth(
   next: NextFunction
 ) {
   try {
-    const staffId = req.session.staffId;
-    const staffFacilityId = req.session.staffFacilityId;
+    let staffId = req.session.staffId;
+    let staffFacilityId = req.session.staffFacilityId;
+
+    // If no staff session but owner is logged in, try to find linked staff record
+    if (!staffId && req.session.ownerId) {
+      const ownerId = req.session.ownerId;
+      // Get owner's facilities and try to find a linked staff record
+      const facilities = await storage.getFacilitiesByOwner(ownerId);
+
+      for (const facility of facilities) {
+        const linkedStaff = await storage.getStaffAuthByLinkedOwner(ownerId, facility.id);
+        if (linkedStaff && linkedStaff.status === "active") {
+          // Found a linked staff record, set session
+          req.session.staffId = linkedStaff.id;
+          req.session.staffFacilityId = linkedStaff.facilityId;
+          req.session.staffRole = linkedStaff.role;
+          staffId = linkedStaff.id;
+          staffFacilityId = linkedStaff.facilityId;
+          break;
+        }
+      }
+    }
 
     if (!staffId || !staffFacilityId) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -81,8 +102,8 @@ export function requirePermission(permission: keyof StaffPermissions) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Admins have all permissions
-    if (req.staff.role === "admin") {
+    // Admins and owners have all permissions
+    if (req.staff.role === "admin" || req.staff.role === "owner") {
       return next();
     }
 

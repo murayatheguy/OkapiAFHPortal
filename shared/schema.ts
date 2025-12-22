@@ -833,6 +833,7 @@ export const staffAuth = pgTable("staff_auth", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
   teamMemberId: varchar("team_member_id").references(() => teamMembers.id, { onDelete: "set null" }),
+  linkedOwnerId: varchar("linked_owner_id").references(() => owners.id, { onDelete: "set null" }),
 
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash"),
@@ -855,6 +856,7 @@ export const staffAuth = pgTable("staff_auth", {
   emailIdx: index("staff_auth_email_idx").on(table.email),
   facilityIdx: index("staff_auth_facility_idx").on(table.facilityId),
   inviteTokenIdx: index("staff_auth_invite_token_idx").on(table.inviteToken),
+  linkedOwnerIdx: index("staff_auth_linked_owner_idx").on(table.linkedOwnerId),
 }));
 
 export const insertStaffAuthSchema = createInsertSchema(staffAuth).omit({

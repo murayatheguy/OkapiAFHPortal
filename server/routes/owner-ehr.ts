@@ -454,4 +454,85 @@ export function registerOwnerEhrRoutes(app: Express) {
       }
     }
   );
+
+  /**
+   * Enable Care Portal for owner - creates/retrieves owner's staff record
+   * This allows owners to seamlessly access the Staff Portal
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/ehr/enable-portal",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const ownerId = req.session.ownerId!;
+        const { facilityId } = req.params;
+        const owner = (req as any).owner;
+
+        // Check if staff record already exists for this owner and facility
+        let staffRecord = await storage.getStaffAuthByLinkedOwner(ownerId, facilityId);
+
+        if (!staffRecord) {
+          // Check if email already exists (owner might have been invited separately)
+          const existingByEmail = await storage.getStaffAuthByEmail(owner.email);
+
+          if (existingByEmail && existingByEmail.facilityId === facilityId) {
+            // Link existing record to owner
+            staffRecord = await storage.updateStaffAuth(existingByEmail.id, {
+              linkedOwnerId: ownerId,
+              role: "owner",
+              status: "active",
+              permissions: {
+                canAdministerMeds: true,
+                canAdministerControlled: true,
+                canFileIncidents: true,
+                canEditResidents: true,
+              },
+            });
+          } else {
+            // Create new staff record for owner
+            const nameParts = (owner.name || "Owner User").split(" ");
+            const firstName = nameParts[0] || "Owner";
+            const lastName = nameParts.slice(1).join(" ") || "User";
+
+            staffRecord = await storage.createStaffAuth({
+              facilityId,
+              linkedOwnerId: ownerId,
+              email: owner.email,
+              firstName,
+              lastName,
+              role: "owner",
+              status: "active",
+              permissions: {
+                canAdministerMeds: true,
+                canAdministerControlled: true,
+                canFileIncidents: true,
+                canEditResidents: true,
+              },
+            } as any);
+          }
+        }
+
+        // Set staff session data so owner can access staff portal
+        req.session.staffId = staffRecord!.id;
+        req.session.staffFacilityId = facilityId;
+        req.session.staffRole = "owner";
+
+        res.json({
+          success: true,
+          staff: {
+            id: staffRecord!.id,
+            email: staffRecord!.email,
+            firstName: staffRecord!.firstName,
+            lastName: staffRecord!.lastName,
+            role: staffRecord!.role,
+            facilityId: staffRecord!.facilityId,
+          },
+        });
+      } catch (error) {
+        console.error("Error enabling care portal:", error);
+        res.status(500).json({ error: "Failed to enable care portal" });
+      }
+    }
+  );
 }

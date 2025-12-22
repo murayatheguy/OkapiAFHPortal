@@ -14,12 +14,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getInquiries, updateInquiry } from "@/lib/api";
 import type { Facility, Inquiry, Review, TeamMember, TransportProvider, TransportBooking } from "@shared/schema";
-import { 
-  Home, Users, MessageSquare, Star, Settings, LogOut, Building2, 
+import {
+  Home, Users, MessageSquare, Star, Settings, LogOut, Building2,
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
-  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap
+  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList
 } from "lucide-react";
+import { CareManagement } from "@/pages/owner/care-management";
 
 export default function OwnerDashboardPage() {
   const [, setLocation] = useLocation();
@@ -195,6 +196,7 @@ export default function OwnerDashboardPage() {
             {[
               { id: "overview", label: "Overview", icon: Home },
               { id: "transport", label: "Transport", icon: Car },
+              { id: "care", label: "Care Management", icon: ClipboardList },
               { id: "team", label: "Team", icon: Users },
               { id: "inquiries", label: "Inquiries", icon: MessageSquare, badge: newInquiries },
               { id: "reviews", label: "Reviews", icon: Star },
@@ -757,6 +759,13 @@ export default function OwnerDashboardPage() {
                     </TabsContent>
                   </Tabs>
                 </div>
+              )}
+
+              {activeSection === "care" && selectedFacilityId && (
+                <CareManagement
+                  facilityId={selectedFacilityId}
+                  facilityName={selectedFacility?.name}
+                />
               )}
 
               {activeSection === "settings" && (

@@ -244,6 +244,7 @@ export interface IStorage {
   getStaffAuthByEmail(email: string): Promise<StaffAuth | undefined>;
   getStaffAuthByInviteToken(token: string): Promise<StaffAuth | undefined>;
   getStaffAuthByFacility(facilityId: string): Promise<StaffAuth[]>;
+  getStaffAuthByLinkedOwner(ownerId: string, facilityId: string): Promise<StaffAuth | undefined>;
   createStaffAuth(staff: InsertStaffAuth): Promise<StaffAuth>;
   updateStaffAuth(id: string, data: Partial<InsertStaffAuth> & { lastLoginAt?: Date }): Promise<StaffAuth | undefined>;
   deleteStaffAuth(id: string): Promise<void>;
@@ -1167,6 +1168,14 @@ export class DatabaseStorage implements IStorage {
       .from(staffAuth)
       .where(eq(staffAuth.facilityId, facilityId))
       .orderBy(staffAuth.lastName, staffAuth.firstName);
+  }
+
+  async getStaffAuthByLinkedOwner(ownerId: string, facilityId: string): Promise<StaffAuth | undefined> {
+    const [staff] = await db
+      .select()
+      .from(staffAuth)
+      .where(and(eq(staffAuth.linkedOwnerId, ownerId), eq(staffAuth.facilityId, facilityId)));
+    return staff || undefined;
   }
 
   async createStaffAuth(staff: InsertStaffAuth): Promise<StaffAuth> {
