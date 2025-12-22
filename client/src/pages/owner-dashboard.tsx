@@ -18,9 +18,10 @@ import {
   Home, Users, MessageSquare, Star, Settings, LogOut, Building2,
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
-  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList
+  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil
 } from "lucide-react";
 import { CareManagement } from "@/pages/owner/care-management";
+import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
 
 export default function OwnerDashboardPage() {
   const [, setLocation] = useLocation();
@@ -29,6 +30,7 @@ export default function OwnerDashboardPage() {
   
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("overview");
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     if (facilities.length > 0 && !selectedFacilityId) {
@@ -276,12 +278,22 @@ export default function OwnerDashboardPage() {
                     <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                       {selectedFacility?.name || "Dashboard"}
                     </h1>
-                    <Link href={`/facility/${selectedFacility?.slug || selectedFacilityId}`}>
-                      <Button variant="outline" className="border-amber-900/30 text-stone-300 hover:text-amber-200">
-                        View Public Listing
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="border-amber-900/30 text-stone-300 hover:text-amber-200"
+                        onClick={() => setShowEditDialog(true)}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit Facility
                       </Button>
-                    </Link>
+                      <Link href={`/facility/${selectedFacility?.slug || selectedFacilityId}`}>
+                        <Button variant="outline" className="border-amber-900/30 text-stone-300 hover:text-amber-200">
+                          View Public Listing
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="grid md:grid-cols-4 gap-4">
@@ -828,6 +840,18 @@ export default function OwnerDashboardPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Edit Facility Dialog */}
+      {selectedFacility && (
+        <EditFacilityDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          facility={selectedFacility}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["owner-facilities"] });
+          }}
+        />
+      )}
     </div>
   );
 }

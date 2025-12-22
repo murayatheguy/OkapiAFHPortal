@@ -553,6 +553,53 @@ export async function registerRoutes(
     }
   });
 
+  // Update owner's facility
+  app.patch("/api/owners/facilities/:facilityId", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+
+      // Verify the facility belongs to this owner
+      const facility = await storage.getFacility(facilityId);
+      if (!facility) {
+        return res.status(404).json({ error: "Facility not found" });
+      }
+      if (facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized to update this facility" });
+      }
+
+      // Only allow updating specific fields
+      const allowedFields = [
+        'name', 'description', 'phone', 'email', 'website',
+        'capacity', 'availableBeds', 'currentOccupancy',
+        'amenities', 'specialties', 'careTypes',
+        'acceptsMedicaid', 'acceptsMedicare', 'acceptsPrivatePay',
+        'priceMin', 'priceMax', 'images', 'acceptingInquiries'
+      ];
+
+      const updateData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updatedFacility = await storage.updateFacility(facilityId, updateData);
+      res.json(updatedFacility);
+    } catch (error) {
+      console.error("Error updating facility:", error);
+      res.status(500).json({ error: "Failed to update facility" });
+    }
+  });
+
   // Get current owner's claims
   app.get("/api/owners/me/claims", async (req, res) => {
     try {
