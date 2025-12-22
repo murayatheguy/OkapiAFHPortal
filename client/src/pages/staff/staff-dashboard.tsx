@@ -26,6 +26,8 @@ import {
   Sunset,
   Loader2,
 } from "lucide-react";
+import { AddNoteDialog } from "@/components/staff/add-note-dialog";
+import { FileIncidentDialog } from "@/components/staff/file-incident-dialog";
 
 const TEAL = "#0d9488";
 
@@ -134,6 +136,8 @@ export default function StaffDashboard() {
   const { staff } = useStaffAuth();
   const [, navigate] = useLocation();
   const [quickActionOpen, setQuickActionOpen] = useState(false);
+  const [addNoteOpen, setAddNoteOpen] = useState(false);
+  const [fileIncidentOpen, setFileIncidentOpen] = useState(false);
   const shift = getShiftInfo();
   const ShiftIcon = shift.icon;
   const facilityId = staff?.facilityId;
@@ -209,10 +213,10 @@ export default function StaffDashboard() {
   ];
 
   const quickActions = [
-    { label: "Log Medication", icon: Pill, href: "/staff/mar" },
-    { label: "Add Note", icon: FileText, href: "/staff/mar" },
-    { label: "File Incident", icon: AlertTriangle, href: "/staff/mar" },
-    { label: "View Schedule", icon: Clock, href: "/staff/mar" },
+    { label: "Log Medication", icon: Pill, action: () => navigate("/staff/mar") },
+    { label: "Add Note", icon: FileText, action: () => setAddNoteOpen(true) },
+    { label: "File Incident", icon: AlertTriangle, action: () => setFileIncidentOpen(true) },
+    { label: "View Schedule", icon: Clock, action: () => navigate("/staff/mar") },
   ];
 
   return (
@@ -331,15 +335,15 @@ export default function StaffDashboard() {
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
-                  <Link key={action.label} href={action.href}>
-                    <Button
-                      variant="outline"
-                      className="w-full h-auto py-3 flex flex-col items-center gap-1.5 hover:border-teal-300"
-                    >
-                      <Icon className="h-5 w-5" style={{ color: TEAL }} />
-                      <span className="text-xs font-medium">{action.label}</span>
-                    </Button>
-                  </Link>
+                  <Button
+                    key={action.label}
+                    variant="outline"
+                    className="w-full h-auto py-3 flex flex-col items-center gap-1.5 hover:border-teal-300"
+                    onClick={action.action}
+                  >
+                    <Icon className="h-5 w-5" style={{ color: TEAL }} />
+                    <span className="text-xs font-medium">{action.label}</span>
+                  </Button>
                 );
               })}
             </div>
@@ -372,7 +376,7 @@ export default function StaffDashboard() {
                   className="h-auto py-4 flex flex-col items-center gap-2 hover:border-teal-300"
                   onClick={() => {
                     setQuickActionOpen(false);
-                    navigate(action.href);
+                    action.action();
                   }}
                 >
                   <Icon className="h-6 w-6" style={{ color: TEAL }} />
@@ -383,6 +387,12 @@ export default function StaffDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Note Dialog */}
+      <AddNoteDialog open={addNoteOpen} onOpenChange={setAddNoteOpen} />
+
+      {/* File Incident Dialog */}
+      <FileIncidentDialog open={fileIncidentOpen} onOpenChange={setFileIncidentOpen} />
     </StaffLayout>
   );
 }
