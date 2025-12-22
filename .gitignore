@@ -6,3 +6,7 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+backups/
+cookies.txt
+*-cookies.txt
+*.output
