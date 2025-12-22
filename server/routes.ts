@@ -5,6 +5,8 @@ import { insertFacilitySchema, insertTeamMemberSchema, insertCredentialSchema, i
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { registerEhrRoutes } from "./routes/ehr";
+import { registerOwnerEhrRoutes } from "./routes/owner-ehr";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -1685,6 +1687,10 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to get photo" });
     }
   });
+
+  // Register EHR routes
+  registerEhrRoutes(app);
+  registerOwnerEhrRoutes(app);
 
   return httpServer;
 }

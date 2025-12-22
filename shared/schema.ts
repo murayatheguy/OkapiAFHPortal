@@ -805,3 +805,371 @@ export const ownerSavedProvidersRelations = relations(ownerSavedProviders, ({ on
     references: [transportProviders.id],
   }),
 }));
+
+// ============================================================================
+// EHR SYSTEM TABLES
+// ============================================================================
+
+// Staff role enum
+export const staffRoleEnum = {
+  CAREGIVER: 'caregiver',
+  MED_TECH: 'med_tech',
+  SHIFT_LEAD: 'shift_lead',
+  NURSE: 'nurse',
+} as const;
+
+export type StaffRole = typeof staffRoleEnum[keyof typeof staffRoleEnum];
+
+// Staff permissions type
+export type StaffPermissions = {
+  canAdministerMeds: boolean;
+  canAdministerControlled: boolean;
+  canFileIncidents: boolean;
+  canEditResidents: boolean;
+};
+
+// Staff Auth table - login credentials for facility staff
+export const staffAuth = pgTable("staff_auth", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  teamMemberId: varchar("team_member_id").references(() => teamMembers.id, { onDelete: "set null" }),
+
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash"),
+  pin: text("pin"), // Hashed PIN for quick login
+
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+
+  role: text("role").notNull().default("caregiver"),
+  permissions: json("permissions").$type<StaffPermissions>(),
+  status: text("status").notNull().default("inactive"), // inactive, active, suspended
+
+  inviteToken: text("invite_token").unique(),
+  inviteExpiresAt: timestamp("invite_expires_at"),
+  lastLoginAt: timestamp("last_login_at"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  emailIdx: index("staff_auth_email_idx").on(table.email),
+  facilityIdx: index("staff_auth_facility_idx").on(table.facilityId),
+  inviteTokenIdx: index("staff_auth_invite_token_idx").on(table.inviteToken),
+}));
+
+export const insertStaffAuthSchema = createInsertSchema(staffAuth).omit({
+  id: true, createdAt: true, updatedAt: true, lastLoginAt: true
+});
+export type InsertStaffAuth = z.infer<typeof insertStaffAuthSchema>;
+export type StaffAuth = typeof staffAuth.$inferSelect;
+
+// Residents table - resident profiles
+export const residents = pgTable("residents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  preferredName: text("preferred_name"),
+  dateOfBirth: date("date_of_birth").notNull(),
+  photo: text("photo"),
+  roomNumber: text("room_number"),
+
+  admissionDate: date("admission_date"),
+  status: text("status").notNull().default("active"), // active, discharged, deceased, hospital
+
+  // JSON fields for complex data
+  primaryPhysician: json("primary_physician").$type<{
+    name: string;
+    phone?: string;
+    fax?: string;
+  }>(),
+  emergencyContacts: json("emergency_contacts").$type<{
+    name: string;
+    relationship: string;
+    phone: string;
+    isPrimary?: boolean;
+  }[]>().default([]),
+  diagnoses: json("diagnoses").$type<string[]>().default([]),
+  allergies: json("allergies").$type<string[]>().default([]),
+  dietaryRestrictions: json("dietary_restrictions").$type<string[]>().default([]),
+  codeStatus: text("code_status"), // full_code, dnr, dnr_dni, comfort_care
+  insuranceInfo: json("insurance_info").$type<{
+    primary?: string;
+    primaryId?: string;
+    medicaidId?: string;
+  }>(),
+  preferences: json("preferences").$type<Record<string, any>>(),
+  notes: text("notes"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("residents_facility_idx").on(table.facilityId),
+  statusIdx: index("residents_status_idx").on(table.status),
+}));
+
+export const insertResidentSchema = createInsertSchema(residents).omit({
+  id: true, createdAt: true, updatedAt: true
+});
+export type InsertResident = z.infer<typeof insertResidentSchema>;
+export type Resident = typeof residents.$inferSelect;
+
+// Medications table - prescribed medications
+export const medications = pgTable("medications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  residentId: varchar("resident_id").references(() => residents.id, { onDelete: "cascade" }).notNull(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+
+  name: text("name").notNull(),
+  genericName: text("generic_name"),
+  dosage: text("dosage").notNull(), // "10mg", "1 tablet", etc.
+  route: text("route").notNull(), // oral, topical, injection, etc.
+  frequency: json("frequency").$type<{
+    times: string[]; // ["08:00", "20:00"]
+    daysOfWeek?: number[]; // [0,1,2,3,4,5,6] for daily, or specific days
+    interval?: string; // "daily", "bid", "tid", "weekly"
+  }>(),
+  instructions: text("instructions"),
+
+  prescribedBy: text("prescribed_by"),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+
+  isControlled: boolean("is_controlled").default(false),
+  isPRN: boolean("is_prn").default(false),
+  prnReason: text("prn_reason"),
+
+  status: text("status").notNull().default("active"), // active, discontinued, completed
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  residentIdx: index("medications_resident_idx").on(table.residentId),
+  facilityIdx: index("medications_facility_idx").on(table.facilityId),
+  statusIdx: index("medications_status_idx").on(table.status),
+}));
+
+export const insertMedicationSchema = createInsertSchema(medications).omit({
+  id: true, createdAt: true, updatedAt: true
+});
+export type InsertMedication = z.infer<typeof insertMedicationSchema>;
+export type Medication = typeof medications.$inferSelect;
+
+// Medication Logs table - MAR records
+export const medicationLogs = pgTable("medication_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  medicationId: varchar("medication_id").references(() => medications.id, { onDelete: "cascade" }).notNull(),
+  residentId: varchar("resident_id").references(() => residents.id, { onDelete: "cascade" }).notNull(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+
+  administeredBy: varchar("administered_by").references(() => staffAuth.id, { onDelete: "set null" }).notNull(),
+  scheduledTime: timestamp("scheduled_time").notNull(),
+  administeredTime: timestamp("administered_time"),
+
+  status: text("status").notNull(), // given, refused, held, missed
+  missedReason: text("missed_reason"),
+
+  witnessedBy: varchar("witnessed_by").references(() => staffAuth.id, { onDelete: "set null" }),
+  notes: text("notes"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  medicationIdx: index("medication_logs_medication_idx").on(table.medicationId),
+  residentIdx: index("medication_logs_resident_idx").on(table.residentId),
+  facilityIdx: index("medication_logs_facility_idx").on(table.facilityId),
+  scheduledIdx: index("medication_logs_scheduled_idx").on(table.scheduledTime),
+}));
+
+export const insertMedicationLogSchema = createInsertSchema(medicationLogs).omit({
+  id: true, createdAt: true
+});
+export type InsertMedicationLog = z.infer<typeof insertMedicationLogSchema>;
+export type MedicationLog = typeof medicationLogs.$inferSelect;
+
+// Daily Notes table - ADL tracking
+export const dailyNotes = pgTable("daily_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  residentId: varchar("resident_id").references(() => residents.id, { onDelete: "cascade" }).notNull(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  staffId: varchar("staff_id").references(() => staffAuth.id, { onDelete: "set null" }).notNull(),
+
+  date: date("date").notNull(),
+  shift: text("shift").notNull(), // day, swing, night
+
+  adls: json("adls").$type<{
+    bathing?: string; // independent, assisted, total, refused
+    dressing?: string;
+    grooming?: string;
+    toileting?: string;
+    eating?: string;
+    mobility?: string;
+  }>(),
+
+  mood: text("mood"),
+  appetite: text("appetite"), // good, fair, poor, refused
+  painLevel: integer("pain_level"), // 0-10
+
+  vitalSigns: json("vital_signs").$type<{
+    bloodPressure?: string;
+    pulse?: number;
+    temperature?: number;
+    oxygenSaturation?: number;
+    weight?: number;
+  }>(),
+
+  notes: text("notes"),
+  concerns: text("concerns"),
+  hasConcerns: boolean("has_concerns").default(false),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  residentIdx: index("daily_notes_resident_idx").on(table.residentId),
+  facilityIdx: index("daily_notes_facility_idx").on(table.facilityId),
+  dateIdx: index("daily_notes_date_idx").on(table.date),
+  residentDateShiftIdx: index("daily_notes_resident_date_shift_idx").on(table.residentId, table.date, table.shift),
+}));
+
+export const insertDailyNoteSchema = createInsertSchema(dailyNotes).omit({
+  id: true, createdAt: true, updatedAt: true
+});
+export type InsertDailyNote = z.infer<typeof insertDailyNoteSchema>;
+export type DailyNote = typeof dailyNotes.$inferSelect;
+
+// Incident Reports table
+export const incidentReports = pgTable("incident_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  residentId: varchar("resident_id").references(() => residents.id, { onDelete: "set null" }),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  reportedBy: varchar("reported_by").references(() => staffAuth.id, { onDelete: "set null" }).notNull(),
+
+  incidentDate: date("incident_date").notNull(),
+  incidentTime: text("incident_time").notNull(),
+  location: text("location"),
+
+  type: text("type").notNull(), // fall, medication_error, behavior, injury, elopement, other
+  description: text("description").notNull(),
+  immediateAction: text("immediate_action"),
+
+  hasInjury: boolean("has_injury").default(false),
+  injuries: json("injuries").$type<{
+    type: string;
+    location: string;
+    severity: string;
+  }[]>(),
+
+  physicianNotified: boolean("physician_notified").default(false),
+  familyNotified: boolean("family_notified").default(false),
+  dshsReportable: boolean("dshs_reportable").default(false),
+
+  status: text("status").notNull().default("open"), // open, investigating, closed
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  residentIdx: index("incident_reports_resident_idx").on(table.residentId),
+  facilityIdx: index("incident_reports_facility_idx").on(table.facilityId),
+  typeIdx: index("incident_reports_type_idx").on(table.type),
+  dateIdx: index("incident_reports_date_idx").on(table.incidentDate),
+}));
+
+export const insertIncidentReportSchema = createInsertSchema(incidentReports).omit({
+  id: true, createdAt: true, updatedAt: true
+});
+export type InsertIncidentReport = z.infer<typeof insertIncidentReportSchema>;
+export type IncidentReport = typeof incidentReports.$inferSelect;
+
+// ============================================================================
+// EHR RELATIONS
+// ============================================================================
+
+export const staffAuthRelations = relations(staffAuth, ({ one, many }) => ({
+  facility: one(facilities, {
+    fields: [staffAuth.facilityId],
+    references: [facilities.id],
+  }),
+  teamMember: one(teamMembers, {
+    fields: [staffAuth.teamMemberId],
+    references: [teamMembers.id],
+  }),
+  medicationLogs: many(medicationLogs),
+  dailyNotes: many(dailyNotes),
+  incidentReports: many(incidentReports),
+}));
+
+export const residentsRelations = relations(residents, ({ one, many }) => ({
+  facility: one(facilities, {
+    fields: [residents.facilityId],
+    references: [facilities.id],
+  }),
+  medications: many(medications),
+  medicationLogs: many(medicationLogs),
+  dailyNotes: many(dailyNotes),
+  incidentReports: many(incidentReports),
+}));
+
+export const medicationsRelations = relations(medications, ({ one, many }) => ({
+  resident: one(residents, {
+    fields: [medications.residentId],
+    references: [residents.id],
+  }),
+  facility: one(facilities, {
+    fields: [medications.facilityId],
+    references: [facilities.id],
+  }),
+  logs: many(medicationLogs),
+}));
+
+export const medicationLogsRelations = relations(medicationLogs, ({ one }) => ({
+  medication: one(medications, {
+    fields: [medicationLogs.medicationId],
+    references: [medications.id],
+  }),
+  resident: one(residents, {
+    fields: [medicationLogs.residentId],
+    references: [residents.id],
+  }),
+  facility: one(facilities, {
+    fields: [medicationLogs.facilityId],
+    references: [facilities.id],
+  }),
+  administeredByStaff: one(staffAuth, {
+    fields: [medicationLogs.administeredBy],
+    references: [staffAuth.id],
+  }),
+  witnessStaff: one(staffAuth, {
+    fields: [medicationLogs.witnessedBy],
+    references: [staffAuth.id],
+  }),
+}));
+
+export const dailyNotesRelations = relations(dailyNotes, ({ one }) => ({
+  resident: one(residents, {
+    fields: [dailyNotes.residentId],
+    references: [residents.id],
+  }),
+  facility: one(facilities, {
+    fields: [dailyNotes.facilityId],
+    references: [facilities.id],
+  }),
+  staff: one(staffAuth, {
+    fields: [dailyNotes.staffId],
+    references: [staffAuth.id],
+  }),
+}));
+
+export const incidentReportsRelations = relations(incidentReports, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [incidentReports.facilityId],
+    references: [facilities.id],
+  }),
+  resident: one(residents, {
+    fields: [incidentReports.residentId],
+    references: [residents.id],
+  }),
+  reportedByStaff: one(staffAuth, {
+    fields: [incidentReports.reportedBy],
+    references: [staffAuth.id],
+  }),
+}));

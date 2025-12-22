@@ -1,7 +1,7 @@
-import { 
-  users, 
-  facilities, 
-  teamMembers, 
+import {
+  users,
+  facilities,
+  teamMembers,
   credentials,
   inquiries,
   admins,
@@ -17,7 +17,14 @@ import {
   transportBookings,
   providerReviews,
   ownerSavedProviders,
-  type User, 
+  // EHR tables
+  staffAuth,
+  residents,
+  medications,
+  medicationLogs,
+  dailyNotes,
+  incidentReports,
+  type User,
   type InsertUser,
   type Facility,
   type InsertFacility,
@@ -49,7 +56,20 @@ import {
   type ProviderReview,
   type InsertProviderReview,
   type OwnerSavedProvider,
-  type InsertOwnerSavedProvider
+  type InsertOwnerSavedProvider,
+  // EHR types
+  type StaffAuth,
+  type InsertStaffAuth,
+  type Resident,
+  type InsertResident,
+  type Medication,
+  type InsertMedication,
+  type MedicationLog,
+  type InsertMedicationLog,
+  type DailyNote,
+  type InsertDailyNote,
+  type IncidentReport,
+  type InsertIncidentReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
@@ -214,6 +234,74 @@ export interface IStorage {
   getInspectionsByFacility(facilityId: string): Promise<DshsInspection[]>;
   createInspection(inspection: InsertDshsInspection): Promise<DshsInspection>;
   deleteInspectionsByFacility(facilityId: string): Promise<void>;
+
+  // ============================================================================
+  // EHR STORAGE METHODS
+  // ============================================================================
+
+  // Staff Auth
+  getStaffAuth(id: string): Promise<StaffAuth | undefined>;
+  getStaffAuthByEmail(email: string): Promise<StaffAuth | undefined>;
+  getStaffAuthByInviteToken(token: string): Promise<StaffAuth | undefined>;
+  getStaffAuthByFacility(facilityId: string): Promise<StaffAuth[]>;
+  createStaffAuth(staff: InsertStaffAuth): Promise<StaffAuth>;
+  updateStaffAuth(id: string, data: Partial<InsertStaffAuth> & { lastLoginAt?: Date }): Promise<StaffAuth | undefined>;
+  deleteStaffAuth(id: string): Promise<void>;
+
+  // Residents
+  getResident(id: string): Promise<Resident | undefined>;
+  getResidentsByFacility(facilityId: string, status?: string): Promise<Resident[]>;
+  createResident(resident: InsertResident): Promise<Resident>;
+  updateResident(id: string, data: Partial<InsertResident>): Promise<Resident | undefined>;
+  deleteResident(id: string): Promise<void>;
+
+  // Medications
+  getMedication(id: string): Promise<Medication | undefined>;
+  getMedicationsByResident(residentId: string, activeOnly?: boolean): Promise<Medication[]>;
+  getMedicationsByFacility(facilityId: string): Promise<Medication[]>;
+  createMedication(medication: InsertMedication): Promise<Medication>;
+  updateMedication(id: string, data: Partial<InsertMedication>): Promise<Medication | undefined>;
+  deleteMedication(id: string): Promise<void>;
+
+  // Medication Logs (MAR)
+  getMedicationLog(id: string): Promise<MedicationLog | undefined>;
+  getMedicationLogsByResident(residentId: string, startDate?: Date, endDate?: Date): Promise<MedicationLog[]>;
+  getMedicationLogsByFacility(facilityId: string, date: string): Promise<MedicationLog[]>;
+  createMedicationLog(log: InsertMedicationLog): Promise<MedicationLog>;
+  updateMedicationLog(id: string, data: Partial<InsertMedicationLog>): Promise<MedicationLog | undefined>;
+
+  // Daily Notes
+  getDailyNote(id: string): Promise<DailyNote | undefined>;
+  getDailyNotesByResident(residentId: string, limit?: number): Promise<DailyNote[]>;
+  getDailyNotesByFacility(facilityId: string, date: string): Promise<DailyNote[]>;
+  createDailyNote(note: InsertDailyNote): Promise<DailyNote>;
+  updateDailyNote(id: string, data: Partial<InsertDailyNote>): Promise<DailyNote | undefined>;
+  deleteDailyNote(id: string): Promise<void>;
+
+  // Incident Reports
+  getIncidentReport(id: string): Promise<IncidentReport | undefined>;
+  getIncidentReportsByFacility(facilityId: string, filters?: { status?: string; dshsReportable?: boolean }): Promise<IncidentReport[]>;
+  getIncidentReportsByResident(residentId: string): Promise<IncidentReport[]>;
+  createIncidentReport(report: InsertIncidentReport): Promise<IncidentReport>;
+  updateIncidentReport(id: string, data: Partial<InsertIncidentReport>): Promise<IncidentReport | undefined>;
+  deleteIncidentReport(id: string): Promise<void>;
+
+  // EHR Dashboard & Advanced Features
+  getEhrDashboardStats(facilityId: string): Promise<{
+    activeResidents: number;
+    totalMedications: number;
+    pendingMedications: number;
+    openIncidents: number;
+    dshsReportableIncidents: number;
+    todayNotes: number;
+  }>;
+  getResidentSummary(residentId: string): Promise<{
+    resident: Resident;
+    activeMedications: Medication[];
+    recentNotes: DailyNote[];
+    recentIncidents: IncidentReport[];
+    recentMar: MedicationLog[];
+  } | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1051,6 +1139,369 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInspectionsByFacility(facilityId: string): Promise<void> {
     await db.delete(dshsInspections).where(eq(dshsInspections.facilityId, facilityId));
+  }
+
+  // ============================================================================
+  // EHR STORAGE IMPLEMENTATIONS
+  // ============================================================================
+
+  // Staff Auth
+  async getStaffAuth(id: string): Promise<StaffAuth | undefined> {
+    const [staff] = await db.select().from(staffAuth).where(eq(staffAuth.id, id));
+    return staff || undefined;
+  }
+
+  async getStaffAuthByEmail(email: string): Promise<StaffAuth | undefined> {
+    const [staff] = await db.select().from(staffAuth).where(eq(staffAuth.email, email));
+    return staff || undefined;
+  }
+
+  async getStaffAuthByInviteToken(token: string): Promise<StaffAuth | undefined> {
+    const [staff] = await db.select().from(staffAuth).where(eq(staffAuth.inviteToken, token));
+    return staff || undefined;
+  }
+
+  async getStaffAuthByFacility(facilityId: string): Promise<StaffAuth[]> {
+    return await db
+      .select()
+      .from(staffAuth)
+      .where(eq(staffAuth.facilityId, facilityId))
+      .orderBy(staffAuth.lastName, staffAuth.firstName);
+  }
+
+  async createStaffAuth(staff: InsertStaffAuth): Promise<StaffAuth> {
+    const [newStaff] = await db.insert(staffAuth).values(staff).returning();
+    return newStaff;
+  }
+
+  async updateStaffAuth(id: string, data: Partial<InsertStaffAuth> & { lastLoginAt?: Date }): Promise<StaffAuth | undefined> {
+    const [updated] = await db
+      .update(staffAuth)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(staffAuth.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteStaffAuth(id: string): Promise<void> {
+    await db.delete(staffAuth).where(eq(staffAuth.id, id));
+  }
+
+  // Residents
+  async getResident(id: string): Promise<Resident | undefined> {
+    const [resident] = await db.select().from(residents).where(eq(residents.id, id));
+    return resident || undefined;
+  }
+
+  async getResidentsByFacility(facilityId: string, status?: string): Promise<Resident[]> {
+    const conditions = [eq(residents.facilityId, facilityId)];
+    if (status) {
+      conditions.push(eq(residents.status, status));
+    }
+    return await db
+      .select()
+      .from(residents)
+      .where(and(...conditions))
+      .orderBy(residents.lastName, residents.firstName);
+  }
+
+  async createResident(resident: InsertResident): Promise<Resident> {
+    const [newResident] = await db.insert(residents).values(resident as any).returning();
+    return newResident;
+  }
+
+  async updateResident(id: string, data: Partial<InsertResident>): Promise<Resident | undefined> {
+    const [updated] = await db
+      .update(residents)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(residents.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteResident(id: string): Promise<void> {
+    await db.delete(residents).where(eq(residents.id, id));
+  }
+
+  // Medications
+  async getMedication(id: string): Promise<Medication | undefined> {
+    const [medication] = await db.select().from(medications).where(eq(medications.id, id));
+    return medication || undefined;
+  }
+
+  async getMedicationsByResident(residentId: string, activeOnly?: boolean): Promise<Medication[]> {
+    const conditions = [eq(medications.residentId, residentId)];
+    if (activeOnly) {
+      conditions.push(eq(medications.status, 'active'));
+    }
+    return await db
+      .select()
+      .from(medications)
+      .where(and(...conditions))
+      .orderBy(medications.name);
+  }
+
+  async getMedicationsByFacility(facilityId: string): Promise<Medication[]> {
+    return await db
+      .select()
+      .from(medications)
+      .where(eq(medications.facilityId, facilityId))
+      .orderBy(medications.name);
+  }
+
+  async createMedication(medication: InsertMedication): Promise<Medication> {
+    const [newMedication] = await db.insert(medications).values(medication as any).returning();
+    return newMedication;
+  }
+
+  async updateMedication(id: string, data: Partial<InsertMedication>): Promise<Medication | undefined> {
+    const [updated] = await db
+      .update(medications)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(medications.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteMedication(id: string): Promise<void> {
+    await db.delete(medications).where(eq(medications.id, id));
+  }
+
+  // Medication Logs (MAR)
+  async getMedicationLog(id: string): Promise<MedicationLog | undefined> {
+    const [log] = await db.select().from(medicationLogs).where(eq(medicationLogs.id, id));
+    return log || undefined;
+  }
+
+  async getMedicationLogsByResident(residentId: string, startDate?: Date, endDate?: Date): Promise<MedicationLog[]> {
+    const conditions = [eq(medicationLogs.residentId, residentId)];
+    if (startDate) {
+      conditions.push(gte(medicationLogs.scheduledTime, startDate));
+    }
+    if (endDate) {
+      conditions.push(lt(medicationLogs.scheduledTime, endDate));
+    }
+    return await db
+      .select()
+      .from(medicationLogs)
+      .where(and(...conditions))
+      .orderBy(desc(medicationLogs.scheduledTime));
+  }
+
+  async getMedicationLogsByFacility(facilityId: string, date: string): Promise<MedicationLog[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return await db
+      .select()
+      .from(medicationLogs)
+      .where(and(
+        eq(medicationLogs.facilityId, facilityId),
+        gte(medicationLogs.scheduledTime, startOfDay),
+        lt(medicationLogs.scheduledTime, endOfDay)
+      ))
+      .orderBy(medicationLogs.scheduledTime);
+  }
+
+  async createMedicationLog(log: InsertMedicationLog): Promise<MedicationLog> {
+    const [newLog] = await db.insert(medicationLogs).values(log).returning();
+    return newLog;
+  }
+
+  async updateMedicationLog(id: string, data: Partial<InsertMedicationLog>): Promise<MedicationLog | undefined> {
+    const [updated] = await db
+      .update(medicationLogs)
+      .set(data)
+      .where(eq(medicationLogs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Daily Notes
+  async getDailyNote(id: string): Promise<DailyNote | undefined> {
+    const [note] = await db.select().from(dailyNotes).where(eq(dailyNotes.id, id));
+    return note || undefined;
+  }
+
+  async getDailyNotesByResident(residentId: string, limit: number = 30): Promise<DailyNote[]> {
+    return await db
+      .select()
+      .from(dailyNotes)
+      .where(eq(dailyNotes.residentId, residentId))
+      .orderBy(desc(dailyNotes.date))
+      .limit(limit);
+  }
+
+  async getDailyNotesByFacility(facilityId: string, date: string): Promise<DailyNote[]> {
+    return await db
+      .select()
+      .from(dailyNotes)
+      .where(and(
+        eq(dailyNotes.facilityId, facilityId),
+        eq(dailyNotes.date, date)
+      ))
+      .orderBy(dailyNotes.shift);
+  }
+
+  async createDailyNote(note: InsertDailyNote): Promise<DailyNote> {
+    const [newNote] = await db.insert(dailyNotes).values(note as any).returning();
+    return newNote;
+  }
+
+  async updateDailyNote(id: string, data: Partial<InsertDailyNote>): Promise<DailyNote | undefined> {
+    const [updated] = await db
+      .update(dailyNotes)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(dailyNotes.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDailyNote(id: string): Promise<void> {
+    await db.delete(dailyNotes).where(eq(dailyNotes.id, id));
+  }
+
+  // Incident Reports
+  async getIncidentReport(id: string): Promise<IncidentReport | undefined> {
+    const [report] = await db.select().from(incidentReports).where(eq(incidentReports.id, id));
+    return report || undefined;
+  }
+
+  async getIncidentReportsByFacility(facilityId: string, filters?: { status?: string; dshsReportable?: boolean }): Promise<IncidentReport[]> {
+    const conditions = [eq(incidentReports.facilityId, facilityId)];
+    if (filters?.status) {
+      conditions.push(eq(incidentReports.status, filters.status));
+    }
+    if (filters?.dshsReportable !== undefined) {
+      conditions.push(eq(incidentReports.dshsReportable, filters.dshsReportable));
+    }
+    return await db
+      .select()
+      .from(incidentReports)
+      .where(and(...conditions))
+      .orderBy(desc(incidentReports.incidentDate));
+  }
+
+  async getIncidentReportsByResident(residentId: string): Promise<IncidentReport[]> {
+    return await db
+      .select()
+      .from(incidentReports)
+      .where(eq(incidentReports.residentId, residentId))
+      .orderBy(desc(incidentReports.incidentDate));
+  }
+
+  async createIncidentReport(report: InsertIncidentReport): Promise<IncidentReport> {
+    const [newReport] = await db.insert(incidentReports).values(report as any).returning();
+    return newReport;
+  }
+
+  async updateIncidentReport(id: string, data: Partial<InsertIncidentReport>): Promise<IncidentReport | undefined> {
+    const [updated] = await db
+      .update(incidentReports)
+      .set({ ...data, updatedAt: new Date() } as any)
+      .where(eq(incidentReports.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteIncidentReport(id: string): Promise<void> {
+    await db.delete(incidentReports).where(eq(incidentReports.id, id));
+  }
+
+  // EHR Dashboard & Advanced Features
+  async getEhrDashboardStats(facilityId: string): Promise<{
+    activeResidents: number;
+    totalMedications: number;
+    pendingMedications: number;
+    openIncidents: number;
+    dshsReportableIncidents: number;
+    todayNotes: number;
+  }> {
+    const today = new Date().toISOString().split("T")[0];
+
+    const [activeResidentsResult] = await db
+      .select({ count: count() })
+      .from(residents)
+      .where(and(eq(residents.facilityId, facilityId), eq(residents.status, "active")));
+
+    const [totalMedicationsResult] = await db
+      .select({ count: count() })
+      .from(medications)
+      .where(and(eq(medications.facilityId, facilityId), eq(medications.status, "active")));
+
+    // Get pending medications (scheduled for today, not yet administered)
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const [pendingMedicationsResult] = await db
+      .select({ count: count() })
+      .from(medicationLogs)
+      .where(and(
+        eq(medicationLogs.facilityId, facilityId),
+        eq(medicationLogs.status, "pending"),
+        gte(medicationLogs.scheduledTime, startOfDay),
+        lt(medicationLogs.scheduledTime, endOfDay)
+      ));
+
+    const [openIncidentsResult] = await db
+      .select({ count: count() })
+      .from(incidentReports)
+      .where(and(eq(incidentReports.facilityId, facilityId), eq(incidentReports.status, "open")));
+
+    const [dshsReportableResult] = await db
+      .select({ count: count() })
+      .from(incidentReports)
+      .where(and(
+        eq(incidentReports.facilityId, facilityId),
+        eq(incidentReports.dshsReportable, true),
+        eq(incidentReports.status, "open")
+      ));
+
+    const [todayNotesResult] = await db
+      .select({ count: count() })
+      .from(dailyNotes)
+      .where(and(eq(dailyNotes.facilityId, facilityId), eq(dailyNotes.date, today)));
+
+    return {
+      activeResidents: activeResidentsResult?.count || 0,
+      totalMedications: totalMedicationsResult?.count || 0,
+      pendingMedications: pendingMedicationsResult?.count || 0,
+      openIncidents: openIncidentsResult?.count || 0,
+      dshsReportableIncidents: dshsReportableResult?.count || 0,
+      todayNotes: todayNotesResult?.count || 0,
+    };
+  }
+
+  async getResidentSummary(residentId: string): Promise<{
+    resident: Resident;
+    activeMedications: Medication[];
+    recentNotes: DailyNote[];
+    recentIncidents: IncidentReport[];
+    recentMar: MedicationLog[];
+  } | undefined> {
+    const resident = await this.getResident(residentId);
+    if (!resident) return undefined;
+
+    const activeMedications = await this.getMedicationsByResident(residentId, true);
+    const recentNotes = await this.getDailyNotesByResident(residentId, 7);
+    const recentIncidents = await this.getIncidentReportsByResident(residentId);
+
+    // Get last 7 days of MAR
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentMar = await this.getMedicationLogsByResident(residentId, sevenDaysAgo, new Date());
+
+    return {
+      resident,
+      activeMedications,
+      recentNotes,
+      recentIncidents: recentIncidents.slice(0, 10), // Limit to 10 most recent
+      recentMar,
+    };
   }
 }
 

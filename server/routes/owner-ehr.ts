@@ -1,0 +1,457 @@
+import { Express, Request, Response, NextFunction } from "express";
+import crypto from "crypto";
+import { storage } from "../storage";
+
+/**
+ * Middleware to require owner authentication
+ */
+async function requireOwnerAuth(req: Request, res: Response, next: NextFunction) {
+  const ownerId = req.session.ownerId;
+  if (!ownerId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const owner = await storage.getOwner(ownerId);
+  if (!owner) {
+    req.session.ownerId = null;
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  if (owner.status !== "active") {
+    return res.status(403).json({ error: "Account is not active" });
+  }
+
+  // Attach owner to request
+  (req as any).owner = owner;
+  next();
+}
+
+/**
+ * Middleware to verify owner has access to facility
+ */
+async function requireFacilityOwnership(req: Request, res: Response, next: NextFunction) {
+  const ownerId = req.session.ownerId;
+  const facilityId = req.params.facilityId;
+
+  if (!facilityId) {
+    return res.status(400).json({ error: "Facility ID required" });
+  }
+
+  const facility = await storage.getFacility(facilityId);
+  if (!facility) {
+    return res.status(404).json({ error: "Facility not found" });
+  }
+
+  if (facility.ownerId !== ownerId) {
+    return res.status(403).json({ error: "Access denied to this facility" });
+  }
+
+  // Attach facility to request
+  (req as any).facility = facility;
+  next();
+}
+
+export function registerOwnerEhrRoutes(app: Express) {
+  // ============================================================================
+  // OWNER EHR DASHBOARD
+  // ============================================================================
+
+  /**
+   * Get EHR dashboard for a facility (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/dashboard",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const stats = await storage.getEhrDashboardStats(facilityId);
+
+        // Get additional owner-relevant info
+        const staff = await storage.getStaffAuthByFacility(facilityId);
+        const activeStaff = staff.filter((s) => s.status === "active");
+
+        res.json({
+          ...stats,
+          staffCount: activeStaff.length,
+          hasStaffAdmin: staff.some((s) => s.role === "admin" && s.status === "active"),
+        });
+      } catch (error) {
+        console.error("Error getting owner EHR dashboard:", error);
+        res.status(500).json({ error: "Failed to get dashboard" });
+      }
+    }
+  );
+
+  // ============================================================================
+  // OWNER STAFF MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get all staff for a facility (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/staff",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const staff = await storage.getStaffAuthByFacility(facilityId);
+
+        // Remove sensitive data
+        const sanitizedStaff = staff.map((s) => ({
+          id: s.id,
+          email: s.email,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          role: s.role,
+          status: s.status,
+          lastLoginAt: s.lastLoginAt,
+          createdAt: s.createdAt,
+        }));
+
+        res.json(sanitizedStaff);
+      } catch (error) {
+        console.error("Error getting facility staff:", error);
+        res.status(500).json({ error: "Failed to get staff list" });
+      }
+    }
+  );
+
+  /**
+   * Invite initial staff admin for a facility
+   * This allows owners to bootstrap EHR access for their facility
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/staff/invite-admin",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { email, firstName, lastName } = req.body;
+
+        if (!email || !firstName || !lastName) {
+          return res.status(400).json({
+            error: "Email, first name, and last name are required",
+          });
+        }
+
+        // Check if email already exists
+        const existing = await storage.getStaffAuthByEmail(email);
+        if (existing) {
+          return res.status(400).json({ error: "Email already in use" });
+        }
+
+        // Generate invite token
+        const inviteToken = crypto.randomBytes(32).toString("hex");
+        const inviteExpiresAt = new Date();
+        inviteExpiresAt.setDate(inviteExpiresAt.getDate() + 7); // 7 days
+
+        const newStaff = await storage.createStaffAuth({
+          facilityId,
+          email,
+          firstName,
+          lastName,
+          role: "admin", // Owner invites create admins
+          permissions: {
+            canAdministerMeds: true,
+            canAdministerControlled: true,
+            canFileIncidents: true,
+            canEditResidents: true,
+          },
+          status: "inactive",
+          inviteToken,
+          inviteExpiresAt,
+        });
+
+        // In production, send invite email here
+        // await sendInviteEmail(email, inviteToken);
+
+        res.json({
+          success: true,
+          staff: {
+            id: newStaff.id,
+            email: newStaff.email,
+            firstName: newStaff.firstName,
+            lastName: newStaff.lastName,
+            role: newStaff.role,
+          },
+          inviteLink: `/ehr/setup?token=${inviteToken}`,
+        });
+      } catch (error) {
+        console.error("Error inviting staff admin:", error);
+        res.status(500).json({ error: "Failed to invite staff admin" });
+      }
+    }
+  );
+
+  /**
+   * Revoke staff access (owner can remove any staff)
+   */
+  app.delete(
+    "/api/owners/facilities/:facilityId/staff/:staffId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, staffId } = req.params;
+
+        const staff = await storage.getStaffAuth(staffId);
+        if (!staff) {
+          return res.status(404).json({ error: "Staff member not found" });
+        }
+
+        if (staff.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Staff member not in this facility" });
+        }
+
+        await storage.deleteStaffAuth(staffId);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error removing staff:", error);
+        res.status(500).json({ error: "Failed to remove staff member" });
+      }
+    }
+  );
+
+  /**
+   * Suspend/reactivate staff member
+   */
+  app.patch(
+    "/api/owners/facilities/:facilityId/staff/:staffId/status",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, staffId } = req.params;
+        const { status } = req.body;
+
+        if (!["active", "suspended"].includes(status)) {
+          return res.status(400).json({ error: "Status must be 'active' or 'suspended'" });
+        }
+
+        const staff = await storage.getStaffAuth(staffId);
+        if (!staff) {
+          return res.status(404).json({ error: "Staff member not found" });
+        }
+
+        if (staff.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Staff member not in this facility" });
+        }
+
+        const updated = await storage.updateStaffAuth(staffId, { status });
+        res.json({
+          id: updated?.id,
+          status: updated?.status,
+        });
+      } catch (error) {
+        console.error("Error updating staff status:", error);
+        res.status(500).json({ error: "Failed to update staff status" });
+      }
+    }
+  );
+
+  // ============================================================================
+  // OWNER REPORTS ACCESS
+  // ============================================================================
+
+  /**
+   * Get resident census for facility (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/census",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const residents = await storage.getResidentsByFacility(facilityId);
+
+        const byStatus = {
+          active: residents.filter((r) => r.status === "active"),
+          discharged: residents.filter((r) => r.status === "discharged"),
+          hospitalized: residents.filter((r) => r.status === "hospitalized"),
+          deceased: residents.filter((r) => r.status === "deceased"),
+        };
+
+        res.json({
+          total: residents.length,
+          byStatus: {
+            active: byStatus.active.length,
+            discharged: byStatus.discharged.length,
+            hospitalized: byStatus.hospitalized.length,
+            deceased: byStatus.deceased.length,
+          },
+          // Basic info only for privacy
+          activeResidents: byStatus.active.map((r) => ({
+            id: r.id,
+            firstName: r.firstName,
+            lastName: r.lastName,
+            roomNumber: r.roomNumber,
+            admissionDate: r.admissionDate,
+          })),
+        });
+      } catch (error) {
+        console.error("Error getting census:", error);
+        res.status(500).json({ error: "Failed to get census report" });
+      }
+    }
+  );
+
+  /**
+   * Get incident summary for facility (owner view)
+   * Shows high-level stats without full PHI
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/incidents/summary",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { startDate, endDate } = req.query;
+
+        const incidents = await storage.getIncidentReportsByFacility(facilityId, {});
+
+        // Filter by date range if provided
+        let filtered = incidents;
+        if (startDate) {
+          filtered = filtered.filter((i) => i.incidentDate >= (startDate as string));
+        }
+        if (endDate) {
+          filtered = filtered.filter((i) => i.incidentDate <= (endDate as string));
+        }
+
+        // Group by type
+        const byType = filtered.reduce((acc: Record<string, number>, incident) => {
+          acc[incident.type] = (acc[incident.type] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Group by status
+        const byStatus = {
+          open: filtered.filter((i) => i.status === "open").length,
+          investigating: filtered.filter((i) => i.status === "investigating").length,
+          closed: filtered.filter((i) => i.status === "closed").length,
+        };
+
+        // DSHS reportable count
+        const dshsReportable = filtered.filter((i) => i.dshsReportable).length;
+
+        res.json({
+          total: filtered.length,
+          dshsReportable,
+          byType,
+          byStatus,
+          // Recent incidents (limited info)
+          recent: filtered.slice(0, 10).map((i) => ({
+            id: i.id,
+            type: i.type,
+            incidentDate: i.incidentDate,
+            status: i.status,
+            dshsReportable: i.dshsReportable,
+          })),
+        });
+      } catch (error) {
+        console.error("Error getting incident summary:", error);
+        res.status(500).json({ error: "Failed to get incident summary" });
+      }
+    }
+  );
+
+  /**
+   * Get medication compliance summary for facility (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/medications/compliance",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const days = parseInt(req.query.days as string) || 7;
+
+        // Get MAR for last N days
+        const allLogs: any[] = [];
+        const today = new Date();
+
+        for (let i = 0; i < days; i++) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split("T")[0];
+          const logs = await storage.getMedicationLogsByFacility(facilityId, dateStr);
+          allLogs.push(...logs);
+        }
+
+        // Calculate stats
+        const total = allLogs.length;
+        const given = allLogs.filter((l) => l.status === "given").length;
+        const refused = allLogs.filter((l) => l.status === "refused").length;
+        const held = allLogs.filter((l) => l.status === "held").length;
+        const missed = allLogs.filter((l) => l.status === "missed").length;
+
+        res.json({
+          period: `Last ${days} days`,
+          summary: {
+            total,
+            given,
+            refused,
+            held,
+            missed,
+            complianceRate: total > 0 ? ((given / total) * 100).toFixed(1) + "%" : "N/A",
+          },
+        });
+      } catch (error) {
+        console.error("Error getting medication compliance:", error);
+        res.status(500).json({ error: "Failed to get medication compliance" });
+      }
+    }
+  );
+
+  /**
+   * Get all facilities with EHR status for owner
+   */
+  app.get(
+    "/api/owners/me/facilities/ehr-status",
+    requireOwnerAuth,
+    async (req, res) => {
+      try {
+        const ownerId = req.session.ownerId!;
+        const facilities = await storage.getFacilitiesByOwner(ownerId);
+
+        const facilitiesWithEhr = await Promise.all(
+          facilities.map(async (facility) => {
+            const staff = await storage.getStaffAuthByFacility(facility.id);
+            const activeStaff = staff.filter((s) => s.status === "active");
+            const hasAdmin = staff.some((s) => s.role === "admin" && s.status === "active");
+
+            let stats = null;
+            if (activeStaff.length > 0) {
+              stats = await storage.getEhrDashboardStats(facility.id);
+            }
+
+            return {
+              id: facility.id,
+              name: facility.name,
+              ehrEnabled: activeStaff.length > 0,
+              hasAdmin,
+              staffCount: activeStaff.length,
+              stats: stats ? {
+                activeResidents: stats.activeResidents,
+                openIncidents: stats.openIncidents,
+              } : null,
+            };
+          })
+        );
+
+        res.json(facilitiesWithEhr);
+      } catch (error) {
+        console.error("Error getting facilities EHR status:", error);
+        res.status(500).json({ error: "Failed to get facilities status" });
+      }
+    }
+  );
+}
