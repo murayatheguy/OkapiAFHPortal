@@ -679,14 +679,14 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
 
   const overviewStats = [
     {
-      label: "Active Residents",
+      label: "Current Clients",
       value: stats?.activeResidents || census?.byStatus?.active || 0,
       icon: Users,
       color: "text-blue-400",
       bgColor: "bg-blue-900/20",
     },
     {
-      label: "MAR Compliance",
+      label: "Meds Given Rate",
       value: medCompliance?.summary?.complianceRate || "N/A",
       icon: Pill,
       color: "text-green-400",
@@ -1503,8 +1503,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-stone-200 font-medium">Medication Compliance Report</h4>
-                        <p className="text-stone-500 text-sm">MAR summary for period</p>
+                        <h4 className="text-stone-200 font-medium">Medication Log Report</h4>
+                        <p className="text-stone-500 text-sm">Summary of all medications given</p>
                       </div>
                       <Button
                         variant="outline"
@@ -1523,8 +1523,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-stone-200 font-medium">Resident Census Report</h4>
-                        <p className="text-stone-500 text-sm">Current resident list and status</p>
+                        <h4 className="text-stone-200 font-medium">Current Clients Report</h4>
+                        <p className="text-stone-500 text-sm">List of all residents and their status</p>
                       </div>
                       <Button
                         variant="outline"
@@ -1707,7 +1707,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
       <ReportViewerDialog
         open={activeReport === "medCompliance"}
         onOpenChange={(open) => !open && setActiveReport(null)}
-        title="Medication Compliance Report"
+        title="Medication Log Report"
       >
         <MedicationComplianceReport
           facilityName={facilityData?.name || "Facility"}
@@ -1724,7 +1724,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 
       <ReportViewerDialog
         open={activeReport === "census"}
         onOpenChange={(open) => !open && setActiveReport(null)}
-        title="Resident Census Report"
+        title="Current Clients Report"
       >
         <CensusReport
           facilityName={facilityData?.name || "Facility"}

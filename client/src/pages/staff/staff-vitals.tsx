@@ -231,7 +231,7 @@ export default function StaffVitals() {
         {/* Resident Selector */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Select Resident</CardTitle>
+            <CardTitle className="text-base">Choose Client</CardTitle>
           </CardHeader>
           <CardContent>
             {residentsLoading ? (
@@ -240,8 +240,8 @@ export default function StaffVitals() {
               </div>
             ) : (
               <Select value={selectedResidentId} onValueChange={setSelectedResidentId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a resident..." />
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue placeholder="Tap to choose a client..." />
                 </SelectTrigger>
                 <SelectContent>
                   {residents.map((resident) => (
@@ -419,16 +419,21 @@ export default function StaffVitals() {
 
                 <Button
                   type="submit"
-                  className="w-full text-white"
+                  className="w-full text-white min-h-[48px] text-base font-medium"
                   style={{ backgroundColor: TEAL }}
                   disabled={saveVitalsMutation.isPending}
                 >
                   {saveVitalsMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      Saving...
+                    </>
                   ) : (
-                    <Check className="h-4 w-4 mr-2" />
+                    <>
+                      <Check className="h-5 w-5 mr-2" />
+                      Save Vital Signs
+                    </>
                   )}
-                  Save Vitals
                 </Button>
               </form>
             </CardContent>

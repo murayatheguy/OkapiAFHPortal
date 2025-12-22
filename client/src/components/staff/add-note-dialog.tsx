@@ -153,15 +153,15 @@ export function AddNoteDialog({ open, onOpenChange }: AddNoteDialogProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Resident Selector */}
           <div className="space-y-2">
-            <Label>Resident</Label>
+            <Label className="text-base font-medium">Choose Client</Label>
             {residentsLoading ? (
               <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             ) : (
               <Select value={selectedResidentId} onValueChange={setSelectedResidentId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select resident..." />
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue placeholder="Tap to choose a client..." />
                 </SelectTrigger>
                 <SelectContent>
                   {residents.map((resident) => (
@@ -177,9 +177,9 @@ export function AddNoteDialog({ open, onOpenChange }: AddNoteDialogProps) {
 
           {/* Note Type */}
           <div className="space-y-2">
-            <Label>Note Type</Label>
+            <Label className="text-base font-medium">Note Category</Label>
             <Select value={noteType} onValueChange={setNoteType}>
-              <SelectTrigger>
+              <SelectTrigger className="min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -194,36 +194,40 @@ export function AddNoteDialog({ open, onOpenChange }: AddNoteDialogProps) {
 
           {/* Note Text */}
           <div className="space-y-2">
-            <Label>Note</Label>
+            <Label className="text-base font-medium">Your Note</Label>
             <Textarea
-              placeholder="Enter your note..."
+              placeholder="What would you like to document?"
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               rows={4}
-              className="resize-none"
+              className="resize-none text-base"
             />
           </div>
 
           {/* Submit */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-h-[48px] text-base"
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 text-white"
+              className="flex-1 text-white min-h-[48px] text-base font-medium"
               style={{ backgroundColor: TEAL }}
               disabled={saveNoteMutation.isPending}
             >
               {saveNoteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Save Note
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Note"
+              )}
             </Button>
           </div>
         </form>

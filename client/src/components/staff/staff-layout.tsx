@@ -28,8 +28,8 @@ interface StaffLayoutProps {
 const TEAL = "#0d9488";
 
 const navItems = [
-  { href: "/staff/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/staff/mar", icon: Pill, label: "MAR" },
+  { href: "/staff/dashboard", icon: LayoutDashboard, label: "Home" },
+  { href: "/staff/mar", icon: Pill, label: "Meds" },
   { href: "/staff/vitals", icon: Activity, label: "Vitals" },
   { href: "/staff/notes", icon: FileText, label: "Notes" },
   { href: "/staff/incidents", icon: AlertTriangle, label: "Incidents" },

@@ -327,8 +327,8 @@ export default function StaffMAR() {
 
             {/* Resident Selector */}
             <Select value={selectedResident || ""} onValueChange={setSelectedResident}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a resident..." />
+              <SelectTrigger className="w-full min-h-[44px]">
+                <SelectValue placeholder="Tap to choose a client..." />
               </SelectTrigger>
               <SelectContent>
                 {residents.map((resident) => (

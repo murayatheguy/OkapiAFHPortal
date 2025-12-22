@@ -206,10 +206,10 @@ export default function StaffDashboard() {
   const medsDueCount = upcomingMeds.filter((m) => m.status === "due").length;
 
   const stats = [
-    { label: "Active Residents", value: residents.length, icon: Users, href: "/staff/mar", color: TEAL },
+    { label: "Current Clients", value: residents.length, icon: Users, href: "/staff/mar", color: TEAL },
     { label: "Meds Due", value: medsDueCount || upcomingMeds.length, icon: Pill, href: "/staff/mar", color: "#f59e0b" },
-    { label: "Notes Today", value: dashboardData?.todayNotes || 0, icon: FileText, href: "/staff/mar", color: "#6366f1" },
-    { label: "Open Incidents", value: incidents.length, icon: AlertTriangle, href: "/staff/mar", color: "#ef4444" },
+    { label: "Notes Today", value: dashboardData?.todayNotes || 0, icon: FileText, href: "/staff/notes", color: "#6366f1" },
+    { label: "Open Incidents", value: incidents.length, icon: AlertTriangle, href: "/staff/incidents", color: "#ef4444" },
   ];
 
   const quickActions = [
@@ -331,18 +331,18 @@ export default function StaffDashboard() {
             <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
                   <Button
                     key={action.label}
                     variant="outline"
-                    className="w-full h-auto py-3 flex flex-col items-center gap-1.5 hover:border-teal-300"
+                    className="w-full h-auto min-h-[60px] py-4 flex flex-col items-center gap-2 hover:border-teal-400 hover:bg-teal-50 active:bg-teal-100 transition-colors"
                     onClick={action.action}
                   >
-                    <Icon className="h-5 w-5" style={{ color: TEAL }} />
-                    <span className="text-xs font-medium">{action.label}</span>
+                    <Icon className="h-6 w-6" style={{ color: TEAL }} />
+                    <span className="text-sm font-medium">{action.label}</span>
                   </Button>
                 );
               })}

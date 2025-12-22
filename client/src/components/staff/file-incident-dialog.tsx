@@ -294,18 +294,18 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Resident Selector (optional) */}
           <div className="space-y-2">
-            <Label>Resident (Optional)</Label>
+            <Label className="text-base font-medium">Client (Optional)</Label>
             {residentsLoading ? (
               <div className="flex items-center justify-center py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             ) : (
               <Select value={selectedResidentId} onValueChange={setSelectedResidentId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select resident (if applicable)..." />
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue placeholder="Tap to choose a client (if applicable)..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No specific resident</SelectItem>
+                  <SelectItem value="none">No specific client</SelectItem>
                   {residents.map((resident) => (
                     <SelectItem key={resident.id} value={resident.id}>
                       {resident.firstName} {resident.lastName}
@@ -319,10 +319,10 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
 
           {/* Incident Type */}
           <div className="space-y-2">
-            <Label>Incident Type *</Label>
+            <Label className="text-base font-medium">What Happened? *</Label>
             <Select value={incidentType} onValueChange={setIncidentType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select incident type..." />
+              <SelectTrigger className="min-h-[44px]">
+                <SelectValue placeholder="Choose incident type..." />
               </SelectTrigger>
               <SelectContent>
                 {INCIDENT_TYPES.map((type) => (
@@ -442,25 +442,29 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
           )}
 
           {/* Submit */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-h-[48px] text-base"
               onClick={handleClose}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 text-white"
+              className="flex-1 text-white min-h-[48px] text-base font-medium"
               style={{ backgroundColor: "#ef4444" }}
               disabled={saveIncidentMutation.isPending}
             >
               {saveIncidentMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              File Incident
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Filing...
+                </>
+              ) : (
+                "File Incident Report"
+              )}
             </Button>
           </div>
         </form>
