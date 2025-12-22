@@ -42,7 +42,9 @@ import { createTourEvent } from "@/lib/calendar";
 import { getFacilityPhotos } from "@/lib/facility-photos";
 
 export default function FacilityDetails() {
-  const [match, params] = useRoute("/facility/:id");
+  const [facilityMatch, facilityParams] = useRoute("/facility/:id");
+  const [homesMatch, homesParams] = useRoute("/homes/:id");
+  const params = facilityParams || homesParams;
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showTourModal, setShowTourModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);

@@ -276,7 +276,7 @@ export default function OwnerDashboardPage() {
                     <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                       {selectedFacility?.name || "Dashboard"}
                     </h1>
-                    <Link href={`/homes/${selectedFacility?.slug || selectedFacilityId}`}>
+                    <Link href={`/facility/${selectedFacility?.slug || selectedFacilityId}`}>
                       <Button variant="outline" className="border-amber-900/30 text-stone-300 hover:text-amber-200">
                         View Public Listing
                         <ChevronRight className="h-4 w-4 ml-1" />
