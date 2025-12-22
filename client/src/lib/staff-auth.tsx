@@ -41,8 +41,9 @@ export function StaffAuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Failed to fetch staff");
         }
         const data = await response.json();
+        // The /api/ehr/auth/me endpoint returns the staff object directly
         return {
-          staff: data.staff,
+          staff: data,
           permissions: data.permissions || null,
           facilityId: data.facilityId,
         };
