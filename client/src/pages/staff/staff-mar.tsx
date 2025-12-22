@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStaffAuth } from "@/lib/staff-auth";
+import { useSearch } from "wouter";
 import { StaffLayout } from "@/components/staff/staff-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
   ChevronRight,
   FileText,
   Loader2,
+  Plus,
 } from "lucide-react";
 
 const TEAL = "#0d9488";
@@ -87,6 +89,7 @@ export default function StaffMAR() {
   const { staff } = useStaffAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const searchString = useSearch();
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedResident, setSelectedResident] = useState<string | null>(null);
@@ -99,6 +102,15 @@ export default function StaffMAR() {
   const [logNotes, setLogNotes] = useState("");
 
   const facilityId = staff?.facilityId;
+
+  // Handle URL param for auto-selecting resident
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    const residentId = params.get("residentId");
+    if (residentId && !selectedResident) {
+      setSelectedResident(residentId);
+    }
+  }, [searchString, selectedResident]);
 
   // Fetch residents
   const { data: residents = [] } = useQuery<Resident[]>({
@@ -412,37 +424,35 @@ export default function StaffMAR() {
 
                               return (
                                 <td key={slot.id} className="py-2 px-1 text-center">
-                                  {isScheduled ? (
-                                    <button
-                                      onClick={() => handleCellClick(med, slot)}
-                                      className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all mx-auto ${
-                                        log
-                                          ? "cursor-default"
-                                          : "hover:border-teal-500 hover:bg-teal-50 cursor-pointer border-gray-300"
-                                      }`}
-                                      style={
-                                        log && statusInfo
-                                          ? {
-                                              backgroundColor: statusInfo.bgColor,
-                                              borderColor: statusInfo.color,
-                                            }
-                                          : undefined
-                                      }
-                                    >
-                                      {log && statusInfo ? (
-                                        <statusInfo.icon
-                                          className="h-5 w-5"
-                                          style={{ color: statusInfo.color }}
-                                        />
-                                      ) : (
-                                        <Clock className="h-4 w-4 text-gray-300" />
-                                      )}
-                                    </button>
-                                  ) : (
-                                    <div className="w-10 h-10 flex items-center justify-center mx-auto text-gray-200">
-                                      —
-                                    </div>
-                                  )}
+                                  <button
+                                    onClick={() => handleCellClick(med, slot)}
+                                    className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all mx-auto ${
+                                      log
+                                        ? "cursor-default"
+                                        : isScheduled
+                                        ? "hover:border-teal-500 hover:bg-teal-50 cursor-pointer border-gray-300"
+                                        : "hover:border-gray-400 hover:bg-gray-50 cursor-pointer border-gray-200 border-dashed"
+                                    }`}
+                                    style={
+                                      log && statusInfo
+                                        ? {
+                                            backgroundColor: statusInfo.bgColor,
+                                            borderColor: statusInfo.color,
+                                          }
+                                        : undefined
+                                    }
+                                  >
+                                    {log && statusInfo ? (
+                                      <statusInfo.icon
+                                        className="h-5 w-5"
+                                        style={{ color: statusInfo.color }}
+                                      />
+                                    ) : isScheduled ? (
+                                      <Clock className="h-4 w-4 text-gray-300" />
+                                    ) : (
+                                      <Plus className="h-4 w-4 text-gray-200" />
+                                    )}
+                                  </button>
                                 </td>
                               );
                             })}

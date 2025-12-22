@@ -46,12 +46,10 @@ interface Medication {
 
 function getShiftInfo() {
   const hour = new Date().getHours();
-  if (hour >= 6 && hour < 12) {
-    return { name: "Morning Shift", icon: Sun, time: "6:00 AM - 12:00 PM" };
-  } else if (hour >= 12 && hour < 18) {
-    return { name: "Afternoon Shift", icon: Sunrise, time: "12:00 PM - 6:00 PM" };
-  } else if (hour >= 18 && hour < 22) {
-    return { name: "Evening Shift", icon: Sunset, time: "6:00 PM - 10:00 PM" };
+  if (hour >= 6 && hour < 14) {
+    return { name: "Morning Shift", icon: Sun, time: "6:00 AM - 2:00 PM" };
+  } else if (hour >= 14 && hour < 22) {
+    return { name: "Afternoon Shift", icon: Sunrise, time: "2:00 PM - 10:00 PM" };
   } else {
     return { name: "Night Shift", icon: Moon, time: "10:00 PM - 6:00 AM" };
   }
@@ -64,6 +62,7 @@ function getUpcomingMeds(residents: Resident[], medications: Medication[]) {
 
   const upcomingMeds: Array<{
     id: string;
+    residentId: string;
     resident: string;
     medication: string;
     time: string;
@@ -110,6 +109,7 @@ function getUpcomingMeds(residents: Resident[], medications: Medication[]) {
 
           upcomingMeds.push({
             id: `${med.id}-${scheduledHour}`,
+            residentId: resident.id,
             resident: `${resident.firstName} ${resident.lastName}`,
             medication: `${med.name} ${med.dosage}`,
             time: timeStr,
@@ -296,9 +296,10 @@ export default function StaffDashboard() {
             ) : (
               <div className="space-y-2">
                 {upcomingMeds.map((med) => (
-                  <div
+                  <button
                     key={med.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    onClick={() => navigate(`/staff/mar?residentId=${med.residentId}`)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer text-left"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{med.resident}</p>
@@ -313,7 +314,7 @@ export default function StaffDashboard() {
                         {med.status === "due" ? "Due Now" : "Upcoming"}
                       </Badge>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
