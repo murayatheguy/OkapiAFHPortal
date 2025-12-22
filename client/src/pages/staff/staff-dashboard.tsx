@@ -1,9 +1,17 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useStaffAuth } from "@/lib/staff-auth";
 import { StaffLayout } from "@/components/staff/staff-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Users,
   Pill,
@@ -15,46 +23,196 @@ import {
   Sun,
   Moon,
   Sunrise,
+  Sunset,
+  Loader2,
 } from "lucide-react";
 
 const TEAL = "#0d9488";
 
-// Placeholder data - will be replaced with API calls
-const placeholderMeds = [
-  { id: 1, resident: "Mary Johnson", medication: "Metformin 500mg", time: "8:00 AM", status: "due" },
-  { id: 2, resident: "Robert Smith", medication: "Lisinopril 10mg", time: "8:00 AM", status: "due" },
-  { id: 3, resident: "Helen Davis", medication: "Omeprazole 20mg", time: "8:30 AM", status: "upcoming" },
-  { id: 4, resident: "James Wilson", medication: "Amlodipine 5mg", time: "9:00 AM", status: "upcoming" },
-];
+interface Resident {
+  id: string;
+  firstName: string;
+  lastName: string;
+  roomNumber?: string;
+}
+
+interface Medication {
+  id: string;
+  residentId: string;
+  name: string;
+  dosage: string;
+  frequency?: { times: string[]; interval?: string } | null;
+}
 
 function getShiftInfo() {
   const hour = new Date().getHours();
-  if (hour >= 6 && hour < 14) {
-    return { name: "Day Shift", icon: Sun, time: "6:00 AM - 2:00 PM" };
-  } else if (hour >= 14 && hour < 22) {
-    return { name: "Swing Shift", icon: Sunrise, time: "2:00 PM - 10:00 PM" };
+  if (hour >= 6 && hour < 12) {
+    return { name: "Morning Shift", icon: Sun, time: "6:00 AM - 12:00 PM" };
+  } else if (hour >= 12 && hour < 18) {
+    return { name: "Afternoon Shift", icon: Sunrise, time: "12:00 PM - 6:00 PM" };
+  } else if (hour >= 18 && hour < 22) {
+    return { name: "Evening Shift", icon: Sunset, time: "6:00 PM - 10:00 PM" };
   } else {
     return { name: "Night Shift", icon: Moon, time: "10:00 PM - 6:00 AM" };
   }
 }
 
+// Get upcoming medications based on current time and frequency
+function getUpcomingMeds(residents: Resident[], medications: Medication[]) {
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  const upcomingMeds: Array<{
+    id: string;
+    resident: string;
+    medication: string;
+    time: string;
+    status: "due" | "upcoming";
+  }> = [];
+
+  residents.forEach((resident) => {
+    const residentMeds = medications.filter((m) => m.residentId === resident.id);
+
+    residentMeds.forEach((med) => {
+      const interval = med.frequency?.interval?.toUpperCase() || "";
+      let times: number[] = [];
+
+      // Determine scheduled times based on frequency
+      if (interval === "QD" || interval === "DAILY") {
+        times = [8]; // 8 AM
+      } else if (interval === "BID") {
+        times = [8, 20]; // 8 AM, 8 PM
+      } else if (interval === "TID") {
+        times = [8, 14, 20]; // 8 AM, 2 PM, 8 PM
+      } else if (interval === "QID") {
+        times = [8, 12, 16, 20]; // Every 4 hours
+      } else if (interval === "QHS") {
+        times = [21]; // 9 PM (bedtime)
+      } else if (interval === "Q4H") {
+        times = [6, 10, 14, 18, 22]; // Every 4 hours
+      } else if (interval === "Q6H") {
+        times = [6, 12, 18, 0]; // Every 6 hours
+      } else if (interval === "Q8H") {
+        times = [6, 14, 22]; // Every 8 hours
+      } else if (interval === "Q12H") {
+        times = [8, 20]; // Every 12 hours
+      }
+
+      times.forEach((scheduledHour) => {
+        const diff = scheduledHour - currentHour;
+        // Show meds due now (within past hour) or upcoming (within next 3 hours)
+        if (diff >= -1 && diff <= 3) {
+          const timeStr = new Date(now.setHours(scheduledHour, 0, 0, 0)).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+
+          upcomingMeds.push({
+            id: `${med.id}-${scheduledHour}`,
+            resident: `${resident.firstName} ${resident.lastName}`,
+            medication: `${med.name} ${med.dosage}`,
+            time: timeStr,
+            status: diff <= 0 ? "due" : "upcoming",
+          });
+        }
+      });
+    });
+  });
+
+  // Sort by status (due first) then by time
+  return upcomingMeds
+    .sort((a, b) => {
+      if (a.status === "due" && b.status !== "due") return -1;
+      if (a.status !== "due" && b.status === "due") return 1;
+      return 0;
+    })
+    .slice(0, 4); // Limit to 4 items
+}
+
 export default function StaffDashboard() {
   const { staff } = useStaffAuth();
+  const [, navigate] = useLocation();
+  const [quickActionOpen, setQuickActionOpen] = useState(false);
   const shift = getShiftInfo();
   const ShiftIcon = shift.icon;
+  const facilityId = staff?.facilityId;
+
+  // Fetch residents
+  const { data: residents = [], isLoading: residentsLoading } = useQuery<Resident[]>({
+    queryKey: ["staff-residents", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/ehr/residents?status=active`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Fetch all active medications for the facility
+  const { data: allMedications = [] } = useQuery<Medication[]>({
+    queryKey: ["facility-medications", facilityId],
+    queryFn: async () => {
+      // Get medications for all residents
+      const meds: Medication[] = [];
+      for (const resident of residents) {
+        const response = await fetch(`/api/ehr/residents/${resident.id}/medications?status=active`, {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const residentMeds = await response.json();
+          meds.push(...residentMeds.map((m: any) => ({ ...m, residentId: resident.id })));
+        }
+      }
+      return meds;
+    },
+    enabled: residents.length > 0,
+  });
+
+  // Fetch dashboard stats
+  const { data: dashboardData } = useQuery({
+    queryKey: ["ehr-dashboard", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/ehr/dashboard`, {
+        credentials: "include",
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Fetch open incidents count
+  const { data: incidents = [] } = useQuery({
+    queryKey: ["ehr-incidents", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/ehr/incidents?status=open`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Calculate upcoming medications
+  const upcomingMeds = getUpcomingMeds(residents, allMedications);
+  const medsDueCount = upcomingMeds.filter((m) => m.status === "due").length;
 
   const stats = [
-    { label: "Active Residents", value: 5, icon: Users, href: "/staff/residents", color: TEAL },
-    { label: "Meds Due", value: 2, icon: Pill, href: "/staff/mar", color: "#f59e0b" },
-    { label: "Notes Today", value: 3, icon: FileText, href: "/staff/notes", color: "#6366f1" },
-    { label: "Open Incidents", value: 1, icon: AlertTriangle, href: "/staff/incidents", color: "#ef4444" },
+    { label: "Active Residents", value: residents.length, icon: Users, href: "/staff/mar", color: TEAL },
+    { label: "Meds Due", value: medsDueCount || upcomingMeds.length, icon: Pill, href: "/staff/mar", color: "#f59e0b" },
+    { label: "Notes Today", value: dashboardData?.todayNotes || 0, icon: FileText, href: "/staff/mar", color: "#6366f1" },
+    { label: "Open Incidents", value: incidents.length, icon: AlertTriangle, href: "/staff/mar", color: "#ef4444" },
   ];
 
   const quickActions = [
-    { label: "Log Medication", icon: Pill, href: "/staff/mar/log" },
-    { label: "Add Note", icon: FileText, href: "/staff/notes/new" },
-    { label: "File Incident", icon: AlertTriangle, href: "/staff/incidents/new" },
-    { label: "View Schedule", icon: Clock, href: "/staff/schedule" },
+    { label: "Log Medication", icon: Pill, href: "/staff/mar" },
+    { label: "Add Note", icon: FileText, href: "/staff/mar" },
+    { label: "File Incident", icon: AlertTriangle, href: "/staff/mar" },
+    { label: "View Schedule", icon: Clock, href: "/staff/mar" },
   ];
 
   return (
@@ -126,28 +284,39 @@ export default function StaffDashboard() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2">
-              {placeholderMeds.map((med) => (
-                <div
-                  key={med.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{med.resident}</p>
-                    <p className="text-sm text-gray-500 truncate">{med.medication}</p>
+            {residentsLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin" style={{ color: TEAL }} />
+              </div>
+            ) : upcomingMeds.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">
+                <Pill className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No upcoming medications</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {upcomingMeds.map((med) => (
+                  <div
+                    key={med.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{med.resident}</p>
+                      <p className="text-sm text-gray-500 truncate">{med.medication}</p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      <span className="text-sm text-gray-600">{med.time}</span>
+                      <Badge
+                        variant={med.status === "due" ? "destructive" : "secondary"}
+                        className="text-xs"
+                      >
+                        {med.status === "due" ? "Due Now" : "Upcoming"}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <span className="text-sm text-gray-600">{med.time}</span>
-                    <Badge
-                      variant={med.status === "due" ? "destructive" : "secondary"}
-                      className="text-xs"
-                    >
-                      {med.status === "due" ? "Due Now" : "Upcoming"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -177,15 +346,42 @@ export default function StaffDashboard() {
         </Card>
 
         {/* Floating Action Button for mobile */}
-        <Link href="/staff/mar/log">
-          <Button
-            className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg text-white"
-            style={{ backgroundColor: TEAL }}
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </Link>
+        <Button
+          className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg text-white"
+          style={{ backgroundColor: TEAL }}
+          onClick={() => setQuickActionOpen(true)}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       </div>
+
+      {/* Quick Action Modal */}
+      <Dialog open={quickActionOpen} onOpenChange={setQuickActionOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Quick Actions</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-4">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={action.label}
+                  variant="outline"
+                  className="h-auto py-4 flex flex-col items-center gap-2 hover:border-teal-300"
+                  onClick={() => {
+                    setQuickActionOpen(false);
+                    navigate(action.href);
+                  }}
+                >
+                  <Icon className="h-6 w-6" style={{ color: TEAL }} />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </StaffLayout>
   );
 }

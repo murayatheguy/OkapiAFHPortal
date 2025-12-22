@@ -104,7 +104,7 @@ export default function StaffMAR() {
   const { data: residents = [] } = useQuery<Resident[]>({
     queryKey: ["staff-residents", facilityId],
     queryFn: async () => {
-      const response = await fetch(`/api/ehr/facilities/${facilityId}/residents?status=active`, {
+      const response = await fetch(`/api/ehr/residents?status=active`, {
         credentials: "include",
       });
       if (!response.ok) return [];
@@ -119,7 +119,7 @@ export default function StaffMAR() {
     queryFn: async () => {
       if (!selectedResident) return [];
       const response = await fetch(
-        `/api/ehr/facilities/${facilityId}/residents/${selectedResident}/medications?status=active`,
+        `/api/ehr/residents/${selectedResident}/medications?status=active`,
         { credentials: "include" }
       );
       if (!response.ok) return [];
@@ -134,7 +134,7 @@ export default function StaffMAR() {
     queryFn: async () => {
       if (!selectedResident) return [];
       const response = await fetch(
-        `/api/ehr/facilities/${facilityId}/residents/${selectedResident}/mar?startDate=${selectedDate}&endDate=${selectedDate}`,
+        `/api/ehr/residents/${selectedResident}/mar?date=${selectedDate}`,
         { credentials: "include" }
       );
       if (!response.ok) return [];
@@ -153,9 +153,10 @@ export default function StaffMAR() {
     }) => {
       const response = await apiRequest(
         "POST",
-        `/api/ehr/facilities/${facilityId}/residents/${selectedResident}/mar`,
+        `/api/ehr/mar`,
         {
           ...data,
+          residentId: selectedResident,
           administeredTime: new Date().toISOString(),
         }
       );
