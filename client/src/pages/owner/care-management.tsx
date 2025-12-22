@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InviteStaffDialog } from "@/components/owner/invite-staff-dialog";
+import { AddClientDialog } from "@/components/owner/add-client-dialog";
+import { ResidentMedicationsDialog } from "@/components/owner/resident-medications-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Users,
@@ -29,11 +31,15 @@ import {
   KeyRound,
   Copy,
   RefreshCw,
+  Edit,
+  UserMinus,
+  Bed,
 } from "lucide-react";
 
 interface CareManagementProps {
   facilityId: string;
   facilityName?: string;
+  facilityCapacity?: number;
 }
 
 interface EhrDashboardStats {
@@ -62,9 +68,15 @@ interface ResidentSummary {
   id: string;
   firstName: string;
   lastName: string;
-  roomNumber: string;
+  preferredName?: string;
+  roomNumber?: string;
   status: string;
-  admissionDate: string;
+  admissionDate?: string;
+  dateOfBirth?: string;
+  diagnoses?: string[];
+  allergies?: string[];
+  emergencyContacts?: { name: string; relationship: string; phone: string; isPrimary?: boolean }[];
+  notes?: string;
 }
 
 interface IncidentSummary {
@@ -75,13 +87,17 @@ interface IncidentSummary {
   dshsReportable: boolean;
 }
 
-export function CareManagement({ facilityId, facilityName }: CareManagementProps) {
+export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 }: CareManagementProps) {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("residents");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isEnablingPortal, setIsEnablingPortal] = useState(false);
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<ResidentSummary | null>(null);
+  const [dischargingClientId, setDischargingClientId] = useState<string | null>(null);
+  const [medicationsResident, setMedicationsResident] = useState<ResidentSummary | null>(null);
 
   // Fetch EHR dashboard stats
   const { data: stats, isLoading: statsLoading } = useQuery<EhrDashboardStats>({
@@ -182,6 +198,44 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
       return response.json();
     },
     enabled: !!facilityId,
+  });
+
+  // Fetch all residents (for editing)
+  const { data: residents = [] } = useQuery<ResidentSummary[]>({
+    queryKey: ["owner-facility-residents", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/residents`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
+  // Discharge client mutation
+  const dischargeMutation = useMutation({
+    mutationFn: async ({ residentId, reason }: { residentId: string; reason: string }) => {
+      const response = await apiRequest(
+        "POST",
+        `/api/owners/facilities/${facilityId}/residents/${residentId}/discharge`,
+        { dischargeReason: reason }
+      );
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner-facility-residents", facilityId] });
+      queryClient.invalidateQueries({ queryKey: ["owner-facility-census", facilityId] });
+      toast({ title: "Client discharged successfully" });
+      setDischargingClientId(null);
+    },
+    onError: () => {
+      toast({
+        title: "Failed to discharge client",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    },
   });
 
   // Generate PIN mutation
@@ -396,17 +450,39 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
         {/* Residents Tab */}
         <TabsContent value="residents" className="mt-6">
           <Card className="border-amber-900/20 bg-stone-900/30">
-            <CardHeader>
-              <CardTitle className="text-stone-200">Active Residents</CardTitle>
-              <CardDescription className="text-stone-500">
-                {census?.byStatus?.active || 0} active, {census?.byStatus?.hospitalized || 0} hospitalized
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-stone-200">Active Residents</CardTitle>
+                <CardDescription className="text-stone-500">
+                  {census?.byStatus?.active || 0} active, {census?.byStatus?.hospitalized || 0} hospitalized
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="border-amber-900/30 text-stone-300 gap-1 px-3 py-1">
+                  <Bed className="h-4 w-4" />
+                  {residents.filter(r => r.status === "active").length}/{facilityCapacity} beds
+                </Badge>
+                <Button
+                  onClick={() => {
+                    setEditingClient(null);
+                    setClientDialogOpen(true);
+                  }}
+                  className="bg-amber-600 hover:bg-amber-500 gap-2"
+                  disabled={residents.filter(r => r.status === "active").length >= facilityCapacity}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Client
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              {census?.activeResidents?.length === 0 ? (
+              {residents.filter(r => r.status === "active").length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-stone-600 mx-auto mb-3" />
                   <p className="text-stone-400">No active residents</p>
+                  <p className="text-stone-500 text-sm mt-1">
+                    Click "Add Client" to admit your first resident
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -417,13 +493,19 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
                         <TableHead className="text-stone-400">Room</TableHead>
                         <TableHead className="text-stone-400">Status</TableHead>
                         <TableHead className="text-stone-400">Admitted</TableHead>
+                        <TableHead className="text-stone-400">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {census?.activeResidents?.map((resident) => (
+                      {residents.filter(r => r.status === "active").map((resident) => (
                         <TableRow key={resident.id} className="border-amber-900/20">
                           <TableCell className="text-stone-200 font-medium">
                             {resident.firstName} {resident.lastName}
+                            {resident.preferredName && (
+                              <span className="text-stone-500 text-sm ml-1">
+                                ({resident.preferredName})
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-stone-400">{resident.roomNumber || "—"}</TableCell>
                           <TableCell>
@@ -440,7 +522,49 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
                             </Badge>
                           </TableCell>
                           <TableCell className="text-stone-400">
-                            {formatDate(resident.admissionDate)}
+                            {formatDate(resident.admissionDate || "")}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 h-8 px-2"
+                                onClick={() => {
+                                  setEditingClient(resident);
+                                  setClientDialogOpen(true);
+                                }}
+                                title="Edit client"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-teal-400 hover:text-teal-300 hover:bg-teal-900/20 h-8 px-2"
+                                onClick={() => setMedicationsResident(resident)}
+                                title="Manage medications"
+                              >
+                                <Pill className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 px-2"
+                                onClick={() => {
+                                  if (confirm(`Discharge ${resident.firstName} ${resident.lastName}? This action can be undone.`)) {
+                                    dischargeMutation.mutate({
+                                      residentId: resident.id,
+                                      reason: "Discharged by owner",
+                                    });
+                                  }
+                                }}
+                                disabled={dischargeMutation.isPending}
+                                title="Discharge client"
+                              >
+                                <UserMinus className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -858,6 +982,26 @@ export function CareManagement({ facilityId, facilityName }: CareManagementProps
         facilityId={facilityId}
         onSuccess={() => refetchStaff()}
       />
+
+      {/* Add/Edit Client Dialog */}
+      <AddClientDialog
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        facilityId={facilityId}
+        editingClient={editingClient}
+        capacity={facilityCapacity}
+        currentCount={residents.filter(r => r.status === "active").length}
+      />
+
+      {/* Resident Medications Dialog */}
+      {medicationsResident && (
+        <ResidentMedicationsDialog
+          open={!!medicationsResident}
+          onOpenChange={(open) => !open && setMedicationsResident(null)}
+          facilityId={facilityId}
+          resident={medicationsResident}
+        />
+      )}
     </div>
   );
 }

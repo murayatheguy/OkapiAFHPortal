@@ -535,4 +535,164 @@ export function registerOwnerEhrRoutes(app: Express) {
       }
     }
   );
+
+  // ============================================
+  // RESIDENT MEDICATIONS MANAGEMENT
+  // ============================================
+
+  /**
+   * Get all medications for a resident
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/residents/:residentId/medications",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, residentId } = req.params;
+        const activeOnly = req.query.activeOnly === "true";
+
+        // Verify resident belongs to facility
+        const resident = await storage.getResident(residentId);
+        if (!resident || resident.facilityId !== facilityId) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        const medications = await storage.getMedicationsByResident(residentId, activeOnly);
+        res.json(medications);
+      } catch (error) {
+        console.error("Error getting resident medications:", error);
+        res.status(500).json({ error: "Failed to get medications" });
+      }
+    }
+  );
+
+  /**
+   * Add a medication to a resident
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/residents/:residentId/medications",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, residentId } = req.params;
+
+        // Verify resident belongs to facility
+        const resident = await storage.getResident(residentId);
+        if (!resident || resident.facilityId !== facilityId) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        const medication = await storage.createMedication({
+          residentId,
+          facilityId,
+          name: req.body.name,
+          dosage: req.body.dosage || req.body.strength || "As directed",
+          route: req.body.route || "oral",
+          frequency: req.body.frequency ? {
+            times: [],
+            interval: req.body.frequency,
+          } : null,
+          instructions: req.body.instructions || null,
+          prescribedBy: req.body.prescriber || null,
+          startDate: req.body.startDate || new Date().toISOString().split("T")[0],
+          endDate: req.body.endDate || null,
+          status: req.body.status || "active",
+        });
+
+        res.status(201).json(medication);
+      } catch (error) {
+        console.error("Error creating medication:", error);
+        res.status(500).json({ error: "Failed to create medication" });
+      }
+    }
+  );
+
+  /**
+   * Update a medication
+   */
+  app.put(
+    "/api/owners/facilities/:facilityId/residents/:residentId/medications/:medicationId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, residentId, medicationId } = req.params;
+
+        // Verify resident belongs to facility
+        const resident = await storage.getResident(residentId);
+        if (!resident || resident.facilityId !== facilityId) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        // Verify medication belongs to resident
+        const existingMed = await storage.getMedication(medicationId);
+        if (!existingMed || existingMed.residentId !== residentId) {
+          return res.status(404).json({ error: "Medication not found" });
+        }
+
+        const updateData: any = {};
+        if (req.body.name !== undefined) updateData.name = req.body.name;
+        if (req.body.dosage !== undefined || req.body.strength !== undefined) {
+          updateData.dosage = req.body.dosage || req.body.strength;
+        }
+        if (req.body.route !== undefined) updateData.route = req.body.route;
+        if (req.body.frequency !== undefined) {
+          updateData.frequency = req.body.frequency ? {
+            times: [],
+            interval: req.body.frequency,
+          } : null;
+        }
+        if (req.body.instructions !== undefined) updateData.instructions = req.body.instructions;
+        if (req.body.prescriber !== undefined) updateData.prescribedBy = req.body.prescriber;
+        if (req.body.startDate !== undefined) updateData.startDate = req.body.startDate;
+        if (req.body.endDate !== undefined) updateData.endDate = req.body.endDate;
+        if (req.body.status !== undefined) updateData.status = req.body.status;
+
+        const medication = await storage.updateMedication(medicationId, updateData);
+
+        res.json(medication);
+      } catch (error) {
+        console.error("Error updating medication:", error);
+        res.status(500).json({ error: "Failed to update medication" });
+      }
+    }
+  );
+
+  /**
+   * Discontinue a medication
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/residents/:residentId/medications/:medicationId/discontinue",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, residentId, medicationId } = req.params;
+
+        // Verify resident belongs to facility
+        const resident = await storage.getResident(residentId);
+        if (!resident || resident.facilityId !== facilityId) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        // Verify medication belongs to resident
+        const existingMed = await storage.getMedication(medicationId);
+        if (!existingMed || existingMed.residentId !== residentId) {
+          return res.status(404).json({ error: "Medication not found" });
+        }
+
+        const medication = await storage.updateMedication(medicationId, {
+          status: "discontinued",
+          endDate: new Date().toISOString().split("T")[0],
+        });
+
+        res.json(medication);
+      } catch (error) {
+        console.error("Error discontinuing medication:", error);
+        res.status(500).json({ error: "Failed to discontinue medication" });
+      }
+    }
+  );
 }

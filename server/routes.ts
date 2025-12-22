@@ -655,6 +655,129 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================================================
+  // OWNER RESIDENT MANAGEMENT ROUTES
+  // ============================================================================
+
+  // Get all residents for owner's facility
+  app.get("/api/owners/facilities/:facilityId/residents", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const residents = await storage.getResidentsByFacility(facilityId);
+      res.json(residents);
+    } catch (error) {
+      console.error("Error getting residents:", error);
+      res.status(500).json({ error: "Failed to get residents" });
+    }
+  });
+
+  // Create a new resident (client)
+  app.post("/api/owners/facilities/:facilityId/residents", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      // Check capacity (max 6 for AFH)
+      const existingResidents = await storage.getResidentsByFacility(facilityId, "active");
+      if (existingResidents.length >= facility.capacity) {
+        return res.status(400).json({ error: `Facility at capacity (${facility.capacity} beds)` });
+      }
+
+      const resident = await storage.createResident({
+        facilityId,
+        ...req.body,
+      });
+      res.status(201).json(resident);
+    } catch (error) {
+      console.error("Error creating resident:", error);
+      res.status(500).json({ error: "Failed to create resident" });
+    }
+  });
+
+  // Update a resident
+  app.put("/api/owners/facilities/:facilityId/residents/:residentId", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId, residentId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const resident = await storage.getResident(residentId);
+      if (!resident || resident.facilityId !== facilityId) {
+        return res.status(404).json({ error: "Resident not found" });
+      }
+
+      const updated = await storage.updateResident(residentId, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating resident:", error);
+      res.status(500).json({ error: "Failed to update resident" });
+    }
+  });
+
+  // Discharge a resident
+  app.post("/api/owners/facilities/:facilityId/residents/:residentId/discharge", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId, residentId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const resident = await storage.getResident(residentId);
+      if (!resident || resident.facilityId !== facilityId) {
+        return res.status(404).json({ error: "Resident not found" });
+      }
+
+      const { dischargeReason } = req.body;
+      const updated = await storage.updateResident(residentId, {
+        status: "discharged",
+        notes: resident.notes
+          ? `${resident.notes}\n\nDischarged: ${dischargeReason || "No reason provided"}`
+          : `Discharged: ${dischargeReason || "No reason provided"}`,
+      });
+
+      // Update available beds
+      await storage.updateFacility(facilityId, {
+        availableBeds: (facility.availableBeds || 0) + 1,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error discharging resident:", error);
+      res.status(500).json({ error: "Failed to discharge resident" });
+    }
+  });
+
   // Get current owner's claims
   app.get("/api/owners/me/claims", async (req, res) => {
     try {
@@ -1787,6 +1910,52 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting Google Places photo:", error);
       res.status(500).json({ error: "Failed to get photo" });
+    }
+  });
+
+  // ============================================
+  // MEDICATIONS REFERENCE API
+  // ============================================
+
+  // Search medications (for autocomplete)
+  app.get("/api/medications/search", async (req, res) => {
+    try {
+      const { searchMedications } = await import("@shared/medications-data");
+      const query = String(req.query.q || "");
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : 10;
+
+      if (query.length < 2) {
+        return res.json([]);
+      }
+
+      const results = searchMedications(query, limit);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching medications:", error);
+      res.status(500).json({ error: "Failed to search medications" });
+    }
+  });
+
+  // Get all medication categories
+  app.get("/api/medications/categories", async (req, res) => {
+    try {
+      const { getMedicationCategories } = await import("@shared/medications-data");
+      res.json(getMedicationCategories());
+    } catch (error) {
+      console.error("Error getting medication categories:", error);
+      res.status(500).json({ error: "Failed to get categories" });
+    }
+  });
+
+  // Get medications by category
+  app.get("/api/medications/by-category/:category", async (req, res) => {
+    try {
+      const { getMedicationsByCategory } = await import("@shared/medications-data");
+      const results = getMedicationsByCategory(req.params.category);
+      res.json(results);
+    } catch (error) {
+      console.error("Error getting medications by category:", error);
+      res.status(500).json({ error: "Failed to get medications" });
     }
   });
 
