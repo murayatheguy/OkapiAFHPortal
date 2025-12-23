@@ -497,8 +497,31 @@ export default function OwnerDashboardPage() {
                   {inquiries.length === 0 ? (
                     <Card className="border-gray-200 bg-white shadow-sm">
                       <CardContent className="p-8 text-center">
-                        <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600">No inquiries yet.</p>
+                        <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center mx-auto mb-4">
+                          <MessageSquare className="h-8 w-8 text-teal-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No inquiries yet</h3>
+                        <p className="text-gray-600 mb-4 max-w-sm mx-auto">
+                          When families submit inquiries from your public listing, they'll appear here.
+                        </p>
+                        <div className="bg-gray-50 rounded-lg p-4 max-w-md mx-auto">
+                          <p className="text-sm text-gray-500 mb-2">Share your listing link to start receiving inquiries:</p>
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 text-xs bg-white px-3 py-2 rounded border text-gray-700 truncate">
+                              {window.location.origin}/facility/{selectedFacility?.id}
+                            </code>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/facility/${selectedFacility?.id}`);
+                                toast({ title: "Link copied!", description: "Share this link with families" });
+                              }}
+                            >
+                              Copy
+                            </Button>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   ) : (
@@ -562,8 +585,18 @@ export default function OwnerDashboardPage() {
                   {reviews.length === 0 ? (
                     <Card className="border-gray-200 bg-white shadow-sm">
                       <CardContent className="p-8 text-center">
-                        <Star className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600">No reviews yet.</p>
+                        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
+                          <Star className="h-8 w-8 text-amber-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h3>
+                        <p className="text-gray-600 mb-4 max-w-sm mx-auto">
+                          When families leave reviews on your listing, you can view and respond to them here.
+                        </p>
+                        <div className="bg-amber-50 rounded-lg p-4 max-w-sm mx-auto border border-amber-100">
+                          <p className="text-sm text-amber-800">
+                            Great care leads to great reviews. They'll come!
+                          </p>
+                        </div>
                       </CardContent>
                     </Card>
                   ) : (
