@@ -23,10 +23,11 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { 
-  MapPin, Phone, MessageSquare, Calendar, CheckCircle2, ShieldCheck, 
+import {
+  MapPin, Phone, MessageSquare, Calendar, CheckCircle2, ShieldCheck,
   Clock, Users, Banknote, ArrowLeft, ArrowRight, Check,
-  Building2, Star, Loader2, ExternalLink, UserCheck, HelpCircle
+  Building2, Star, Loader2, ExternalLink, UserCheck, HelpCircle,
+  Camera, X, ChevronLeft, ChevronRight, Heart, Home
 } from "lucide-react";
 import { 
   Carousel,
@@ -48,6 +49,8 @@ export default function FacilityDetails() {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showTourModal, setShowTourModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [claimForm, setClaimForm] = useState({
     requesterName: "",
     requesterEmail: "",
@@ -210,46 +213,155 @@ export default function FacilityDetails() {
           Back to Search Results
         </Link>
 
-        {/* SECTION 1: PHOTO GALLERY */}
+        {/* SECTION 1: HERO PHOTO GALLERY */}
         <div className="mb-8">
           {(() => {
             const photoData = getFacilityPhotos(facility);
             const photos = photoData.photos;
             const isPlaceholder = photoData.isPlaceholder;
-            
+
+            const openLightbox = (index: number) => {
+              setLightboxIndex(index);
+              setLightboxOpen(true);
+            };
+
             return (
-              <Carousel className="w-full">
-                <CarouselContent>
-                  {photos.map((img, index) => (
-                    <CarouselItem key={index}>
-                      <div className={cn(
-                        "relative aspect-video rounded-xl overflow-hidden",
-                        isPlaceholder ? "bg-muted flex items-center justify-center" : "bg-muted"
-                      )}>
-                        <img 
-                          src={img} 
-                          alt={`${facility.name} - View ${index + 1}`} 
+              <>
+                {/* Hero Layout - Main image with thumbnail grid */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-2xl overflow-hidden">
+                  {/* Main Hero Image */}
+                  <div
+                    className={cn(
+                      "md:col-span-2 md:row-span-2 relative cursor-pointer group",
+                      isPlaceholder ? "bg-gradient-to-br from-amber-50 to-orange-50" : ""
+                    )}
+                    onClick={() => openLightbox(0)}
+                  >
+                    <div className="aspect-[4/3] md:aspect-auto md:h-full">
+                      <img
+                        src={photos[0]}
+                        alt={`${facility.name} - Main view`}
+                        className={cn(
+                          "w-full h-full transition-transform duration-300 group-hover:scale-105",
+                          isPlaceholder ? "object-contain p-8" : "object-cover"
+                        )}
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                      <Camera className="h-5 w-5" />
+                      <span className="font-medium">View Gallery</span>
+                    </div>
+                  </div>
+
+                  {/* Thumbnail Grid */}
+                  {photos.slice(1, 5).map((img, index) => (
+                    <div
+                      key={index + 1}
+                      className={cn(
+                        "relative cursor-pointer group overflow-hidden",
+                        isPlaceholder ? "bg-gradient-to-br from-amber-50 to-orange-50" : "bg-muted",
+                        index === 3 && photos.length > 5 ? "" : ""
+                      )}
+                      onClick={() => openLightbox(index + 1)}
+                    >
+                      <div className="aspect-[4/3]">
+                        <img
+                          src={img}
+                          alt={`${facility.name} - View ${index + 2}`}
                           className={cn(
-                            "w-full h-full",
-                            isPlaceholder ? "object-contain p-8" : "object-cover"
-                          )} 
+                            "w-full h-full transition-transform duration-300 group-hover:scale-110",
+                            isPlaceholder ? "object-contain p-4" : "object-cover"
+                          )}
                         />
                       </div>
-                    </CarouselItem>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                      {/* Show "+X more" overlay on last thumbnail if there are more photos */}
+                      {index === 3 && photos.length > 5 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-white font-semibold text-lg">+{photos.length - 5} more</span>
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </CarouselContent>
-                {photos.length > 1 && (
-                  <>
-                    <CarouselPrevious className="left-4" />
-                    <CarouselNext className="right-4" />
-                  </>
-                )}
+
+                  {/* Fill empty slots with placeholder gradient if less than 5 photos */}
+                  {photos.length < 5 && [...Array(5 - photos.length)].map((_, i) => (
+                    <div key={`empty-${i}`} className="hidden md:block aspect-[4/3] bg-gradient-to-br from-stone-100 to-stone-50" />
+                  ))}
+                </div>
+
                 {photoData.showAttribution && (
-                  <div className="text-xs text-muted-foreground text-center mt-2">
+                  <p className="text-xs text-muted-foreground text-center mt-2">
                     Photos provided by Google
-                  </div>
+                  </p>
                 )}
-              </Carousel>
+
+                {/* Lightbox Modal */}
+                <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+                  <DialogContent className="max-w-5xl w-full p-0 bg-black/95 border-none">
+                    <div className="relative">
+                      {/* Close button */}
+                      <button
+                        onClick={() => setLightboxOpen(false)}
+                        className="absolute top-4 right-4 z-50 text-white/80 hover:text-white p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+
+                      {/* Main Image */}
+                      <div className="flex items-center justify-center min-h-[60vh] p-4">
+                        <img
+                          src={photos[lightboxIndex]}
+                          alt={`${facility.name} - View ${lightboxIndex + 1}`}
+                          className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                        />
+                      </div>
+
+                      {/* Navigation Arrows */}
+                      {photos.length > 1 && (
+                        <>
+                          <button
+                            onClick={() => setLightboxIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                          >
+                            <ChevronLeft className="h-8 w-8" />
+                          </button>
+                          <button
+                            onClick={() => setLightboxIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                          >
+                            <ChevronRight className="h-8 w-8" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Thumbnail strip */}
+                      <div className="flex justify-center gap-2 p-4 overflow-x-auto">
+                        {photos.map((img, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setLightboxIndex(index)}
+                            className={cn(
+                              "flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                              lightboxIndex === index
+                                ? "border-white ring-2 ring-white/50"
+                                : "border-transparent opacity-60 hover:opacity-100"
+                            )}
+                          >
+                            <img src={img} alt="" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Image counter */}
+                      <div className="text-center text-white/60 text-sm pb-4">
+                        {lightboxIndex + 1} of {photos.length}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
             );
           })()}
         </div>
@@ -562,7 +674,7 @@ export default function FacilityDetails() {
             </div>
 
             {/* SECTION 7: ABOUT THIS HOME */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-serif font-bold mb-1">About This Home</h2>
                 <p className="text-sm text-muted-foreground">From the owner</p>
@@ -572,7 +684,85 @@ export default function FacilityDetails() {
                 {facility.description || `${facility.name} provides compassionate, personalized care in a warm, home-like environment. Our experienced caregivers are dedicated to ensuring the comfort, safety, and dignity of each resident.`}
               </p>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Care Philosophy */}
+              {facility.carePhilosophy && (
+                <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl p-5 border border-teal-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <Heart className="h-5 w-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-teal-900 mb-2">Our Care Philosophy</h4>
+                      <p className="text-teal-800 leading-relaxed text-sm">{facility.carePhilosophy}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* What Makes Us Special */}
+              {facility.uniqueFeatures && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <Star className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-amber-900 mb-2">What Makes Us Special</h4>
+                      <p className="text-amber-800 leading-relaxed text-sm">{facility.uniqueFeatures}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* A Day at Our Home */}
+              {facility.dailyRoutine && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-blue-900 mb-2">A Day at Our Home</h4>
+                      <p className="text-blue-800 leading-relaxed text-sm">{facility.dailyRoutine}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Meet the Team */}
+              {facility.ownerBio && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                      <Users className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-purple-900 mb-2">Meet the Team</h4>
+                      <p className="text-purple-800 leading-relaxed text-sm">{facility.ownerBio}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Room Types */}
+              {facility.roomTypes && facility.roomTypes.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <Home className="h-4 w-4 text-muted-foreground" />
+                    Room Options
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {facility.roomTypes.map((roomType) => (
+                      <Badge key={roomType} variant="outline" className="px-3 py-1.5">
+                        <Check className="h-3.5 w-3.5 mr-1.5 text-green-600" />
+                        {roomType}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Visiting Hours</p>
                   <p className="font-medium text-sm">Open visiting 8am - 8pm daily</p>
@@ -599,18 +789,30 @@ export default function FacilityDetails() {
               </div>
 
               <div>
-                <h4 className="font-semibold text-sm mb-2">Payment Types Accepted</h4>
-                <div className="flex flex-wrap gap-2">
+                <h4 className="font-semibold text-sm mb-3">Payment Types Accepted</h4>
+                <div className="grid grid-cols-2 gap-3">
                   {facility.acceptsPrivatePay && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm bg-green-50 rounded-lg px-3 py-2 border border-green-100">
                       <Check className="h-4 w-4 text-green-600" />
-                      <span>Private Pay</span>
+                      <span className="text-green-800">Private Pay</span>
                     </div>
                   )}
                   {facility.acceptsMedicaid && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm bg-green-50 rounded-lg px-3 py-2 border border-green-100">
                       <Check className="h-4 w-4 text-green-600" />
-                      <span>Medicaid</span>
+                      <span className="text-green-800">Medicaid</span>
+                    </div>
+                  )}
+                  {facility.acceptsLTCInsurance && (
+                    <div className="flex items-center gap-2 text-sm bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                      <Check className="h-4 w-4 text-blue-600" />
+                      <span className="text-blue-800">Long-Term Care Insurance</span>
+                    </div>
+                  )}
+                  {facility.acceptsVABenefits && (
+                    <div className="flex items-center gap-2 text-sm bg-purple-50 rounded-lg px-3 py-2 border border-purple-100">
+                      <Check className="h-4 w-4 text-purple-600" />
+                      <span className="text-purple-800">VA Benefits</span>
                     </div>
                   )}
                 </div>
