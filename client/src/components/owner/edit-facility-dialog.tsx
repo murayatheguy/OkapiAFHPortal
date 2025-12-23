@@ -144,58 +144,58 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-stone-900 border-amber-900/30 max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-white border-teal-300 max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-amber-100 flex items-center gap-2" style={{ fontFamily: "'Cormorant', serif" }}>
+          <DialogTitle className="text-teal-700 flex items-center gap-2" style={{ fontFamily: "'Cormorant', serif" }}>
             <Building2 className="h-5 w-5" />
             Edit Facility
           </DialogTitle>
-          <DialogDescription className="text-stone-400">
+          <DialogDescription className="text-gray-500">
             Update your facility information and listing details
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-stone-800">
-              <TabsTrigger value="basic" className="text-xs data-[state=active]:bg-amber-900/30">
+            <TabsList className="grid w-full grid-cols-5 bg-gray-50">
+              <TabsTrigger value="basic" className="text-xs data-[state=active]:bg-teal-100">
                 Basic
               </TabsTrigger>
-              <TabsTrigger value="contact" className="text-xs data-[state=active]:bg-amber-900/30">
+              <TabsTrigger value="contact" className="text-xs data-[state=active]:bg-teal-100">
                 Contact
               </TabsTrigger>
-              <TabsTrigger value="capacity" className="text-xs data-[state=active]:bg-amber-900/30">
+              <TabsTrigger value="capacity" className="text-xs data-[state=active]:bg-teal-100">
                 Capacity
               </TabsTrigger>
-              <TabsTrigger value="features" className="text-xs data-[state=active]:bg-amber-900/30">
+              <TabsTrigger value="features" className="text-xs data-[state=active]:bg-teal-100">
                 Features
               </TabsTrigger>
-              <TabsTrigger value="photos" className="text-xs data-[state=active]:bg-amber-900/30">
+              <TabsTrigger value="photos" className="text-xs data-[state=active]:bg-teal-100">
                 Photos
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label className="text-stone-400">Facility Name</Label>
+                <Label className="text-gray-500">Facility Name</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                  className="bg-gray-50 border-teal-300 text-gray-700"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-stone-400">Description</Label>
+                <Label className="text-gray-500">Description</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe your facility, the care you provide, and what makes it special..."
-                  className="bg-stone-800 border-amber-900/30 text-stone-200 min-h-[150px]"
+                  className="bg-gray-50 border-teal-300 text-gray-700 min-h-[150px]"
                 />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <Label className="text-stone-400">Accepts Medicaid</Label>
+                  <Label className="text-gray-500">Accepts Medicaid</Label>
                   <p className="text-xs text-stone-500">Show in Medicaid-friendly searches</p>
                 </div>
                 <Switch
@@ -205,7 +205,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <Label className="text-stone-400">Accepts Private Pay</Label>
+                  <Label className="text-gray-500">Accepts Private Pay</Label>
                   <p className="text-xs text-stone-500">Show in private pay searches</p>
                 </div>
                 <Switch
@@ -217,7 +217,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
 
             <TabsContent value="contact" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label className="text-stone-400 flex items-center gap-2">
+                <Label className="text-gray-500 flex items-center gap-2">
                   <Phone className="h-4 w-4" />
                   Phone Number
                 </Label>
@@ -226,27 +226,27 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="(555) 123-4567"
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                  className="bg-gray-50 border-teal-300 text-gray-700"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-stone-400">Email Address</Label>
+                <Label className="text-gray-500">Email Address</Label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="contact@facility.com"
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                  className="bg-gray-50 border-teal-300 text-gray-700"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-stone-400">Website</Label>
+                <Label className="text-gray-500">Website</Label>
                 <Input
                   type="url"
                   value={formData.website}
                   onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                   placeholder="https://www.yourfacility.com"
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                  className="bg-gray-50 border-teal-300 text-gray-700"
                 />
               </div>
             </TabsContent>
@@ -254,7 +254,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
             <TabsContent value="capacity" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-stone-400 flex items-center gap-2">
+                  <Label className="text-gray-500 flex items-center gap-2">
                     <Bed className="h-4 w-4" />
                     Total Capacity
                   </Label>
@@ -263,42 +263,42 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     min="0"
                     value={formData.capacity}
                     onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })}
-                    className="bg-stone-800 border-amber-900/30 text-stone-200"
+                    className="bg-gray-50 border-teal-300 text-gray-700"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-stone-400">Available Beds</Label>
+                  <Label className="text-gray-500">Available Beds</Label>
                   <Input
                     type="number"
                     min="0"
                     max={formData.capacity}
                     value={formData.availableBeds}
                     onChange={(e) => setFormData({ ...formData, availableBeds: parseInt(e.target.value) || 0 })}
-                    className="bg-stone-800 border-amber-900/30 text-stone-200"
+                    className="bg-gray-50 border-teal-300 text-gray-700"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-stone-400">Minimum Monthly Rate ($)</Label>
+                  <Label className="text-gray-500">Minimum Monthly Rate ($)</Label>
                   <Input
                     type="number"
                     min="0"
                     value={formData.priceMin || ""}
                     onChange={(e) => setFormData({ ...formData, priceMin: parseInt(e.target.value) || 0 })}
                     placeholder="3500"
-                    className="bg-stone-800 border-amber-900/30 text-stone-200"
+                    className="bg-gray-50 border-teal-300 text-gray-700"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-stone-400">Maximum Monthly Rate ($)</Label>
+                  <Label className="text-gray-500">Maximum Monthly Rate ($)</Label>
                   <Input
                     type="number"
                     min="0"
                     value={formData.priceMax || ""}
                     onChange={(e) => setFormData({ ...formData, priceMax: parseInt(e.target.value) || 0 })}
                     placeholder="6000"
-                    className="bg-stone-800 border-amber-900/30 text-stone-200"
+                    className="bg-gray-50 border-teal-300 text-gray-700"
                   />
                 </div>
               </div>
@@ -307,13 +307,13 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
             <TabsContent value="features" className="space-y-6 mt-4">
               {/* Amenities */}
               <div className="space-y-3">
-                <Label className="text-stone-400 flex items-center gap-2">
+                <Label className="text-gray-500 flex items-center gap-2">
                   <Heart className="h-4 w-4" />
                   Amenities
                 </Label>
                 <div className="flex flex-wrap gap-2">
                   {formData.amenities.map((amenity) => (
-                    <Badge key={amenity} className="bg-amber-900/30 text-amber-200 hover:bg-amber-900/50">
+                    <Badge key={amenity} className="bg-teal-100 text-teal-600 hover:bg-amber-900/50">
                       {amenity}
                       <button type="button" onClick={() => removeItem('amenities', amenity)} className="ml-1">
                         <X className="h-3 w-3" />
@@ -326,7 +326,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     value={newAmenity}
                     onChange={(e) => setNewAmenity(e.target.value)}
                     placeholder="Add custom amenity..."
-                    className="bg-stone-800 border-amber-900/30 text-stone-200 flex-1"
+                    className="bg-gray-50 border-teal-300 text-gray-700 flex-1"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -340,7 +340,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     variant="outline"
                     size="icon"
                     onClick={() => { addItem('amenities', newAmenity); setNewAmenity(""); }}
-                    className="border-amber-900/30"
+                    className="border-teal-300"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -350,7 +350,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     <Badge
                       key={amenity}
                       variant="outline"
-                      className="text-stone-400 border-stone-700 cursor-pointer hover:bg-stone-800 text-xs"
+                      className="text-gray-500 border-gray-200 cursor-pointer hover:bg-gray-50 text-xs"
                       onClick={() => addItem('amenities', amenity)}
                     >
                       + {amenity}
@@ -361,7 +361,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
 
               {/* Specialties */}
               <div className="space-y-3">
-                <Label className="text-stone-400">Care Specialties</Label>
+                <Label className="text-gray-500">Care Specialties</Label>
                 <div className="flex flex-wrap gap-2">
                   {formData.specialties.map((specialty) => (
                     <Badge key={specialty} className="bg-teal-900/30 text-teal-200 hover:bg-teal-900/50">
@@ -377,7 +377,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     value={newSpecialty}
                     onChange={(e) => setNewSpecialty(e.target.value)}
                     placeholder="Add custom specialty..."
-                    className="bg-stone-800 border-amber-900/30 text-stone-200 flex-1"
+                    className="bg-gray-50 border-teal-300 text-gray-700 flex-1"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -391,7 +391,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     variant="outline"
                     size="icon"
                     onClick={() => { addItem('specialties', newSpecialty); setNewSpecialty(""); }}
-                    className="border-amber-900/30"
+                    className="border-teal-300"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -401,7 +401,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     <Badge
                       key={specialty}
                       variant="outline"
-                      className="text-stone-400 border-stone-700 cursor-pointer hover:bg-stone-800 text-xs"
+                      className="text-gray-500 border-gray-200 cursor-pointer hover:bg-gray-50 text-xs"
                       onClick={() => addItem('specialties', specialty)}
                     >
                       + {specialty}
@@ -412,7 +412,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
 
               {/* Care Types */}
               <div className="space-y-3">
-                <Label className="text-stone-400">Care Services</Label>
+                <Label className="text-gray-500">Care Services</Label>
                 <div className="flex flex-wrap gap-2">
                   {formData.careTypes.map((careType) => (
                     <Badge key={careType} className="bg-purple-900/30 text-purple-200 hover:bg-purple-900/50">
@@ -428,7 +428,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     value={newCareType}
                     onChange={(e) => setNewCareType(e.target.value)}
                     placeholder="Add custom care service..."
-                    className="bg-stone-800 border-amber-900/30 text-stone-200 flex-1"
+                    className="bg-gray-50 border-teal-300 text-gray-700 flex-1"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -442,7 +442,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     variant="outline"
                     size="icon"
                     onClick={() => { addItem('careTypes', newCareType); setNewCareType(""); }}
-                    className="border-amber-900/30"
+                    className="border-teal-300"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -452,7 +452,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     <Badge
                       key={careType}
                       variant="outline"
-                      className="text-stone-400 border-stone-700 cursor-pointer hover:bg-stone-800 text-xs"
+                      className="text-gray-500 border-gray-200 cursor-pointer hover:bg-gray-50 text-xs"
                       onClick={() => addItem('careTypes', careType)}
                     >
                       + {careType}
@@ -464,7 +464,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
 
             <TabsContent value="photos" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label className="text-stone-400 flex items-center gap-2">
+                <Label className="text-gray-500 flex items-center gap-2">
                   <Image className="h-4 w-4" />
                   Photo URLs
                 </Label>
@@ -479,7 +479,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                     <img
                       src={image}
                       alt={`Facility photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border border-amber-900/30"
+                      className="w-full h-32 object-cover rounded-lg border border-teal-300"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "/placeholder-facility.jpg";
                       }}
@@ -500,7 +500,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                   value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)}
                   placeholder="https://example.com/photo.jpg"
-                  className="bg-stone-800 border-amber-900/30 text-stone-200 flex-1"
+                  className="bg-gray-50 border-teal-300 text-gray-700 flex-1"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -512,7 +512,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                   type="button"
                   variant="outline"
                   onClick={addImageUrl}
-                  className="border-amber-900/30 text-stone-300"
+                  className="border-teal-300 text-gray-600"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Photo
@@ -530,7 +530,7 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-amber-900/30 text-stone-300"
+              className="border-teal-300 text-gray-600"
             >
               Cancel
             </Button>

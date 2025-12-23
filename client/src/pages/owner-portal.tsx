@@ -334,9 +334,9 @@ export default function OwnerDashboard() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
       {/* Header - Matching Homepage Style */}
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/20">
+      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-teal-200">
         <Link href="/" className="flex items-center gap-1.5">
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
@@ -355,7 +355,7 @@ export default function OwnerDashboard() {
             <Link 
               key={item.label}
               href={item.href}
-              className="text-stone-400 hover:text-amber-200 transition-colors"
+              className="text-gray-500 hover:text-teal-600 transition-colors"
               style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.85rem', letterSpacing: '0.1em' }}
             >
               {item.label}
@@ -365,7 +365,7 @@ export default function OwnerDashboard() {
 
         {/* Mobile menu icon */}
         <button 
-          className="md:hidden text-stone-400"
+          className="md:hidden text-gray-500"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           data-testid="button-mobile-menu"
         >
@@ -387,7 +387,7 @@ export default function OwnerDashboard() {
               <Link 
                 key={item.label}
                 href={item.href}
-                className="text-stone-300 hover:text-amber-200 transition-colors text-lg"
+                className="text-gray-600 hover:text-teal-600 transition-colors text-lg"
                 style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, letterSpacing: '0.1em' }}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -1687,7 +1687,7 @@ export default function OwnerDashboard() {
                                         key={i} 
                                         className={cn(
                                           "h-3.5 w-3.5",
-                                          i < Math.floor(Number(provider.rating) || 0) ? "text-amber-400 fill-amber-400" : "text-gray-200"
+                                          i < Math.floor(Number(provider.rating) || 0) ? "text-teal-500 fill-amber-400" : "text-gray-200"
                                         )} 
                                       />
                                     ))}
@@ -1771,7 +1771,7 @@ export default function OwnerDashboard() {
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 py-8 border-t border-amber-900/20" style={{ backgroundColor: '#0a1410' }}>
+      <footer className="relative z-10 py-8 border-t border-teal-200" style={{ backgroundColor: '#0a1410' }}>
         <div className="px-5 md:px-12 max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-1.5">
@@ -1796,7 +1796,7 @@ export default function OwnerDashboard() {
                 <Link 
                   key={link.label}
                   href={link.href} 
-                  className="text-stone-500 hover:text-amber-200 transition-colors"
+                  className="text-stone-500 hover:text-teal-600 transition-colors"
                   style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
                 >
                   {link.label}

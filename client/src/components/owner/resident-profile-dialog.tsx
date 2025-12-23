@@ -251,19 +251,19 @@ export function ResidentProfileDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-stone-900 border-amber-900/30">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-white border-teal-300">
           <DialogHeader className="flex-shrink-0">
             <div className="flex items-start gap-4">
               {/* Avatar/Photo placeholder */}
-              <div className="h-16 w-16 rounded-full bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                <User className="h-8 w-8 text-amber-400" />
+              <div className="h-16 w-16 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                <User className="h-8 w-8 text-teal-500" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <DialogTitle className="text-xl text-stone-200">
+                  <DialogTitle className="text-xl text-gray-700">
                     {resident.firstName} {resident.lastName}
                     {resident.preferredName && (
-                      <span className="text-stone-400 text-base ml-2">
+                      <span className="text-gray-500 text-base ml-2">
                         "{resident.preferredName}"
                       </span>
                     )}
@@ -280,7 +280,7 @@ export function ResidentProfileDialog({
                     {resident.status}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-4 text-stone-400 text-sm mt-1">
+                <div className="flex items-center gap-4 text-gray-500 text-sm mt-1">
                   {resident.roomNumber && <span>Room {resident.roomNumber}</span>}
                   {resident.dateOfBirth && (
                     <span>Age {calculateAge(resident.dateOfBirth)}</span>
@@ -298,45 +298,45 @@ export function ResidentProfileDialog({
             onValueChange={setActiveTab}
             className="flex-1 flex flex-col overflow-hidden mt-4"
           >
-            <TabsList className="bg-stone-800 border border-amber-900/20 flex-shrink-0">
+            <TabsList className="bg-gray-50 border border-teal-200 flex-shrink-0">
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1"
+                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1"
               >
                 <User className="h-4 w-4" />
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="notes"
-                className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1"
+                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1"
               >
                 <FileText className="h-4 w-4" />
                 Notes
               </TabsTrigger>
               <TabsTrigger
                 value="medications"
-                className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1"
+                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1"
               >
                 <Pill className="h-4 w-4" />
                 Medications
               </TabsTrigger>
               <TabsTrigger
                 value="vitals"
-                className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1"
+                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1"
               >
                 <Activity className="h-4 w-4" />
                 Vitals
               </TabsTrigger>
               <TabsTrigger
                 value="incidents"
-                className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1"
+                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1"
               >
                 <AlertTriangle className="h-4 w-4" />
                 Incidents
               </TabsTrigger>
               <TabsTrigger
                 value="documents"
-                className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1"
+                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1"
               >
                 <Folder className="h-4 w-4" />
                 Documents
@@ -348,35 +348,35 @@ export function ResidentProfileDialog({
               <TabsContent value="overview" className="m-0 space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   {/* Basic Info */}
-                  <Card className="border-amber-900/20 bg-stone-800/50">
+                  <Card className="border-teal-200 bg-gray-50/50">
                     <CardContent className="p-4">
-                      <h3 className="text-stone-300 font-medium mb-3">Basic Information</h3>
+                      <h3 className="text-gray-600 font-medium mb-3">Basic Information</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-stone-500">Date of Birth</span>
-                          <span className="text-stone-300">{formatDate(resident.dateOfBirth)}</span>
+                          <span className="text-gray-600">{formatDate(resident.dateOfBirth)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-stone-500">Age</span>
-                          <span className="text-stone-300">{calculateAge(resident.dateOfBirth)} years</span>
+                          <span className="text-gray-600">{calculateAge(resident.dateOfBirth)} years</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-stone-500">Admission Date</span>
-                          <span className="text-stone-300">{formatDate(resident.admissionDate)}</span>
+                          <span className="text-gray-600">{formatDate(resident.admissionDate)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-stone-500">Room Number</span>
-                          <span className="text-stone-300">{resident.roomNumber || "—"}</span>
+                          <span className="text-gray-600">{resident.roomNumber || "—"}</span>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Emergency Contacts */}
-                  <Card className="border-amber-900/20 bg-stone-800/50">
+                  <Card className="border-teal-200 bg-gray-50/50">
                     <CardContent className="p-4">
-                      <h3 className="text-stone-300 font-medium mb-3 flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-amber-400" />
+                      <h3 className="text-gray-600 font-medium mb-3 flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-teal-500" />
                         Emergency Contacts
                       </h3>
                       {!resident.emergencyContacts?.length ? (
@@ -386,13 +386,13 @@ export function ResidentProfileDialog({
                           {resident.emergencyContacts.map((contact, idx) => (
                             <div key={idx} className="text-sm">
                               <div className="flex items-center gap-2">
-                                <span className="text-stone-300 font-medium">{contact.name}</span>
+                                <span className="text-gray-600 font-medium">{contact.name}</span>
                                 {contact.isPrimary && (
                                   <Badge className="bg-amber-600 text-xs">Primary</Badge>
                                 )}
                               </div>
                               <p className="text-stone-500">{contact.relationship}</p>
-                              <p className="text-stone-400">{contact.phone}</p>
+                              <p className="text-gray-500">{contact.phone}</p>
                             </div>
                           ))}
                         </div>
@@ -401,9 +401,9 @@ export function ResidentProfileDialog({
                   </Card>
 
                   {/* Diagnoses */}
-                  <Card className="border-amber-900/20 bg-stone-800/50">
+                  <Card className="border-teal-200 bg-gray-50/50">
                     <CardContent className="p-4">
-                      <h3 className="text-stone-300 font-medium mb-3 flex items-center gap-2">
+                      <h3 className="text-gray-600 font-medium mb-3 flex items-center gap-2">
                         <Heart className="h-4 w-4 text-red-400" />
                         Diagnoses
                       </h3>
@@ -415,7 +415,7 @@ export function ResidentProfileDialog({
                             <Badge
                               key={idx}
                               variant="outline"
-                              className="border-amber-900/30 text-stone-300"
+                              className="border-teal-300 text-gray-600"
                             >
                               {diagnosis}
                             </Badge>
@@ -426,10 +426,10 @@ export function ResidentProfileDialog({
                   </Card>
 
                   {/* Allergies */}
-                  <Card className="border-amber-900/20 bg-stone-800/50">
+                  <Card className="border-teal-200 bg-gray-50/50">
                     <CardContent className="p-4">
-                      <h3 className="text-stone-300 font-medium mb-3 flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-amber-400" />
+                      <h3 className="text-gray-600 font-medium mb-3 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-teal-500" />
                         Allergies
                       </h3>
                       {!resident.allergies?.length ? (
@@ -449,10 +449,10 @@ export function ResidentProfileDialog({
 
                 {/* Additional Notes */}
                 {resident.notes && (
-                  <Card className="border-amber-900/20 bg-stone-800/50">
+                  <Card className="border-teal-200 bg-gray-50/50">
                     <CardContent className="p-4">
-                      <h3 className="text-stone-300 font-medium mb-2">Care Notes</h3>
-                      <p className="text-stone-400 text-sm whitespace-pre-wrap">{resident.notes}</p>
+                      <h3 className="text-gray-600 font-medium mb-2">Care Notes</h3>
+                      <p className="text-gray-500 text-sm whitespace-pre-wrap">{resident.notes}</p>
                     </CardContent>
                   </Card>
                 )}
@@ -469,19 +469,19 @@ export function ResidentProfileDialog({
                         placeholder="Search notes..."
                         value={noteSearch}
                         onChange={(e) => setNoteSearch(e.target.value)}
-                        className="pl-10 bg-stone-800 border-amber-900/30 text-stone-200"
+                        className="pl-10 bg-gray-50 border-teal-300 text-gray-700"
                       />
                     </div>
                     <Select value={noteTypeFilter} onValueChange={setNoteTypeFilter}>
-                      <SelectTrigger className="w-full md:w-48 bg-stone-800 border-amber-900/30 text-stone-200">
+                      <SelectTrigger className="w-full md:w-48 bg-gray-50 border-teal-300 text-gray-700">
                         <SelectValue placeholder="Filter by type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-stone-800 border-amber-900/30">
-                        <SelectItem value="all" className="text-stone-200">All Types</SelectItem>
-                        <SelectItem value="general" className="text-stone-200">General</SelectItem>
-                        <SelectItem value="behavior" className="text-stone-200">Behavior</SelectItem>
-                        <SelectItem value="health" className="text-stone-200">Health</SelectItem>
-                        <SelectItem value="family" className="text-stone-200">Family</SelectItem>
+                      <SelectContent className="bg-gray-50 border-teal-300">
+                        <SelectItem value="all" className="text-gray-700">All Types</SelectItem>
+                        <SelectItem value="general" className="text-gray-700">General</SelectItem>
+                        <SelectItem value="behavior" className="text-gray-700">Behavior</SelectItem>
+                        <SelectItem value="health" className="text-gray-700">Health</SelectItem>
+                        <SelectItem value="family" className="text-gray-700">Family</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button
@@ -496,12 +496,12 @@ export function ResidentProfileDialog({
                   {/* Notes List */}
                   {notesLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                      <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
                     </div>
                   ) : filteredNotes.length === 0 ? (
                     <div className="text-center py-12">
                       <FileText className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                      <p className="text-stone-400">No notes found</p>
+                      <p className="text-gray-500">No notes found</p>
                       <p className="text-stone-500 text-sm mt-1">
                         {notes.length === 0
                           ? "No notes have been recorded for this resident yet."
@@ -511,24 +511,24 @@ export function ResidentProfileDialog({
                   ) : (
                     <div className="space-y-3">
                       {filteredNotes.map((note) => (
-                        <Card key={note.id} className="border-amber-900/20 bg-stone-800/50">
+                        <Card key={note.id} className="border-teal-200 bg-gray-50/50">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-stone-500" />
-                                <span className="text-stone-300 font-medium">
+                                <span className="text-gray-600 font-medium">
                                   {formatDate(note.date)}
                                 </span>
                                 <Badge
                                   variant="outline"
-                                  className="border-amber-900/30 text-stone-400 text-xs"
+                                  className="border-teal-300 text-gray-500 text-xs"
                                 >
                                   {SHIFT_LABELS[note.shift] || note.shift}
                                 </Badge>
                                 {note.mood && (
                                   <Badge
                                     variant="outline"
-                                    className="border-amber-900/30 text-stone-400 text-xs"
+                                    className="border-teal-300 text-gray-500 text-xs"
                                   >
                                     {NOTE_TYPE_LABELS[note.mood] || note.mood}
                                   </Badge>
@@ -538,7 +538,7 @@ export function ResidentProfileDialog({
                                 )}
                               </div>
                             </div>
-                            <p className="text-stone-400 text-sm whitespace-pre-wrap">
+                            <p className="text-gray-500 text-sm whitespace-pre-wrap">
                               {note.notes || "No content"}
                             </p>
                             <p className="text-stone-500 text-xs mt-2">
@@ -556,23 +556,23 @@ export function ResidentProfileDialog({
               <TabsContent value="medications" className="m-0">
                 {medsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
                   </div>
                 ) : medications.length === 0 ? (
                   <div className="text-center py-12">
                     <Pill className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                    <p className="text-stone-400">No medications on file</p>
+                    <p className="text-gray-500">No medications on file</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {medications.map((med) => (
-                      <Card key={med.id} className="border-amber-900/20 bg-stone-800/50">
+                      <Card key={med.id} className="border-teal-200 bg-gray-50/50">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="text-stone-200 font-medium">{med.name}</span>
-                                <span className="text-amber-400">{med.dosage}</span>
+                                <span className="text-gray-700 font-medium">{med.name}</span>
+                                <span className="text-teal-500">{med.dosage}</span>
                                 <Badge
                                   className={
                                     med.status === "active" ? "bg-green-600" : "bg-stone-600"
@@ -581,7 +581,7 @@ export function ResidentProfileDialog({
                                   {med.status}
                                 </Badge>
                               </div>
-                              <p className="text-stone-400 text-sm mt-1">
+                              <p className="text-gray-500 text-sm mt-1">
                                 {med.route} • {med.frequency?.interval || "As needed"}
                               </p>
                               {med.instructions && (
@@ -600,21 +600,21 @@ export function ResidentProfileDialog({
               <TabsContent value="vitals" className="m-0">
                 {vitalsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
                   </div>
                 ) : vitals.length === 0 ? (
                   <div className="text-center py-12">
                     <Activity className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                    <p className="text-stone-400">No vitals recorded</p>
+                    <p className="text-gray-500">No vitals recorded</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {vitals.map((vital) => (
-                      <Card key={vital.id} className="border-amber-900/20 bg-stone-800/50">
+                      <Card key={vital.id} className="border-teal-200 bg-gray-50/50">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <Calendar className="h-4 w-4 text-stone-500" />
-                            <span className="text-stone-300 font-medium">
+                            <span className="text-gray-600 font-medium">
                               {formatDate(vital.date)} at {formatTime(vital.time)}
                             </span>
                           </div>
@@ -622,7 +622,7 @@ export function ResidentProfileDialog({
                             {vital.bloodPressureSystolic && vital.bloodPressureDiastolic && (
                               <div>
                                 <p className="text-stone-500">Blood Pressure</p>
-                                <p className="text-stone-200">
+                                <p className="text-gray-700">
                                   {vital.bloodPressureSystolic}/{vital.bloodPressureDiastolic} mmHg
                                 </p>
                               </div>
@@ -630,37 +630,37 @@ export function ResidentProfileDialog({
                             {vital.heartRate && (
                               <div>
                                 <p className="text-stone-500">Heart Rate</p>
-                                <p className="text-stone-200">{vital.heartRate} bpm</p>
+                                <p className="text-gray-700">{vital.heartRate} bpm</p>
                               </div>
                             )}
                             {vital.temperature && (
                               <div>
                                 <p className="text-stone-500">Temperature</p>
-                                <p className="text-stone-200">{vital.temperature}°F</p>
+                                <p className="text-gray-700">{vital.temperature}°F</p>
                               </div>
                             )}
                             {vital.oxygenSaturation && (
                               <div>
                                 <p className="text-stone-500">O2 Saturation</p>
-                                <p className="text-stone-200">{vital.oxygenSaturation}%</p>
+                                <p className="text-gray-700">{vital.oxygenSaturation}%</p>
                               </div>
                             )}
                             {vital.weight && (
                               <div>
                                 <p className="text-stone-500">Weight</p>
-                                <p className="text-stone-200">{vital.weight} lbs</p>
+                                <p className="text-gray-700">{vital.weight} lbs</p>
                               </div>
                             )}
                             {vital.bloodSugar && (
                               <div>
                                 <p className="text-stone-500">Blood Sugar</p>
-                                <p className="text-stone-200">{vital.bloodSugar} mg/dL</p>
+                                <p className="text-gray-700">{vital.bloodSugar} mg/dL</p>
                               </div>
                             )}
                             {vital.painLevel !== undefined && vital.painLevel !== null && (
                               <div>
                                 <p className="text-stone-500">Pain Level</p>
-                                <p className="text-stone-200">{vital.painLevel}/10</p>
+                                <p className="text-gray-700">{vital.painLevel}/10</p>
                               </div>
                             )}
                           </div>
@@ -675,21 +675,21 @@ export function ResidentProfileDialog({
               <TabsContent value="incidents" className="m-0">
                 {incidentsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
                   </div>
                 ) : incidents.length === 0 ? (
                   <div className="text-center py-12">
                     <AlertTriangle className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                    <p className="text-stone-400">No incidents recorded</p>
+                    <p className="text-gray-500">No incidents recorded</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {incidents.map((incident) => (
-                      <Card key={incident.id} className="border-amber-900/20 bg-stone-800/50">
+                      <Card key={incident.id} className="border-teal-200 bg-gray-50/50">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-stone-200 font-medium">
+                              <span className="text-gray-700 font-medium">
                                 {INCIDENT_TYPE_LABELS[incident.type] || incident.type}
                               </span>
                               <Badge
@@ -708,10 +708,10 @@ export function ResidentProfileDialog({
                               )}
                             </div>
                           </div>
-                          <p className="text-stone-400 text-sm">
+                          <p className="text-gray-500 text-sm">
                             {formatDate(incident.incidentDate)} at {formatTime(incident.incidentTime)}
                           </p>
-                          <p className="text-stone-400 text-sm mt-2 line-clamp-2">
+                          <p className="text-gray-500 text-sm mt-2 line-clamp-2">
                             {incident.description}
                           </p>
                         </CardContent>
@@ -725,7 +725,7 @@ export function ResidentProfileDialog({
               <TabsContent value="documents" className="m-0">
                 <div className="text-center py-12">
                   <Folder className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400">Document storage coming soon</p>
+                  <p className="text-gray-500">Document storage coming soon</p>
                   <p className="text-stone-500 text-sm mt-1">
                     Upload and manage resident documents in a future update.
                   </p>

@@ -3,8 +3,8 @@ import { ArrowLeft } from "lucide-react";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
-      <header className="sticky top-0 z-50 border-b border-amber-900/20" style={{ backgroundColor: 'rgba(13, 26, 20, 0.95)', backdropFilter: 'blur(8px)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
+      <header className="sticky top-0 z-50 border-b border-teal-200" style={{ backgroundColor: 'rgba(13, 26, 20, 0.95)', backdropFilter: 'blur(8px)' }}>
         <div className="px-5 md:px-12 py-4 flex items-center justify-between max-w-6xl mx-auto">
           <Link href="/">
             <a className="flex items-center gap-1.5 cursor-pointer">
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             </a>
           </Link>
           <Link href="/">
-            <a className="flex items-center gap-2 text-stone-400 hover:text-amber-200 transition-colors" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem' }}>
+            <a className="flex items-center gap-2 text-gray-500 hover:text-teal-600 transition-colors" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem' }}>
               <ArrowLeft className="w-4 h-4" />
               Back to Home
             </a>
@@ -34,11 +34,11 @@ export default function PrivacyPage() {
         </p>
 
         <div className="prose prose-invert max-w-none" style={{ fontFamily: "'Jost', sans-serif", color: '#c4c0b8' }}>
-          <p className="text-stone-300 leading-relaxed mb-6">
+          <p className="text-gray-600 leading-relaxed mb-6">
             Okapi Health, Inc. ("Okapi," "we," "us," or "our") operates the Okapi Care Network platform, including okapicarenetwork.com and related mobile applications and services. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Platform.
           </p>
 
-          <p className="text-amber-200 font-medium mb-6">
+          <p className="text-teal-600 font-medium mb-6">
             By using the Platform, you consent to the collection, storage, use, and disclosure of your information as described in this Privacy Policy.
           </p>
 
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
 
           <Section title="5. Verification and Background Checks">
             <p>When AFH Owners claim a listing, we verify identity and ownership through phone matching, document verification, and name matching. Background checks may be conducted by third-party consumer reporting agencies subject to the Fair Credit Reporting Act.</p>
-            <p className="text-amber-200">Background checks are not 100% accurate and cannot guarantee safety. Users should conduct their own due diligence.</p>
+            <p className="text-teal-600">Background checks are not 100% accurate and cannot guarantee safety. Users should conduct their own due diligence.</p>
           </Section>
 
           <Section title="6. Your Privacy Rights">
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
         </div>
       </main>
 
-      <footer className="py-8 border-t border-amber-900/20" style={{ backgroundColor: '#0a1410' }}>
+      <footer className="py-8 border-t border-teal-200" style={{ backgroundColor: '#0a1410' }}>
         <div className="px-5 md:px-12 max-w-6xl mx-auto text-center">
           <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', color: '#6b7c72' }}>
             © 2024 Okapi Care Network. All rights reserved.
@@ -142,7 +142,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.5rem', fontWeight: 400, color: '#c9a962', marginBottom: '1rem' }}>
         {title}
       </h2>
-      <div className="text-stone-300 leading-relaxed space-y-3 text-sm">
+      <div className="text-gray-600 leading-relaxed space-y-3 text-sm">
         {children}
       </div>
     </section>

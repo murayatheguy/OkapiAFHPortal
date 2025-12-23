@@ -276,10 +276,10 @@ export function AddMedicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto bg-stone-900 border-amber-900/30">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto bg-white border-teal-300">
         <DialogHeader>
-          <DialogTitle className="text-stone-200 flex items-center gap-2">
-            <Pill className="h-5 w-5 text-amber-400" />
+          <DialogTitle className="text-gray-700 flex items-center gap-2">
+            <Pill className="h-5 w-5 text-teal-500" />
             {isEditing ? "Edit Medication" : "Add Medication"}
           </DialogTitle>
           <DialogDescription className="text-stone-500">
@@ -292,29 +292,29 @@ export function AddMedicationDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Drug Name with Autocomplete */}
           <div className="space-y-2">
-            <Label className="text-stone-300">Drug Name *</Label>
+            <Label className="text-gray-600">Drug Name *</Label>
             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
                   aria-expanded={searchOpen}
-                  className="w-full justify-between bg-stone-800 border-stone-700 text-stone-200 hover:bg-stone-700"
+                  className="w-full justify-between bg-gray-50 border-gray-200 text-gray-700 hover:bg-stone-700"
                 >
                   {name || "Search for medication..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0 bg-stone-800 border-stone-700" align="start">
-                <Command className="bg-stone-800">
+              <PopoverContent className="w-full p-0 bg-gray-50 border-gray-200" align="start">
+                <Command className="bg-gray-50">
                   <CommandInput
                     placeholder="Type drug name..."
                     value={searchQuery}
                     onValueChange={setSearchQuery}
-                    className="text-stone-200"
+                    className="text-gray-700"
                   />
                   <CommandList>
-                    <CommandEmpty className="text-stone-400 py-2 text-center text-sm">
+                    <CommandEmpty className="text-gray-500 py-2 text-center text-sm">
                       {searchQuery.length < 2 ? "Type at least 2 characters" : "No medications found"}
                     </CommandEmpty>
                     <CommandGroup>
@@ -323,7 +323,7 @@ export function AddMedicationDialog({
                           key={med.name}
                           value={med.name}
                           onSelect={() => handleSelectMedication(med)}
-                          className="text-stone-200 hover:bg-stone-700"
+                          className="text-gray-700 hover:bg-stone-700"
                         >
                           <Check
                             className={cn(
@@ -334,7 +334,7 @@ export function AddMedicationDialog({
                           <div>
                             <div className="font-medium">{med.name}</div>
                             {med.genericName && med.genericName !== med.name.toLowerCase() && (
-                              <div className="text-xs text-stone-400">({med.genericName})</div>
+                              <div className="text-xs text-gray-500">({med.genericName})</div>
                             )}
                             <div className="text-xs text-stone-500">
                               {med.category} • {med.form}
@@ -352,22 +352,22 @@ export function AddMedicationDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Or type medication name manually"
-              className="bg-stone-800 border-stone-700 text-stone-200 mt-1"
+              className="bg-gray-50 border-gray-200 text-gray-700 mt-1"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             {/* Dosage */}
             <div className="space-y-2">
-              <Label className="text-stone-300">Dosage</Label>
+              <Label className="text-gray-600">Dosage</Label>
               {selectedMed && selectedMed.commonStrengths.length > 0 ? (
                 <Select value={dosage} onValueChange={setDosage}>
-                  <SelectTrigger className="bg-stone-800 border-stone-700 text-stone-200">
+                  <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-700">
                     <SelectValue placeholder="Select dosage" />
                   </SelectTrigger>
-                  <SelectContent className="bg-stone-800 border-stone-700">
+                  <SelectContent className="bg-gray-50 border-gray-200">
                     {selectedMed.commonStrengths.map((s) => (
-                      <SelectItem key={s} value={s} className="text-stone-200">
+                      <SelectItem key={s} value={s} className="text-gray-700">
                         {s}
                       </SelectItem>
                     ))}
@@ -378,21 +378,21 @@ export function AddMedicationDialog({
                   value={dosage}
                   onChange={(e) => setDosage(e.target.value)}
                   placeholder="e.g., 10mg, 5mL"
-                  className="bg-stone-800 border-stone-700 text-stone-200"
+                  className="bg-gray-50 border-gray-200 text-gray-700"
                 />
               )}
             </div>
 
             {/* Form */}
             <div className="space-y-2">
-              <Label className="text-stone-300">Form</Label>
+              <Label className="text-gray-600">Form</Label>
               <Select value={form} onValueChange={setForm}>
-                <SelectTrigger className="bg-stone-800 border-stone-700 text-stone-200">
+                <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-700">
                   <SelectValue placeholder="Select form" />
                 </SelectTrigger>
-                <SelectContent className="bg-stone-800 border-stone-700">
+                <SelectContent className="bg-gray-50 border-gray-200">
                   {FORM_OPTIONS.map((f) => (
-                    <SelectItem key={f} value={f} className="text-stone-200 capitalize">
+                    <SelectItem key={f} value={f} className="text-gray-700 capitalize">
                       {f}
                     </SelectItem>
                   ))}
@@ -404,14 +404,14 @@ export function AddMedicationDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Route */}
             <div className="space-y-2">
-              <Label className="text-stone-300">Route</Label>
+              <Label className="text-gray-600">Route</Label>
               <Select value={route} onValueChange={setRoute}>
-                <SelectTrigger className="bg-stone-800 border-stone-700 text-stone-200">
+                <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-700">
                   <SelectValue placeholder="Select route" />
                 </SelectTrigger>
-                <SelectContent className="bg-stone-800 border-stone-700">
+                <SelectContent className="bg-gray-50 border-gray-200">
                   {ROUTE_OPTIONS.map((r) => (
-                    <SelectItem key={r} value={r} className="text-stone-200 capitalize">
+                    <SelectItem key={r} value={r} className="text-gray-700 capitalize">
                       {r}
                     </SelectItem>
                   ))}
@@ -421,14 +421,14 @@ export function AddMedicationDialog({
 
             {/* Frequency */}
             <div className="space-y-2">
-              <Label className="text-stone-300">Frequency</Label>
+              <Label className="text-gray-600">Frequency</Label>
               <Select value={frequency} onValueChange={setFrequency}>
-                <SelectTrigger className="bg-stone-800 border-stone-700 text-stone-200">
+                <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-700">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
-                <SelectContent className="bg-stone-800 border-stone-700">
+                <SelectContent className="bg-gray-50 border-gray-200">
                   {FREQUENCY_OPTIONS.map((f) => (
-                    <SelectItem key={f.value} value={f.value} className="text-stone-200">
+                    <SelectItem key={f.value} value={f.value} className="text-gray-700">
                       {f.label}
                     </SelectItem>
                   ))}
@@ -440,35 +440,35 @@ export function AddMedicationDialog({
           <div className="grid grid-cols-2 gap-4">
             {/* Prescriber */}
             <div className="space-y-2">
-              <Label className="text-stone-300">Prescriber</Label>
+              <Label className="text-gray-600">Prescriber</Label>
               <Input
                 value={prescriber}
                 onChange={(e) => setPrescriber(e.target.value)}
                 placeholder="Dr. Smith"
-                className="bg-stone-800 border-stone-700 text-stone-200"
+                className="bg-gray-50 border-gray-200 text-gray-700"
               />
             </div>
 
             {/* Start Date */}
             <div className="space-y-2">
-              <Label className="text-stone-300">Start Date</Label>
+              <Label className="text-gray-600">Start Date</Label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-stone-800 border-stone-700 text-stone-200"
+                className="bg-gray-50 border-gray-200 text-gray-700"
               />
             </div>
           </div>
 
           {/* Instructions */}
           <div className="space-y-2">
-            <Label className="text-stone-300">Instructions</Label>
+            <Label className="text-gray-600">Instructions</Label>
             <Textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               placeholder="Take with food, avoid alcohol, etc."
-              className="bg-stone-800 border-stone-700 text-stone-200 min-h-[80px]"
+              className="bg-gray-50 border-gray-200 text-gray-700 min-h-[80px]"
             />
           </div>
 
@@ -477,7 +477,7 @@ export function AddMedicationDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-stone-700"
+              className="border-gray-200"
             >
               Cancel
             </Button>

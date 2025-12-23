@@ -134,7 +134,7 @@ export default function Home() {
   return (
     <div className="min-h-screen" style={{ 
       fontFamily: "'Cormorant', serif",
-      backgroundColor: '#0d1a14'
+      backgroundColor: '#f9fafb'
     }}>
       {/* Texture overlay */}
       <div 
@@ -145,7 +145,7 @@ export default function Home() {
       />
 
       {/* Header - Compact */}
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/20">
+      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-teal-200">
         <div className="flex items-center gap-1.5">
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
@@ -164,7 +164,7 @@ export default function Home() {
             <Link 
               key={item.label}
               href={item.href}
-              className="text-stone-400 hover:text-amber-200 transition-colors"
+              className="text-gray-500 hover:text-teal-600 transition-colors"
               style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.85rem', letterSpacing: '0.1em' }}
             >
               {item.label}
@@ -174,7 +174,7 @@ export default function Home() {
 
         {/* Mobile menu icon */}
         <button 
-          className="md:hidden text-stone-400"
+          className="md:hidden text-gray-500"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           data-testid="button-mobile-menu"
         >
@@ -196,7 +196,7 @@ export default function Home() {
               <Link 
                 key={item.label}
                 href={item.href}
-                className="text-stone-300 hover:text-amber-200 transition-colors text-lg"
+                className="text-gray-600 hover:text-teal-600 transition-colors text-lg"
                 style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, letterSpacing: '0.1em' }}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -324,7 +324,7 @@ export default function Home() {
                       onChange={(e) => setSearchValue(e.target.value)}
                       onKeyDown={handleKeyDown}
                       onFocus={() => autocompleteResults.length > 0 && setShowAutocomplete(true)}
-                      className="w-full pl-10 pr-3 py-3 bg-transparent text-stone-200 placeholder-stone-600 focus:outline-none text-sm"
+                      className="w-full pl-10 pr-3 py-3 bg-transparent text-gray-700 placeholder-stone-600 focus:outline-none text-sm"
                       style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, letterSpacing: '0.03em' }}
                       data-testid="input-search"
                       autoComplete="off"
@@ -345,7 +345,7 @@ export default function Home() {
             {/* Autocomplete Dropdown */}
             {showAutocomplete && autocompleteResults.length > 0 && (
               <div 
-                className="absolute left-0 right-0 mt-1 bg-[#1a2f25] border border-amber-900/30 rounded-lg shadow-xl z-50 overflow-hidden"
+                className="absolute left-0 right-0 mt-1 bg-[#1a2f25] border border-teal-300 rounded-lg shadow-xl z-50 overflow-hidden"
                 style={{ maxHeight: '320px', overflowY: 'auto' }}
               >
                 {autocompleteResults.map((facility, index) => (
@@ -355,8 +355,8 @@ export default function Home() {
                     onClick={() => handleSelectFacility(facility)}
                     className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 ${
                       index === selectedIndex 
-                        ? 'bg-amber-900/30' 
-                        : 'hover:bg-amber-900/20'
+                        ? 'bg-teal-100' 
+                        : 'hover:bg-teal-50'
                     }`}
                     data-testid={`autocomplete-item-${facility.id}`}
                   >
@@ -365,7 +365,7 @@ export default function Home() {
                     </svg>
                     <div className="flex-1 min-w-0">
                       <p 
-                        className="text-stone-200 text-sm truncate"
+                        className="text-gray-700 text-sm truncate"
                         style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400 }}
                       >
                         {facility.name}
@@ -559,7 +559,7 @@ export default function Home() {
 
                   <Link 
                     href={`/facility/${facility.id}`}
-                    className="block w-full py-2.5 text-center border border-stone-300 text-stone-700 hover:bg-stone-800 hover:text-white hover:border-stone-800 transition-all duration-300"
+                    className="block w-full py-2.5 text-center border border-stone-300 text-stone-700 hover:bg-gray-50 hover:text-white hover:border-gray-300 transition-all duration-300"
                     style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em' }}
                     data-testid={`button-view-${facility.id}`}
                   >
@@ -592,7 +592,7 @@ export default function Home() {
       </section>
 
       {/* How It Works - Compact */}
-      <section id="how-it-works" className="relative z-10 py-12 md:py-20" style={{ backgroundColor: '#0d1a14' }}>
+      <section id="how-it-works" className="relative z-10 py-12 md:py-20" style={{ backgroundColor: '#f9fafb' }}>
         <div className="px-5 md:px-12 max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <p 
@@ -629,7 +629,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-8 border-t border-amber-900/20" style={{ backgroundColor: '#0a1410' }}>
+      <footer className="relative z-10 py-8 border-t border-teal-200" style={{ backgroundColor: '#0a1410' }}>
         <div className="px-5 md:px-12 max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-1.5">
@@ -648,21 +648,21 @@ export default function Home() {
             <div className="flex gap-5">
               <a 
                 href="/privacy" 
-                className="text-stone-500 hover:text-amber-200 transition-colors"
+                className="text-stone-500 hover:text-teal-600 transition-colors"
                 style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
               >
                 Privacy
               </a>
               <a 
                 href="/terms" 
-                className="text-stone-500 hover:text-amber-200 transition-colors"
+                className="text-stone-500 hover:text-teal-600 transition-colors"
                 style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
               >
                 Terms
               </a>
               <a 
                 href="mailto:contact@okapicarenetwork.com" 
-                className="text-stone-500 hover:text-amber-200 transition-colors"
+                className="text-stone-500 hover:text-teal-600 transition-colors"
                 style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
               >
                 Contact

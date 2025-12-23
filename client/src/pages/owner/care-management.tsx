@@ -163,7 +163,7 @@ const CREDENTIAL_TYPES = [
 // Get credential status based on expiration date
 function getCredentialStatus(expirationDate?: string): { status: string; color: string; bgColor: string } {
   if (!expirationDate) {
-    return { status: "No Expiration", color: "text-stone-400", bgColor: "bg-stone-600" };
+    return { status: "No Expiration", color: "text-gray-500", bgColor: "bg-stone-600" };
   }
 
   const expDate = new Date(expirationDate);
@@ -173,7 +173,7 @@ function getCredentialStatus(expirationDate?: string): { status: string; color: 
   if (daysUntilExpiry < 0) {
     return { status: "Expired", color: "text-red-400", bgColor: "bg-red-600" };
   } else if (daysUntilExpiry <= 30) {
-    return { status: "Expiring Soon", color: "text-amber-400", bgColor: "bg-amber-600" };
+    return { status: "Expiring Soon", color: "text-teal-500", bgColor: "bg-amber-600" };
   } else {
     return { status: "Active", color: "text-green-400", bgColor: "bg-green-600" };
   }
@@ -690,7 +690,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
       </div>
     );
   }
@@ -714,16 +714,16 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
       label: "Expiring Soon",
       value: expiringCredentials.length,
       icon: Shield,
-      color: expiringCredentials.length > 0 ? "text-amber-400" : "text-green-400",
-      bgColor: expiringCredentials.length > 0 ? "bg-amber-900/20" : "bg-green-900/20",
+      color: expiringCredentials.length > 0 ? "text-teal-500" : "text-green-400",
+      bgColor: expiringCredentials.length > 0 ? "bg-teal-50" : "bg-green-900/20",
       onClick: () => setActiveTab("credentials"),
     },
     {
       label: "Open Incidents",
       value: stats?.openIncidents || incidentSummary?.byStatus?.open || 0,
       icon: AlertTriangle,
-      color: "text-amber-400",
-      bgColor: "bg-amber-900/20",
+      color: "text-teal-500",
+      bgColor: "bg-teal-50",
     },
   ];
 
@@ -759,10 +759,10 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
+          <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
             Care Management
           </h1>
-          <p className="text-stone-400 text-sm mt-1">
+          <p className="text-gray-500 text-sm mt-1">
             Monitor and manage your facility's EHR system
           </p>
         </div>
@@ -796,7 +796,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                   <Icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
                 <div>
-                  <p className="text-2xl text-amber-100 font-semibold">{stat.value}</p>
+                  <p className="text-2xl text-teal-700 font-semibold">{stat.value}</p>
                   <p className="text-stone-500 text-xs">{stat.label}</p>
                 </div>
               </div>
@@ -805,7 +805,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           return (
             <Card
               key={stat.label}
-              className={`border-amber-900/20 bg-stone-900/30 ${stat.onClick ? "cursor-pointer hover:border-amber-700/40 transition-colors" : ""}`}
+              className={`border-teal-200 bg-gray-50 ${stat.onClick ? "cursor-pointer hover:border-amber-700/40 transition-colors" : ""}`}
               onClick={stat.onClick}
             >
               {cardContent}
@@ -816,16 +816,16 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
       {/* Sub-tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-stone-900/50 border border-amber-900/20 w-full md:w-auto grid grid-cols-5 md:inline-flex">
-          <TabsTrigger value="residents" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
+        <TabsList className="bg-gray-100 border border-teal-200 w-full md:w-auto grid grid-cols-5 md:inline-flex">
+          <TabsTrigger value="residents" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1">
             <Users className="h-4 w-4 hidden md:block" />
             Residents
           </TabsTrigger>
-          <TabsTrigger value="staff" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
+          <TabsTrigger value="staff" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1">
             <UserCheck className="h-4 w-4 hidden md:block" />
             Staff
           </TabsTrigger>
-          <TabsTrigger value="credentials" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1 relative">
+          <TabsTrigger value="credentials" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1 relative">
             <Shield className="h-4 w-4 hidden md:block" />
             Credentials
             {expiringCredentials.length > 0 && (
@@ -834,11 +834,11 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="incidents" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
+          <TabsTrigger value="incidents" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1">
             <AlertTriangle className="h-4 w-4 hidden md:block" />
             Incidents
           </TabsTrigger>
-          <TabsTrigger value="reports" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200 gap-1">
+          <TabsTrigger value="reports" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600 gap-1">
             <FileText className="h-4 w-4 hidden md:block" />
             Reports
           </TabsTrigger>
@@ -846,16 +846,16 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
         {/* Residents Tab */}
         <TabsContent value="residents" className="mt-6">
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-stone-200">Active Residents</CardTitle>
+                <CardTitle className="text-gray-700">Active Residents</CardTitle>
                 <CardDescription className="text-stone-500">
                   {census?.byStatus?.active || 0} active, {census?.byStatus?.hospitalized || 0} hospitalized
                 </CardDescription>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className="border-amber-900/30 text-stone-300 gap-1 px-3 py-1">
+                <Badge variant="outline" className="border-teal-300 text-gray-600 gap-1 px-3 py-1">
                   <Bed className="h-4 w-4" />
                   {residents.filter(r => r.status === "active").length}/{facilityCapacity} beds
                 </Badge>
@@ -876,7 +876,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               {residents.filter(r => r.status === "active").length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400">No active residents</p>
+                  <p className="text-gray-500">No active residents</p>
                   <p className="text-stone-500 text-sm mt-1">
                     Click "Add Client" to admit your first resident
                   </p>
@@ -885,21 +885,21 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-amber-900/20">
-                        <TableHead className="text-stone-400">Name</TableHead>
-                        <TableHead className="text-stone-400">Room</TableHead>
-                        <TableHead className="text-stone-400">Status</TableHead>
-                        <TableHead className="text-stone-400">Admitted</TableHead>
-                        <TableHead className="text-stone-400">Actions</TableHead>
+                      <TableRow className="border-teal-200">
+                        <TableHead className="text-gray-500">Name</TableHead>
+                        <TableHead className="text-gray-500">Room</TableHead>
+                        <TableHead className="text-gray-500">Status</TableHead>
+                        <TableHead className="text-gray-500">Admitted</TableHead>
+                        <TableHead className="text-gray-500">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {residents.filter(r => r.status === "active").map((resident) => (
-                        <TableRow key={resident.id} className="border-amber-900/20">
+                        <TableRow key={resident.id} className="border-teal-200">
                           <TableCell>
                             <button
                               onClick={() => setProfileResident(resident)}
-                              className="text-stone-200 font-medium hover:text-amber-400 hover:underline text-left transition-colors"
+                              className="text-gray-700 font-medium hover:text-teal-500 hover:underline text-left transition-colors"
                             >
                               {resident.firstName} {resident.lastName}
                               {resident.preferredName && (
@@ -909,7 +909,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                               )}
                             </button>
                           </TableCell>
-                          <TableCell className="text-stone-400">{resident.roomNumber || "—"}</TableCell>
+                          <TableCell className="text-gray-500">{resident.roomNumber || "—"}</TableCell>
                           <TableCell>
                             <Badge
                               className={
@@ -923,7 +923,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                               {resident.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-stone-400">
+                          <TableCell className="text-gray-500">
                             {formatDate(resident.admissionDate || "")}
                           </TableCell>
                           <TableCell>
@@ -931,7 +931,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 h-8 px-2"
+                                className="text-teal-500 hover:text-amber-300 hover:bg-teal-50 h-8 px-2"
                                 onClick={() => {
                                   setEditingClient(resident);
                                   setClientDialogOpen(true);
@@ -981,29 +981,29 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         {/* Staff Tab */}
         <TabsContent value="staff" className="mt-6 space-y-6">
           {/* Staff Quick Login PIN Card */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-amber-400" />
-                <CardTitle className="text-stone-200">Staff Quick Login PIN</CardTitle>
+                <KeyRound className="h-5 w-5 text-teal-500" />
+                <CardTitle className="text-gray-700">Staff Quick Login PIN</CardTitle>
               </div>
               <CardDescription className="text-stone-500">
-                Share this 4-digit PIN with your staff for quick login at <span className="text-amber-400">/staff/login</span>
+                Share this 4-digit PIN with your staff for quick login at <span className="text-teal-500">/staff/login</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
                 {facilityPinData?.pin ? (
                   <>
-                    <div className="flex items-center gap-2 bg-stone-800/50 px-4 py-3 rounded-lg">
-                      <span className="text-3xl font-mono text-amber-200 tracking-widest">
+                    <div className="flex items-center gap-2 bg-gray-50/50 px-4 py-3 rounded-lg">
+                      <span className="text-3xl font-mono text-teal-600 tracking-widest">
                         {facilityPinData.pin}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={copyPinToClipboard}
-                        className="text-stone-400 hover:text-amber-200"
+                        className="text-gray-500 hover:text-teal-600"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -1012,7 +1012,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                       variant="outline"
                       onClick={() => generatePinMutation.mutate()}
                       disabled={generatePinMutation.isPending}
-                      className="border-amber-900/30 text-stone-300 hover:text-amber-200 gap-2"
+                      className="border-teal-300 text-gray-600 hover:text-teal-600 gap-2"
                     >
                       {generatePinMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -1044,10 +1044,10 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           </Card>
 
           {/* Staff Users Card */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-stone-200">Staff Users</CardTitle>
+                <CardTitle className="text-gray-700">Staff Users</CardTitle>
                 <CardDescription className="text-stone-500">
                   {staff.filter((s) => s.status === "active").length} active staff with login access
                 </CardDescription>
@@ -1064,7 +1064,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               {staff.length === 0 ? (
                 <div className="text-center py-8">
                   <UserCheck className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400">No staff users with login access yet</p>
+                  <p className="text-gray-500">No staff users with login access yet</p>
                   <p className="text-stone-500 text-sm mt-1">
                     Invite staff to give them login access to the Care Portal
                   </p>
@@ -1073,23 +1073,23 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-amber-900/20">
-                        <TableHead className="text-stone-400">Name</TableHead>
-                        <TableHead className="text-stone-400">Email</TableHead>
-                        <TableHead className="text-stone-400">Role</TableHead>
-                        <TableHead className="text-stone-400">Status</TableHead>
-                        <TableHead className="text-stone-400">Last Login</TableHead>
-                        <TableHead className="text-stone-400">Actions</TableHead>
+                      <TableRow className="border-teal-200">
+                        <TableHead className="text-gray-500">Name</TableHead>
+                        <TableHead className="text-gray-500">Email</TableHead>
+                        <TableHead className="text-gray-500">Role</TableHead>
+                        <TableHead className="text-gray-500">Status</TableHead>
+                        <TableHead className="text-gray-500">Last Login</TableHead>
+                        <TableHead className="text-gray-500">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {staff.map((member) => (
-                        <TableRow key={member.id} className="border-amber-900/20">
-                          <TableCell className="text-stone-200 font-medium">
+                        <TableRow key={member.id} className="border-teal-200">
+                          <TableCell className="text-gray-700 font-medium">
                             {member.firstName} {member.lastName}
                           </TableCell>
-                          <TableCell className="text-stone-400">{member.email}</TableCell>
-                          <TableCell className="text-stone-400 capitalize">{member.role}</TableCell>
+                          <TableCell className="text-gray-500">{member.email}</TableCell>
+                          <TableCell className="text-gray-500 capitalize">{member.role}</TableCell>
                           <TableCell>
                             <Badge
                               className={
@@ -1103,7 +1103,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                               {member.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-stone-400">
+                          <TableCell className="text-gray-500">
                             {member.lastLoginAt ? (
                               <span>
                                 {formatDate(member.lastLoginAt)} {formatTime(member.lastLoginAt)}
@@ -1118,7 +1118,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 h-8 px-2"
+                                  className="text-teal-500 hover:text-amber-300 hover:bg-teal-50 h-8 px-2"
                                   onClick={() =>
                                     updateStaffStatusMutation.mutate({
                                       staffId: member.id,
@@ -1163,10 +1163,10 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           </Card>
 
           {/* Team Members Card - Unified view with portal access */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
               <div>
-                <CardTitle className="text-stone-200">Team Members</CardTitle>
+                <CardTitle className="text-gray-700">Team Members</CardTitle>
                 <CardDescription className="text-stone-500">
                   {teamMembers.filter((m) => m.status === "active").length} team members • {staff.filter((s) => s.teamMemberId).length} with portal access
                 </CardDescription>
@@ -1176,7 +1176,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               {teamMembers.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400">No team members yet</p>
+                  <p className="text-gray-500">No team members yet</p>
                   <p className="text-stone-500 text-sm mt-1">
                     Add team members from the Dashboard → Team section
                   </p>
@@ -1185,12 +1185,12 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-amber-900/20">
-                        <TableHead className="text-stone-400">Name</TableHead>
-                        <TableHead className="text-stone-400">Email</TableHead>
-                        <TableHead className="text-stone-400">Role</TableHead>
-                        <TableHead className="text-stone-400">Portal Access</TableHead>
-                        <TableHead className="text-stone-400">Credentials</TableHead>
+                      <TableRow className="border-teal-200">
+                        <TableHead className="text-gray-500">Name</TableHead>
+                        <TableHead className="text-gray-500">Email</TableHead>
+                        <TableHead className="text-gray-500">Role</TableHead>
+                        <TableHead className="text-gray-500">Portal Access</TableHead>
+                        <TableHead className="text-gray-500">Credentials</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1198,12 +1198,12 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                         const memberCredentials = getTeamMemberCredentials(member.id);
                         const portalAccess = getTeamMemberPortalAccess(member.id);
                         return (
-                          <TableRow key={member.id} className="border-amber-900/20">
-                            <TableCell className="text-stone-200 font-medium">
+                          <TableRow key={member.id} className="border-teal-200">
+                            <TableCell className="text-gray-700 font-medium">
                               {member.name}
                             </TableCell>
-                            <TableCell className="text-stone-400">{member.email || "—"}</TableCell>
-                            <TableCell className="text-stone-400 capitalize">{member.role}</TableCell>
+                            <TableCell className="text-gray-500">{member.email || "—"}</TableCell>
+                            <TableCell className="text-gray-500 capitalize">{member.role}</TableCell>
                             <TableCell>
                               {portalAccess ? (
                                 <div className="flex items-center gap-2">
@@ -1230,7 +1230,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 h-8 px-2 gap-1"
+                                className="text-teal-500 hover:text-amber-300 hover:bg-teal-50 h-8 px-2 gap-1"
                                 onClick={() => {
                                   setActiveTab("credentials");
                                 }}
@@ -1254,13 +1254,13 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         <TabsContent value="credentials" className="mt-6 space-y-6">
           {/* Expiring Soon Alert */}
           {expiringCredentials.length > 0 && (
-            <Card className="border-amber-600/30 bg-amber-900/10">
+            <Card className="border-amber-600/30 bg-teal-50/50">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-amber-400" />
-                  <CardTitle className="text-amber-200">Credentials Expiring Soon</CardTitle>
+                  <AlertCircle className="h-5 w-5 text-teal-500" />
+                  <CardTitle className="text-teal-600">Credentials Expiring Soon</CardTitle>
                 </div>
-                <CardDescription className="text-amber-400/80">
+                <CardDescription className="text-teal-500/80">
                   {expiringCredentials.length} credential(s) expiring within 30 days
                 </CardDescription>
               </CardHeader>
@@ -1271,13 +1271,13 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                     return (
                       <div
                         key={cred.id}
-                        className="flex items-center justify-between p-3 bg-stone-900/50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-100 rounded-lg"
                       >
                         <div>
-                          <p className="text-stone-200 font-medium">
+                          <p className="text-gray-700 font-medium">
                             {CREDENTIAL_TYPES.find((t) => t.value === cred.credentialType)?.label || cred.credentialType}
                           </p>
-                          <p className="text-stone-400 text-sm">{getTeamMemberName(cred.teamMemberId)}</p>
+                          <p className="text-gray-500 text-sm">{getTeamMemberName(cred.teamMemberId)}</p>
                         </div>
                         <div className="text-right">
                           <Badge className={statusInfo.bgColor}>{statusInfo.status}</Badge>
@@ -1294,9 +1294,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           )}
 
           {/* Team Members Credentials */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="text-stone-200">Staff Credentials</CardTitle>
+              <CardTitle className="text-gray-700">Staff Credentials</CardTitle>
               <CardDescription className="text-stone-500">
                 Manage certifications and training records for your team
               </CardDescription>
@@ -1305,7 +1305,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               {teamMembers.length === 0 ? (
                 <div className="text-center py-8">
                   <Shield className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400">No team members yet</p>
+                  <p className="text-gray-500">No team members yet</p>
                   <p className="text-stone-500 text-sm mt-1">
                     Add team members to track their credentials
                   </p>
@@ -1315,10 +1315,10 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                   {teamMembers.map((member) => {
                     const memberCredentials = getTeamMemberCredentials(member.id);
                     return (
-                      <div key={member.id} className="border border-amber-900/20 rounded-lg p-4">
+                      <div key={member.id} className="border border-teal-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-4">
                           <div>
-                            <h3 className="text-stone-200 font-medium">{member.name}</h3>
+                            <h3 className="text-gray-700 font-medium">{member.name}</h3>
                             <p className="text-stone-500 text-sm capitalize">{member.role}</p>
                           </div>
                           <Button
@@ -1337,30 +1337,30 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                           <div className="overflow-x-auto">
                             <Table>
                               <TableHeader>
-                                <TableRow className="border-amber-900/20">
-                                  <TableHead className="text-stone-400">Type</TableHead>
-                                  <TableHead className="text-stone-400">Number</TableHead>
-                                  <TableHead className="text-stone-400">Issued By</TableHead>
-                                  <TableHead className="text-stone-400">Expiration</TableHead>
-                                  <TableHead className="text-stone-400">Status</TableHead>
-                                  <TableHead className="text-stone-400">Actions</TableHead>
+                                <TableRow className="border-teal-200">
+                                  <TableHead className="text-gray-500">Type</TableHead>
+                                  <TableHead className="text-gray-500">Number</TableHead>
+                                  <TableHead className="text-gray-500">Issued By</TableHead>
+                                  <TableHead className="text-gray-500">Expiration</TableHead>
+                                  <TableHead className="text-gray-500">Status</TableHead>
+                                  <TableHead className="text-gray-500">Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
                                 {memberCredentials.map((cred) => {
                                   const statusInfo = getCredentialStatus(cred.expirationDate);
                                   return (
-                                    <TableRow key={cred.id} className="border-amber-900/20">
-                                      <TableCell className="text-stone-200">
+                                    <TableRow key={cred.id} className="border-teal-200">
+                                      <TableCell className="text-gray-700">
                                         {CREDENTIAL_TYPES.find((t) => t.value === cred.credentialType)?.label || cred.credentialType}
                                       </TableCell>
-                                      <TableCell className="text-stone-400">
+                                      <TableCell className="text-gray-500">
                                         {cred.credentialNumber || "-"}
                                       </TableCell>
-                                      <TableCell className="text-stone-400">
+                                      <TableCell className="text-gray-500">
                                         {cred.issuingAuthority || "-"}
                                       </TableCell>
-                                      <TableCell className="text-stone-400">
+                                      <TableCell className="text-gray-500">
                                         {cred.expirationDate || "No expiration"}
                                       </TableCell>
                                       <TableCell>
@@ -1371,7 +1371,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                                           <Button
                                             size="sm"
                                             variant="ghost"
-                                            className="text-stone-400 hover:text-stone-200 hover:bg-stone-800 h-8 px-2"
+                                            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 h-8 px-2"
                                             onClick={() => openEditCredentialDialog(cred, member)}
                                           >
                                             <Edit className="h-4 w-4" />
@@ -1404,9 +1404,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
         {/* Incidents Tab */}
         <TabsContent value="incidents" className="mt-6">
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="text-stone-200">Incident Reports</CardTitle>
+              <CardTitle className="text-gray-700">Incident Reports</CardTitle>
               <CardDescription className="text-stone-500">
                 {incidentSummary?.byStatus?.open || 0} open, {incidentSummary?.dshsReportable || 0} DSHS reportable
               </CardDescription>
@@ -1415,26 +1415,26 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               {!incidentSummary?.recent?.length ? (
                 <div className="text-center py-8">
                   <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-3" />
-                  <p className="text-stone-400">No recent incidents</p>
+                  <p className="text-gray-500">No recent incidents</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-amber-900/20">
-                        <TableHead className="text-stone-400">Date</TableHead>
-                        <TableHead className="text-stone-400">Type</TableHead>
-                        <TableHead className="text-stone-400">Status</TableHead>
-                        <TableHead className="text-stone-400">DSHS</TableHead>
+                      <TableRow className="border-teal-200">
+                        <TableHead className="text-gray-500">Date</TableHead>
+                        <TableHead className="text-gray-500">Type</TableHead>
+                        <TableHead className="text-gray-500">Status</TableHead>
+                        <TableHead className="text-gray-500">DSHS</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {incidentSummary?.recent?.map((incident) => (
-                        <TableRow key={incident.id} className="border-amber-900/20">
-                          <TableCell className="text-stone-200">
+                        <TableRow key={incident.id} className="border-teal-200">
+                          <TableCell className="text-gray-700">
                             {formatDate(incident.incidentDate)}
                           </TableCell>
-                          <TableCell className="text-stone-400 capitalize">
+                          <TableCell className="text-gray-500 capitalize">
                             {incident.type.replace(/_/g, " ")}
                           </TableCell>
                           <TableCell>
@@ -1466,14 +1466,14 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
               {/* Incident Summary by Type */}
               {incidentSummary?.byType && Object.keys(incidentSummary.byType).length > 0 && (
-                <div className="mt-6 pt-6 border-t border-amber-900/20">
-                  <h4 className="text-stone-300 text-sm font-medium mb-3">Incidents by Type</h4>
+                <div className="mt-6 pt-6 border-t border-teal-200">
+                  <h4 className="text-gray-600 text-sm font-medium mb-3">Incidents by Type</h4>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(incidentSummary.byType).map(([type, count]) => (
                       <Badge
                         key={type}
                         variant="outline"
-                        className="border-amber-900/30 text-stone-400"
+                        className="border-teal-300 text-gray-500"
                       >
                         {type.replace(/_/g, " ")}: {count}
                       </Badge>
@@ -1488,26 +1488,26 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         {/* Reports Tab */}
         <TabsContent value="reports" className="mt-6 space-y-6">
           {/* DSHS Reports Card */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="text-stone-200">Facility Reports</CardTitle>
+              <CardTitle className="text-gray-700">Facility Reports</CardTitle>
               <CardDescription className="text-stone-500">
                 Generate and print regulatory and operational reports
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                <Card className="border-amber-900/20 bg-stone-800/50">
+                <Card className="border-teal-200 bg-gray-50/50">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-stone-200 font-medium">Monthly Incident Summary</h4>
+                        <h4 className="text-gray-700 font-medium">Monthly Incident Summary</h4>
                         <p className="text-stone-500 text-sm">DSHS incident report</p>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
+                        className="border-teal-300 text-gray-600 gap-2"
                         onClick={() => setActiveReport("incident")}
                       >
                         <Download className="h-4 w-4" />
@@ -1517,17 +1517,17 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                   </CardContent>
                 </Card>
 
-                <Card className="border-amber-900/20 bg-stone-800/50">
+                <Card className="border-teal-200 bg-gray-50/50">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-stone-200 font-medium">Medication Log Report</h4>
+                        <h4 className="text-gray-700 font-medium">Medication Log Report</h4>
                         <p className="text-stone-500 text-sm">Summary of all medications given</p>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
+                        className="border-teal-300 text-gray-600 gap-2"
                         onClick={() => setActiveReport("medCompliance")}
                       >
                         <Download className="h-4 w-4" />
@@ -1537,17 +1537,17 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                   </CardContent>
                 </Card>
 
-                <Card className="border-amber-900/20 bg-stone-800/50">
+                <Card className="border-teal-200 bg-gray-50/50">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-stone-200 font-medium">Current Clients Report</h4>
+                        <h4 className="text-gray-700 font-medium">Current Clients Report</h4>
                         <p className="text-stone-500 text-sm">List of all residents and their status</p>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
+                        className="border-teal-300 text-gray-600 gap-2"
                         onClick={() => setActiveReport("census")}
                       >
                         <Download className="h-4 w-4" />
@@ -1557,17 +1557,17 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                   </CardContent>
                 </Card>
 
-                <Card className="border-amber-900/20 bg-stone-800/50">
+                <Card className="border-teal-200 bg-gray-50/50">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-stone-200 font-medium">Staff Activity Report</h4>
+                        <h4 className="text-gray-700 font-medium">Staff Activity Report</h4>
                         <p className="text-stone-500 text-sm">Login and documentation activity</p>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
+                        className="border-teal-300 text-gray-600 gap-2"
                         onClick={() => setActiveReport("staffActivity")}
                       >
                         <Download className="h-4 w-4" />
@@ -1581,9 +1581,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           </Card>
 
           {/* Medication List Report Card */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="text-stone-200">Client Medication Sheet</CardTitle>
+              <CardTitle className="text-gray-700">Client Medication Sheet</CardTitle>
               <CardDescription className="text-stone-500">
                 Generate a printable medication list for a specific resident
               </CardDescription>
@@ -1597,15 +1597,15 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                     setMedListResident(resident || null);
                   }}
                 >
-                  <SelectTrigger className="w-full md:w-72 bg-stone-800 border-amber-900/30 text-stone-200">
+                  <SelectTrigger className="w-full md:w-72 bg-gray-50 border-teal-300 text-gray-700">
                     <SelectValue placeholder="Select a resident..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-stone-800 border-amber-900/30">
+                  <SelectContent className="bg-gray-50 border-teal-300">
                     {residents.filter((r) => r.status === "active").map((resident) => (
                       <SelectItem
                         key={resident.id}
                         value={resident.id}
-                        className="text-stone-200 focus:bg-amber-900/30"
+                        className="text-gray-700 focus:bg-teal-100"
                       >
                         {resident.firstName} {resident.lastName}
                         {resident.roomNumber && ` (Room ${resident.roomNumber})`}
@@ -1626,34 +1626,34 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           </Card>
 
           {/* Compliance Overview */}
-          <Card className="border-amber-900/20 bg-stone-900/30">
+          <Card className="border-teal-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="text-stone-200">Compliance Overview</CardTitle>
+              <CardTitle className="text-gray-700">Compliance Overview</CardTitle>
               <CardDescription className="text-stone-500">
                 {medCompliance?.period || "Last 7 days"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-stone-800/50 rounded-lg">
+                <div className="text-center p-4 bg-gray-50/50 rounded-lg">
                   <p className="text-3xl font-bold text-green-400">
                     {medCompliance?.summary?.given || 0}
                   </p>
                   <p className="text-stone-500 text-sm">Meds Given</p>
                 </div>
-                <div className="text-center p-4 bg-stone-800/50 rounded-lg">
-                  <p className="text-3xl font-bold text-amber-400">
+                <div className="text-center p-4 bg-gray-50/50 rounded-lg">
+                  <p className="text-3xl font-bold text-teal-500">
                     {medCompliance?.summary?.refused || 0}
                   </p>
                   <p className="text-stone-500 text-sm">Refused</p>
                 </div>
-                <div className="text-center p-4 bg-stone-800/50 rounded-lg">
+                <div className="text-center p-4 bg-gray-50/50 rounded-lg">
                   <p className="text-3xl font-bold text-blue-400">
                     {medCompliance?.summary?.held || 0}
                   </p>
                   <p className="text-stone-500 text-sm">Held</p>
                 </div>
-                <div className="text-center p-4 bg-stone-800/50 rounded-lg">
+                <div className="text-center p-4 bg-gray-50/50 rounded-lg">
                   <p className="text-3xl font-bold text-red-400">
                     {medCompliance?.summary?.missed || 0}
                   </p>
@@ -1799,12 +1799,12 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
       {/* Add/Edit Credential Dialog */}
       <Dialog open={credentialDialogOpen} onOpenChange={setCredentialDialogOpen}>
-        <DialogContent className="bg-stone-900 border-amber-900/30">
+        <DialogContent className="bg-white border-teal-300">
           <DialogHeader>
-            <DialogTitle className="text-stone-200">
+            <DialogTitle className="text-gray-700">
               {editingCredential ? "Edit Credential" : "Add Credential"}
             </DialogTitle>
-            <DialogDescription className="text-stone-400">
+            <DialogDescription className="text-gray-500">
               {selectedTeamMember && (
                 <>Add certification for {selectedTeamMember.name}</>
               )}
@@ -1813,22 +1813,22 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-stone-300">Credential Type</Label>
+              <Label className="text-gray-600">Credential Type</Label>
               <Select
                 value={credentialForm.credentialType}
                 onValueChange={(value) =>
                   setCredentialForm({ ...credentialForm, credentialType: value })
                 }
               >
-                <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
+                <SelectTrigger className="bg-gray-50 border-teal-300 text-gray-700">
                   <SelectValue placeholder="Select credential type" />
                 </SelectTrigger>
-                <SelectContent className="bg-stone-800 border-amber-900/30">
+                <SelectContent className="bg-gray-50 border-teal-300">
                   {CREDENTIAL_TYPES.map((type) => (
                     <SelectItem
                       key={type.value}
                       value={type.value}
-                      className="text-stone-200 focus:bg-amber-900/30"
+                      className="text-gray-700 focus:bg-teal-100"
                     >
                       {type.label}
                     </SelectItem>
@@ -1838,63 +1838,63 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
             </div>
 
             <div className="space-y-2">
-              <Label className="text-stone-300">Credential Number (optional)</Label>
+              <Label className="text-gray-600">Credential Number (optional)</Label>
               <Input
                 value={credentialForm.credentialNumber}
                 onChange={(e) =>
                   setCredentialForm({ ...credentialForm, credentialNumber: e.target.value })
                 }
                 placeholder="e.g., NAC-123456"
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
+                className="bg-gray-50 border-teal-300 text-gray-700"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-stone-300">Issuing Authority (optional)</Label>
+              <Label className="text-gray-600">Issuing Authority (optional)</Label>
               <Input
                 value={credentialForm.issuingAuthority}
                 onChange={(e) =>
                   setCredentialForm({ ...credentialForm, issuingAuthority: e.target.value })
                 }
                 placeholder="e.g., WA DOH, American Red Cross"
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
+                className="bg-gray-50 border-teal-300 text-gray-700"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-stone-300">Issue Date (optional)</Label>
+                <Label className="text-gray-600">Issue Date (optional)</Label>
                 <Input
                   type="date"
                   value={credentialForm.issueDate}
                   onChange={(e) =>
                     setCredentialForm({ ...credentialForm, issueDate: e.target.value })
                   }
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                  className="bg-gray-50 border-teal-300 text-gray-700"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-stone-300">Expiration Date</Label>
+                <Label className="text-gray-600">Expiration Date</Label>
                 <Input
                   type="date"
                   value={credentialForm.expirationDate}
                   onChange={(e) =>
                     setCredentialForm({ ...credentialForm, expirationDate: e.target.value })
                   }
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
+                  className="bg-gray-50 border-teal-300 text-gray-700"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-stone-300">Notes (optional)</Label>
+              <Label className="text-gray-600">Notes (optional)</Label>
               <Textarea
                 value={credentialForm.notes}
                 onChange={(e) =>
                   setCredentialForm({ ...credentialForm, notes: e.target.value })
                 }
                 placeholder="Any additional notes about this credential"
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
+                className="bg-gray-50 border-teal-300 text-gray-700"
                 rows={3}
               />
             </div>
@@ -1908,7 +1908,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                 setEditingCredential(null);
                 resetCredentialForm();
               }}
-              className="border-amber-900/30 text-stone-300"
+              className="border-teal-300 text-gray-600"
             >
               Cancel
             </Button>
