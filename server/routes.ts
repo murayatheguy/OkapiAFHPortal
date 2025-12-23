@@ -585,7 +585,10 @@ export async function registerRoutes(
         'capacity', 'availableBeds', 'currentOccupancy',
         'amenities', 'specialties', 'careTypes',
         'acceptsMedicaid', 'acceptsMedicare', 'acceptsPrivatePay',
-        'priceMin', 'priceMax', 'images', 'acceptingInquiries'
+        'priceMin', 'priceMax', 'images', 'acceptingInquiries',
+        // Listing customization fields
+        'ownerBio', 'carePhilosophy', 'dailyRoutine', 'uniqueFeatures',
+        'roomTypes', 'acceptsLTCInsurance', 'acceptsVABenefits'
       ];
 
       const updateData: Record<string, any> = {};
