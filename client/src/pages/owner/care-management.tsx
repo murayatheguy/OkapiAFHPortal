@@ -1763,7 +1763,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           facilityName={facilityData?.name || "Facility"}
           facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
           facilityPhone={facilityData?.phone}
-          staff={staffList.map((s) => ({
+          staff={staff.map((s) => ({
             id: s.id,
             firstName: s.firstName,
             lastName: s.lastName,
