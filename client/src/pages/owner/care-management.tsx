@@ -58,10 +58,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+interface FacilityData {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+  capacity?: number;
+}
+
 interface CareManagementProps {
   facilityId: string;
   facilityName?: string;
   facilityCapacity?: number;
+  facility?: FacilityData;
 }
 
 interface EhrDashboardStats {
@@ -167,7 +179,13 @@ function getCredentialStatus(expirationDate?: string): { status: string; color: 
   }
 }
 
-export function CareManagement({ facilityId, facilityName, facilityCapacity = 6 }: CareManagementProps) {
+export function CareManagement({ facilityId, facilityName, facilityCapacity = 6, facility }: CareManagementProps) {
+  // Create facilityData from props for reports
+  const facilityData = facility || {
+    id: facilityId,
+    name: facilityName || "Facility",
+    capacity: facilityCapacity,
+  };
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();

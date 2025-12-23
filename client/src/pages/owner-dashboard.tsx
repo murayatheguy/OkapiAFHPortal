@@ -859,6 +859,7 @@ export default function OwnerDashboardPage() {
                 <CareManagement
                   facilityId={selectedFacilityId}
                   facilityName={selectedFacility?.name}
+                  facility={selectedFacility}
                 />
               )}
 
