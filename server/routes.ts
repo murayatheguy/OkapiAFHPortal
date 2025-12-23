@@ -505,10 +505,17 @@ export async function registerRoutes(
       await storage.updateOwner(owner.id, { lastLoginAt: new Date() });
 
       const { passwordHash: _, ...ownerData } = owner;
-      
+
       (req.session as any).ownerId = owner.id;
-      
-      res.json({ owner: ownerData });
+
+      // Explicitly save session before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Login failed - session error" });
+        }
+        res.json({ owner: ownerData });
+      });
     } catch (error) {
       console.error("Error during owner login:", error);
       res.status(500).json({ error: "Login failed" });
