@@ -398,11 +398,11 @@ export default function OwnerDashboardPage() {
                   </div>
 
                   {selectedFacility?.violationsCount && selectedFacility.violationsCount > 0 ? (
-                    <Card className="border-red-900/30 bg-red-900/10">
+                    <Card className="border-red-200 bg-red-50">
                       <CardContent className="p-4 flex items-center gap-3">
-                        <AlertCircle className="h-5 w-5 text-red-400" />
+                        <AlertCircle className="h-5 w-5 text-red-500" />
                         <div>
-                          <div className="text-red-400 font-medium">Compliance Alert</div>
+                          <div className="text-red-600 font-medium">Compliance Alert</div>
                           <div className="text-gray-600 text-sm">
                             {selectedFacility.violationsCount} violation{selectedFacility.violationsCount > 1 ? 's' : ''} on record
                           </div>
@@ -410,12 +410,19 @@ export default function OwnerDashboardPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <Card className="border-green-900/30 bg-green-900/10">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-green-400" />
+                    <Card className="border-green-200 overflow-hidden">
+                      <CardContent
+                        className="p-5 flex items-center gap-4"
+                        style={{
+                          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%)',
+                        }}
+                      >
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-200">
+                          <CheckCircle2 className="h-7 w-7 text-white" />
+                        </div>
                         <div>
-                          <div className="text-green-400 font-medium">Good Standing</div>
-                          <div className="text-gray-600 text-sm">No compliance violations on record</div>
+                          <div className="text-green-700 font-bold text-lg">Good Standing</div>
+                          <div className="text-green-600 text-sm">No compliance violations on record</div>
                         </div>
                       </CardContent>
                     </Card>
