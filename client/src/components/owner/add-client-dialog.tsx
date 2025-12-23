@@ -217,9 +217,9 @@ export function AddClientDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetForm(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-teal-300">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-stone-900 border-amber-900/30">
         <DialogHeader>
-          <DialogTitle className="text-gray-700">
+          <DialogTitle className="text-stone-200">
             {isEditing ? "Edit Client" : "Add New Client"}
           </DialogTitle>
           <DialogDescription className="text-stone-500">
@@ -231,7 +231,7 @@ export function AddClientDialog({
 
         {isFull ? (
           <div className="py-8 text-center">
-            <p className="text-teal-500">Facility is at capacity ({capacity} beds)</p>
+            <p className="text-amber-400">Facility is at capacity ({capacity} beds)</p>
             <p className="text-stone-500 text-sm mt-2">
               Discharge a client before adding a new one
             </p>
@@ -239,7 +239,7 @@ export function AddClientDialog({
         ) : (
           <form onSubmit={handleSubmit}>
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-gray-50">
+              <TabsList className="grid w-full grid-cols-4 bg-stone-800">
                 <TabsTrigger value="basic" className="gap-1 text-xs">
                   <User className="h-3 w-3" />
                   Basic
@@ -262,22 +262,22 @@ export function AddClientDialog({
               <TabsContent value="basic" className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-600">First Name *</Label>
+                    <Label className="text-stone-300">First Name *</Label>
                     <Input
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="First name"
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Last Name *</Label>
+                    <Label className="text-stone-300">Last Name *</Label>
                     <Input
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Last name"
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                       required
                     />
                   </div>
@@ -285,21 +285,21 @@ export function AddClientDialog({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Preferred Name</Label>
+                    <Label className="text-stone-300">Preferred Name</Label>
                     <Input
                       value={preferredName}
                       onChange={(e) => setPreferredName(e.target.value)}
                       placeholder="Nickname or preferred name"
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Date of Birth *</Label>
+                    <Label className="text-stone-300">Date of Birth *</Label>
                     <Input
                       type="date"
                       value={dateOfBirth}
                       onChange={(e) => setDateOfBirth(e.target.value)}
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                       required
                     />
                   </div>
@@ -307,21 +307,21 @@ export function AddClientDialog({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Room Number</Label>
+                    <Label className="text-stone-300">Room Number</Label>
                     <Input
                       value={roomNumber}
                       onChange={(e) => setRoomNumber(e.target.value)}
                       placeholder="e.g., 1A, Room 2"
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Admission Date</Label>
+                    <Label className="text-stone-300">Admission Date</Label>
                     <Input
                       type="date"
                       value={admissionDate}
                       onChange={(e) => setAdmissionDate(e.target.value)}
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                     />
                   </div>
                 </div>
@@ -331,13 +331,13 @@ export function AddClientDialog({
               <TabsContent value="medical" className="space-y-4 mt-4">
                 {/* Diagnoses */}
                 <div className="space-y-2">
-                  <Label className="text-gray-600">Diagnoses</Label>
+                  <Label className="text-stone-300">Diagnoses</Label>
                   <div className="flex gap-2">
                     <Input
                       value={newDiagnosis}
                       onChange={(e) => setNewDiagnosis(e.target.value)}
                       placeholder="Add diagnosis"
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -349,7 +349,7 @@ export function AddClientDialog({
                       type="button"
                       onClick={addDiagnosis}
                       variant="outline"
-                      className="border-teal-300"
+                      className="border-amber-900/30"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -359,7 +359,7 @@ export function AddClientDialog({
                       <Badge
                         key={i}
                         variant="secondary"
-                        className="bg-gray-50 text-gray-600 gap-1"
+                        className="bg-stone-800 text-stone-300 gap-1"
                       >
                         {d}
                         <X
@@ -373,7 +373,7 @@ export function AddClientDialog({
 
                 {/* Allergies */}
                 <div className="space-y-2">
-                  <Label className="text-gray-600 flex items-center gap-2">
+                  <Label className="text-stone-300 flex items-center gap-2">
                     Allergies
                     {allergies.length > 0 && (
                       <Badge variant="destructive" className="text-xs">
@@ -386,7 +386,7 @@ export function AddClientDialog({
                       value={newAllergy}
                       onChange={(e) => setNewAllergy(e.target.value)}
                       placeholder="Add allergy"
-                      className="bg-gray-50 border-gray-200 text-gray-700"
+                      className="bg-stone-800 border-stone-700 text-stone-200"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
@@ -398,7 +398,7 @@ export function AddClientDialog({
                       type="button"
                       onClick={addAllergy}
                       variant="outline"
-                      className="border-teal-300"
+                      className="border-amber-900/30"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -420,13 +420,13 @@ export function AddClientDialog({
               {/* Contacts Tab */}
               <TabsContent value="contacts" className="space-y-4 mt-4">
                 <div className="flex justify-between items-center">
-                  <Label className="text-gray-600">Emergency Contacts</Label>
+                  <Label className="text-stone-300">Emergency Contacts</Label>
                   <Button
                     type="button"
                     onClick={addEmergencyContact}
                     variant="outline"
                     size="sm"
-                    className="border-teal-300 gap-1"
+                    className="border-amber-900/30 gap-1"
                   >
                     <Plus className="h-3 w-3" />
                     Add Contact
@@ -438,9 +438,9 @@ export function AddClientDialog({
                 ) : (
                   <div className="space-y-4">
                     {emergencyContacts.map((contact, i) => (
-                      <div key={i} className="p-3 bg-gray-50/50 rounded-lg space-y-3">
+                      <div key={i} className="p-3 bg-stone-800/50 rounded-lg space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-500 text-sm">Contact {i + 1}</span>
+                          <span className="text-stone-400 text-sm">Contact {i + 1}</span>
                           <Button
                             type="button"
                             onClick={() => removeEmergencyContact(i)}
@@ -456,7 +456,7 @@ export function AddClientDialog({
                             value={contact.name}
                             onChange={(e) => updateEmergencyContact(i, "name", e.target.value)}
                             placeholder="Name"
-                            className="bg-gray-50 border-gray-200 text-gray-700"
+                            className="bg-stone-800 border-stone-700 text-stone-200"
                           />
                           <Input
                             value={contact.relationship}
@@ -464,13 +464,13 @@ export function AddClientDialog({
                               updateEmergencyContact(i, "relationship", e.target.value)
                             }
                             placeholder="Relationship"
-                            className="bg-gray-50 border-gray-200 text-gray-700"
+                            className="bg-stone-800 border-stone-700 text-stone-200"
                           />
                           <Input
                             value={contact.phone}
                             onChange={(e) => updateEmergencyContact(i, "phone", e.target.value)}
                             placeholder="Phone"
-                            className="bg-gray-50 border-gray-200 text-gray-700"
+                            className="bg-stone-800 border-stone-700 text-stone-200"
                           />
                         </div>
                       </div>
@@ -482,12 +482,12 @@ export function AddClientDialog({
               {/* Notes Tab */}
               <TabsContent value="notes" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-600">Notes</Label>
+                  <Label className="text-stone-300">Notes</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Additional notes about the client..."
-                    className="bg-gray-50 border-gray-200 text-gray-700 min-h-[150px]"
+                    className="bg-stone-800 border-stone-700 text-stone-200 min-h-[150px]"
                   />
                 </div>
               </TabsContent>
@@ -498,7 +498,7 @@ export function AddClientDialog({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="border-gray-200"
+                className="border-stone-700"
               >
                 Cancel
               </Button>

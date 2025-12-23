@@ -52,15 +52,15 @@ export default function OwnerLogin() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d1a14' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f9fafb' }}>
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-teal-200">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0d1a14' }}>
+      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/20">
         <Link href="/" className="flex items-center gap-1.5">
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
@@ -71,7 +71,7 @@ export default function OwnerLogin() {
         </Link>
         
         <Link href="/">
-          <Button variant="ghost" className="text-gray-500 hover:text-teal-600">
+          <Button variant="ghost" className="text-stone-400 hover:text-amber-200">
             <Home className="h-4 w-4 mr-2" />
             Home
           </Button>
@@ -79,19 +79,19 @@ export default function OwnerLogin() {
       </header>
 
       <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-teal-200" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
+        <Card className="w-full max-w-md border-amber-900/20" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+            <CardTitle className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
               Provider Login
             </CardTitle>
-            <CardDescription className="text-gray-500">
+            <CardDescription className="text-stone-400">
               Sign in to manage your Adult Family Home listings
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-600">Email Address</Label>
+                <Label htmlFor="email" className="text-stone-300">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -99,12 +99,12 @@ export default function OwnerLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting}
-                  className="bg-gray-100 border-teal-300 text-gray-800"
+                  className="bg-stone-900/50 border-amber-900/30 text-stone-100"
                   data-testid="input-login-email"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-600">Password</Label>
+                <Label htmlFor="password" className="text-stone-300">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -113,13 +113,13 @@ export default function OwnerLogin() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isSubmitting}
-                    className="bg-gray-100 border-teal-300 text-gray-800 pr-10"
+                    className="bg-stone-900/50 border-amber-900/30 text-stone-100 pr-10"
                     data-testid="input-login-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -142,10 +142,10 @@ export default function OwnerLogin() {
                   "Sign In"
                 )}
               </Button>
-              <div className="text-center text-sm text-gray-500">
+              <div className="text-center text-sm text-stone-400">
                 <p>
                   Don't have an account?{" "}
-                  <Link href="/search" className="text-teal-500 hover:text-amber-300">
+                  <Link href="/search" className="text-amber-400 hover:text-amber-300">
                     Find your facility
                   </Link>
                   {" "}and claim it.

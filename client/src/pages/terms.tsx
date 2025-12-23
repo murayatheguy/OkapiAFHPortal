@@ -3,8 +3,8 @@ import { ArrowLeft } from "lucide-react";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
-      <header className="sticky top-0 z-50 border-b border-teal-200" style={{ backgroundColor: 'rgba(13, 26, 20, 0.95)', backdropFilter: 'blur(8px)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
+      <header className="sticky top-0 z-50 border-b border-amber-900/20" style={{ backgroundColor: 'rgba(13, 26, 20, 0.95)', backdropFilter: 'blur(8px)' }}>
         <div className="px-5 md:px-12 py-4 flex items-center justify-between max-w-6xl mx-auto">
           <Link href="/">
             <a className="flex items-center gap-1.5 cursor-pointer">
@@ -17,7 +17,7 @@ export default function TermsPage() {
             </a>
           </Link>
           <Link href="/">
-            <a className="flex items-center gap-2 text-gray-500 hover:text-teal-600 transition-colors" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem' }}>
+            <a className="flex items-center gap-2 text-stone-400 hover:text-amber-200 transition-colors" style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem' }}>
               <ArrowLeft className="w-4 h-4" />
               Back to Home
             </a>
@@ -34,11 +34,11 @@ export default function TermsPage() {
         </p>
 
         <div className="prose prose-invert max-w-none" style={{ fontFamily: "'Jost', sans-serif", color: '#c4c0b8' }}>
-          <p className="text-gray-600 leading-relaxed mb-6">
+          <p className="text-stone-300 leading-relaxed mb-6">
             Welcome to the Okapi Care Network. These Terms of Use ("Terms") govern your access to and use of okapicarenetwork.com, our mobile applications, and all related services (collectively, the "Platform") operated by Okapi Health, Inc. ("Okapi," "we," "us," or "our").
           </p>
 
-          <p className="text-teal-600 font-medium mb-6">
+          <p className="text-amber-200 font-medium mb-6">
             BY ACCESSING OR USING THE PLATFORM, YOU AGREE TO BE BOUND BY THESE TERMS. IF YOU DO NOT AGREE TO THESE TERMS, DO NOT USE THE PLATFORM.
           </p>
 
@@ -50,7 +50,7 @@ export default function TermsPage() {
               <li><strong>Transport Marketplace:</strong> A booking platform connecting users with non-emergency medical transportation (NEMT) providers.</li>
               <li><strong>Okapi Academy:</strong> An online learning management system offering DSHS-compliant training courses for caregivers.</li>
             </ul>
-            <p className="text-teal-600 mt-4">
+            <p className="text-amber-200 mt-4">
               IMPORTANT: Okapi does not employ any caregiver, operate any care facility, or provide any care services directly. We are a technology platform that facilitates connections between users.
             </p>
           </Section>
@@ -98,7 +98,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="10. Disclaimers and Limitations">
-            <p className="text-teal-600">
+            <p className="text-amber-200">
               THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. OKAPI DOES NOT GUARANTEE THE QUALITY, SAFETY, OR SUITABILITY OF ANY CARE FACILITY. YOU ARE SOLELY RESPONSIBLE FOR EVALUATING AND SELECTING CARE FACILITIES.
             </p>
           </Section>
@@ -114,7 +114,7 @@ export default function TermsPage() {
         </div>
       </main>
 
-      <footer className="py-8 border-t border-teal-200" style={{ backgroundColor: '#0a1410' }}>
+      <footer className="py-8 border-t border-amber-900/20" style={{ backgroundColor: '#0a1410' }}>
         <div className="px-5 md:px-12 max-w-6xl mx-auto text-center">
           <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', color: '#6b7c72' }}>
             © 2024 Okapi Care Network. All rights reserved.
@@ -131,7 +131,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.5rem', fontWeight: 400, color: '#c9a962', marginBottom: '1rem' }}>
         {title}
       </h2>
-      <div className="text-gray-600 leading-relaxed space-y-3 text-sm">
+      <div className="text-stone-300 leading-relaxed space-y-3 text-sm">
         {children}
       </div>
     </section>

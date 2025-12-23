@@ -202,7 +202,7 @@ export function LocationAutocomplete({
 
       {showDropdown && predictions.length > 0 && (
         <div 
-          className="absolute left-0 right-0 mt-1 bg-[#1a2f25] border border-teal-300 rounded-lg shadow-xl z-50 overflow-hidden"
+          className="absolute left-0 right-0 mt-1 bg-[#1a2f25] border border-amber-900/30 rounded-lg shadow-xl z-50 overflow-hidden"
           style={{ maxHeight: '280px', overflowY: 'auto' }}
         >
           {predictions.map((prediction, index) => (
@@ -212,8 +212,8 @@ export function LocationAutocomplete({
               onClick={() => handleSelectPrediction(prediction)}
               className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 ${
                 index === selectedIndex 
-                  ? 'bg-teal-100' 
-                  : 'hover:bg-teal-50'
+                  ? 'bg-amber-900/30' 
+                  : 'hover:bg-amber-900/20'
               }`}
               data-testid={`location-item-${index}`}
             >
@@ -229,7 +229,7 @@ export function LocationAutocomplete({
               </svg>
               <div className="flex-1 min-w-0">
                 <p 
-                  className="text-gray-700 text-sm truncate"
+                  className="text-stone-200 text-sm truncate"
                   style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400 }}
                 >
                   {prediction.structured_formatting.main_text}
@@ -244,7 +244,7 @@ export function LocationAutocomplete({
             </button>
           ))}
           <div 
-            className="px-4 py-2 text-xs text-stone-600 border-t border-teal-200"
+            className="px-4 py-2 text-xs text-stone-600 border-t border-amber-900/20"
             style={{ fontFamily: "'Jost', sans-serif" }}
           >
             Powered by Google

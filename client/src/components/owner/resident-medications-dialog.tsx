@@ -128,10 +128,10 @@ export function ResidentMedicationsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-teal-300">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-stone-900 border-amber-900/30">
           <DialogHeader>
-            <DialogTitle className="text-gray-700 flex items-center gap-2">
-              <Pill className="h-5 w-5 text-teal-500" />
+            <DialogTitle className="text-stone-200 flex items-center gap-2">
+              <Pill className="h-5 w-5 text-amber-400" />
               Medications for {residentName}
             </DialogTitle>
             <DialogDescription className="text-stone-500">
@@ -145,7 +145,7 @@ export function ResidentMedicationsDialog({
                 {activeMeds.length} Active
               </Badge>
               {discontinuedMeds.length > 0 && (
-                <Badge variant="outline" className="border-stone-600 text-gray-500">
+                <Badge variant="outline" className="border-stone-600 text-stone-400">
                   {discontinuedMeds.length} Discontinued
                 </Badge>
               )}
@@ -164,12 +164,12 @@ export function ResidentMedicationsDialog({
 
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
+              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
             </div>
           ) : medications.length === 0 ? (
             <div className="text-center py-8">
               <Pill className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-              <p className="text-gray-500">No medications on file</p>
+              <p className="text-stone-400">No medications on file</p>
               <p className="text-stone-500 text-sm mt-1">
                 Click "Add Medication" to add the first prescription
               </p>
@@ -179,25 +179,25 @@ export function ResidentMedicationsDialog({
               {/* Active Medications */}
               {activeMeds.length > 0 && (
                 <div>
-                  <h3 className="text-gray-600 font-medium mb-2">Active Medications</h3>
+                  <h3 className="text-stone-300 font-medium mb-2">Active Medications</h3>
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow className="border-teal-200">
-                          <TableHead className="text-gray-500">Medication</TableHead>
-                          <TableHead className="text-gray-500">Dosage</TableHead>
-                          <TableHead className="text-gray-500">Frequency</TableHead>
-                          <TableHead className="text-gray-500">Prescriber</TableHead>
-                          <TableHead className="text-gray-500">Started</TableHead>
-                          <TableHead className="text-gray-500">Actions</TableHead>
+                        <TableRow className="border-amber-900/20">
+                          <TableHead className="text-stone-400">Medication</TableHead>
+                          <TableHead className="text-stone-400">Dosage</TableHead>
+                          <TableHead className="text-stone-400">Frequency</TableHead>
+                          <TableHead className="text-stone-400">Prescriber</TableHead>
+                          <TableHead className="text-stone-400">Started</TableHead>
+                          <TableHead className="text-stone-400">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {activeMeds.map((med) => (
-                          <TableRow key={med.id} className="border-teal-200">
+                          <TableRow key={med.id} className="border-amber-900/20">
                             <TableCell>
                               <div>
-                                <div className="text-gray-700 font-medium">{med.name}</div>
+                                <div className="text-stone-200 font-medium">{med.name}</div>
                                 {med.instructions && (
                                   <div className="text-stone-500 text-xs mt-1 max-w-xs truncate">
                                     {med.instructions}
@@ -205,7 +205,7 @@ export function ResidentMedicationsDialog({
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="text-gray-500">
+                            <TableCell className="text-stone-400">
                               <div>
                                 {med.dosage || "—"}
                               </div>
@@ -214,12 +214,12 @@ export function ResidentMedicationsDialog({
                               )}
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="border-teal-300 text-gray-600">
+                              <Badge variant="outline" className="border-amber-900/30 text-stone-300">
                                 <Clock className="h-3 w-3 mr-1" />
                                 {med.frequency?.interval || "PRN"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-gray-500">
+                            <TableCell className="text-stone-400">
                               {med.prescribedBy ? (
                                 <span className="flex items-center gap-1">
                                   <User className="h-3 w-3" />
@@ -229,7 +229,7 @@ export function ResidentMedicationsDialog({
                                 "—"
                               )}
                             </TableCell>
-                            <TableCell className="text-gray-500">
+                            <TableCell className="text-stone-400">
                               {formatDate(med.startDate)}
                             </TableCell>
                             <TableCell>
@@ -237,7 +237,7 @@ export function ResidentMedicationsDialog({
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="text-teal-500 hover:text-amber-300 hover:bg-teal-50 h-8 px-2"
+                                  className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20 h-8 px-2"
                                   onClick={() => {
                                     setEditingMed(med);
                                     setAddMedOpen(true);
@@ -270,7 +270,7 @@ export function ResidentMedicationsDialog({
                   <div className="overflow-x-auto opacity-60">
                     <Table>
                       <TableHeader>
-                        <TableRow className="border-gray-200">
+                        <TableRow className="border-stone-700">
                           <TableHead className="text-stone-500">Medication</TableHead>
                           <TableHead className="text-stone-500">Dosage</TableHead>
                           <TableHead className="text-stone-500">Prescriber</TableHead>
@@ -279,8 +279,8 @@ export function ResidentMedicationsDialog({
                       </TableHeader>
                       <TableBody>
                         {discontinuedMeds.map((med) => (
-                          <TableRow key={med.id} className="border-gray-200">
-                            <TableCell className="text-gray-500">{med.name}</TableCell>
+                          <TableRow key={med.id} className="border-stone-700">
+                            <TableCell className="text-stone-400">{med.name}</TableCell>
                             <TableCell className="text-stone-500">
                               {med.dosage || "—"}
                             </TableCell>
@@ -315,19 +315,19 @@ export function ResidentMedicationsDialog({
         open={!!discontinuingMed}
         onOpenChange={(open) => !open && setDiscontinuingMed(null)}
       >
-        <AlertDialogContent className="bg-white border-teal-300">
+        <AlertDialogContent className="bg-stone-900 border-amber-900/30">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-700">
+            <AlertDialogTitle className="text-stone-200">
               Discontinue Medication?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-500">
+            <AlertDialogDescription className="text-stone-400">
               Are you sure you want to discontinue{" "}
-              <span className="text-teal-500 font-medium">{discontinuingMed?.name}</span> for{" "}
+              <span className="text-amber-400 font-medium">{discontinuingMed?.name}</span> for{" "}
               {residentName}? This medication will be marked as discontinued with today's date.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-gray-200 text-gray-600">
+            <AlertDialogCancel className="border-stone-700 text-stone-300">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

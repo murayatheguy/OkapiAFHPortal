@@ -196,8 +196,8 @@ export default function OwnerDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d1a14' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
@@ -211,8 +211,8 @@ export default function OwnerDashboardPage() {
   const pendingClaims = claims.filter(c => c.status === "pending" || c.status === "verified").length;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-teal-200">
+    <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
+      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/20">
         <Link href="/" className="flex items-center gap-1.5">
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
@@ -223,12 +223,12 @@ export default function OwnerDashboardPage() {
         </Link>
 
         <div className="flex items-center gap-4">
-          <span className="text-gray-500 text-sm hidden md:inline">
+          <span className="text-stone-400 text-sm hidden md:inline">
             Welcome, {owner?.name || "Provider"}
           </span>
           <Button 
             variant="ghost" 
-            className="text-gray-500 hover:text-teal-600"
+            className="text-stone-400 hover:text-amber-200"
             onClick={handleLogout}
             data-testid="button-logout"
           >
@@ -239,12 +239,12 @@ export default function OwnerDashboardPage() {
       </header>
 
       <div className="flex">
-        <aside className="hidden md:flex w-64 min-h-[calc(100vh-73px)] flex-col border-r border-teal-200 p-4">
+        <aside className="hidden md:flex w-64 min-h-[calc(100vh-73px)] flex-col border-r border-amber-900/20 p-4">
           {facilities.length > 1 && (
             <div className="mb-6">
               <label className="text-xs text-stone-500 mb-2 block">Select Facility</label>
               <Select value={selectedFacilityId || ""} onValueChange={setSelectedFacilityId}>
-                <SelectTrigger className="bg-gray-100 border-teal-300 text-gray-800">
+                <SelectTrigger className="bg-stone-900/50 border-amber-900/30 text-stone-100">
                   <SelectValue placeholder="Select facility" />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,8 +271,8 @@ export default function OwnerDashboardPage() {
                 onClick={() => setActiveSection(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
                   activeSection === item.id 
-                    ? "bg-teal-100 text-teal-600" 
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50/50"
+                    ? "bg-amber-900/30 text-amber-200" 
+                    : "text-stone-400 hover:text-stone-200 hover:bg-stone-800/50"
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -285,12 +285,12 @@ export default function OwnerDashboardPage() {
               </button>
             ))}
             
-            <div className="pt-4 mt-4 border-t border-teal-200">
+            <div className="pt-4 mt-4 border-t border-amber-900/20">
               <a
                 href="https://okapi-health-ai-info10705.replit.app/academy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50/50"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-stone-400 hover:text-stone-200 hover:bg-stone-800/50"
               >
                 <span className="flex items-center gap-2">
                   <GraduationCap className="h-4 w-4" />
@@ -302,9 +302,9 @@ export default function OwnerDashboardPage() {
           </nav>
 
           {pendingClaims > 0 && (
-            <Card className="mt-4 border-amber-600/30 bg-teal-50/50">
+            <Card className="mt-4 border-amber-600/30 bg-amber-900/10">
               <CardContent className="p-3">
-                <div className="flex items-center gap-2 text-teal-500 text-sm">
+                <div className="flex items-center gap-2 text-amber-400 text-sm">
                   <Clock className="h-4 w-4" />
                   <span>{pendingClaims} pending claim{pendingClaims > 1 ? 's' : ''}</span>
                 </div>
@@ -317,10 +317,10 @@ export default function OwnerDashboardPage() {
           {facilities.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
               <Building2 className="h-16 w-16 text-stone-600 mb-4" />
-              <h2 className="text-2xl text-gray-700 mb-2" style={{ fontFamily: "'Cormorant', serif" }}>
+              <h2 className="text-2xl text-stone-200 mb-2" style={{ fontFamily: "'Cormorant', serif" }}>
                 No Facilities Yet
               </h2>
-              <p className="text-gray-500 mb-6 max-w-md">
+              <p className="text-stone-400 mb-6 max-w-md">
                 You don't have any facilities linked to your account yet. 
                 {pendingClaims > 0 
                   ? ` You have ${pendingClaims} claim${pendingClaims > 1 ? 's' : ''} pending review.`
@@ -337,20 +337,20 @@ export default function OwnerDashboardPage() {
               {activeSection === "overview" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+                    <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                       {selectedFacility?.name || "Dashboard"}
                     </h1>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        className="border-teal-300 text-gray-600 hover:text-teal-600"
+                        className="border-amber-900/30 text-stone-300 hover:text-amber-200"
                         onClick={() => setShowEditDialog(true)}
                       >
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit Facility
                       </Button>
                       <Link href={`/facility/${selectedFacility?.slug || selectedFacilityId}`}>
-                        <Button variant="outline" className="border-teal-300 text-gray-600 hover:text-teal-600">
+                        <Button variant="outline" className="border-amber-900/30 text-stone-300 hover:text-amber-200">
                           View Public Listing
                           <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
@@ -359,34 +359,34 @@ export default function OwnerDashboardPage() {
                   </div>
 
                   <div className="grid md:grid-cols-4 gap-4">
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-4">
-                        <div className="text-gray-500 text-sm">Capacity</div>
-                        <div className="text-2xl text-teal-700 font-semibold">
+                        <div className="text-stone-400 text-sm">Capacity</div>
+                        <div className="text-2xl text-amber-100 font-semibold">
                           {selectedFacility?.capacity || 0}
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-4">
-                        <div className="text-gray-500 text-sm">Available Beds</div>
-                        <div className="text-2xl text-teal-700 font-semibold">
+                        <div className="text-stone-400 text-sm">Available Beds</div>
+                        <div className="text-2xl text-amber-100 font-semibold">
                           {selectedFacility?.availableBeds || 0}
                         </div>
                       </CardContent>
                     </Card>
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-4">
-                        <div className="text-gray-500 text-sm">New Inquiries</div>
-                        <div className="text-2xl text-teal-700 font-semibold">{newInquiries}</div>
+                        <div className="text-stone-400 text-sm">New Inquiries</div>
+                        <div className="text-2xl text-amber-100 font-semibold">{newInquiries}</div>
                       </CardContent>
                     </Card>
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-4">
-                        <div className="text-gray-500 text-sm">Rating</div>
+                        <div className="text-stone-400 text-sm">Rating</div>
                         <div className="flex items-center gap-1">
-                          <Star className="h-5 w-5 text-teal-500 fill-amber-400" />
-                          <span className="text-2xl text-teal-700 font-semibold">
+                          <Star className="h-5 w-5 text-amber-400 fill-amber-400" />
+                          <span className="text-2xl text-amber-100 font-semibold">
                             {selectedFacility?.rating || "N/A"}
                           </span>
                           <span className="text-stone-500 text-sm">
@@ -403,7 +403,7 @@ export default function OwnerDashboardPage() {
                         <AlertCircle className="h-5 w-5 text-red-400" />
                         <div>
                           <div className="text-red-400 font-medium">Compliance Alert</div>
-                          <div className="text-gray-500 text-sm">
+                          <div className="text-stone-400 text-sm">
                             {selectedFacility.violationsCount} violation{selectedFacility.violationsCount > 1 ? 's' : ''} on record
                           </div>
                         </div>
@@ -415,7 +415,7 @@ export default function OwnerDashboardPage() {
                         <CheckCircle2 className="h-5 w-5 text-green-400" />
                         <div>
                           <div className="text-green-400 font-medium">Good Standing</div>
-                          <div className="text-gray-500 text-sm">No compliance violations on record</div>
+                          <div className="text-stone-400 text-sm">No compliance violations on record</div>
                         </div>
                       </CardContent>
                     </Card>
@@ -426,7 +426,7 @@ export default function OwnerDashboardPage() {
               {activeSection === "team" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+                    <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                       Team Members
                     </h1>
                     <Button
@@ -439,14 +439,14 @@ export default function OwnerDashboardPage() {
                   </div>
 
                   {teamMembers.length === 0 ? (
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-8 text-center">
                         <Users className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                        <p className="text-gray-500">No team members added yet.</p>
+                        <p className="text-stone-400">No team members added yet.</p>
                         <Button
                           onClick={() => setShowAddTeamMemberDialog(true)}
                           variant="outline"
-                          className="mt-4 border-teal-300 text-teal-600 hover:bg-teal-50"
+                          className="mt-4 border-amber-900/30 text-amber-200 hover:bg-amber-900/20"
                         >
                           <UserPlus className="h-4 w-4 mr-2" />
                           Add Your First Team Member
@@ -456,17 +456,17 @@ export default function OwnerDashboardPage() {
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {teamMembers.map(member => (
-                        <Card key={member.id} className="border-teal-200 bg-gray-50">
+                        <Card key={member.id} className="border-amber-900/20 bg-stone-900/30">
                           <CardContent className="p-4">
                             <div className="flex items-center gap-3">
                               <Avatar>
                                 <AvatarImage src={member.avatarUrl || undefined} />
-                                <AvatarFallback className="bg-teal-100 text-teal-600">
+                                <AvatarFallback className="bg-amber-900/30 text-amber-200">
                                   {member.name.split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
-                                <div className="text-gray-700 font-medium">{member.name}</div>
+                                <div className="text-stone-200 font-medium">{member.name}</div>
                                 <div className="text-stone-500 text-sm capitalize">{member.role.replace('_', ' ')}</div>
                               </div>
                               <Badge className={member.status === 'active' ? 'bg-green-600' : 'bg-stone-600'}>
@@ -483,26 +483,26 @@ export default function OwnerDashboardPage() {
 
               {activeSection === "inquiries" && (
                 <div className="space-y-6">
-                  <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+                  <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                     Inquiries
                   </h1>
                   
                   {inquiries.length === 0 ? (
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-8 text-center">
                         <MessageSquare className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                        <p className="text-gray-500">No inquiries yet.</p>
+                        <p className="text-stone-400">No inquiries yet.</p>
                       </CardContent>
                     </Card>
                   ) : (
                     <div className="space-y-4">
                       {inquiries.map(inquiry => (
-                        <Card key={inquiry.id} className="border-teal-200 bg-gray-50">
+                        <Card key={inquiry.id} className="border-amber-900/20 bg-stone-900/30">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-gray-700 font-medium">{inquiry.name}</span>
+                                  <span className="text-stone-200 font-medium">{inquiry.name}</span>
                                   <Badge 
                                     variant={inquiry.status === "new" ? "default" : "secondary"}
                                     className={inquiry.status === "new" ? "bg-amber-600" : ""}
@@ -510,7 +510,7 @@ export default function OwnerDashboardPage() {
                                     {inquiry.status}
                                   </Badge>
                                 </div>
-                                <p className="text-gray-500 text-sm mb-2">{inquiry.message}</p>
+                                <p className="text-stone-400 text-sm mb-2">{inquiry.message}</p>
                                 <div className="flex items-center gap-4 text-stone-500 text-xs">
                                   <span className="flex items-center gap-1">
                                     <Mail className="h-3 w-3" />
@@ -528,7 +528,7 @@ export default function OwnerDashboardPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="border-teal-300 text-teal-600"
+                                  className="border-amber-900/30 text-amber-200"
                                   onClick={() => updateInquiryMutation.mutate({ 
                                     id: inquiry.id, 
                                     data: { status: "contacted" } 
@@ -548,38 +548,38 @@ export default function OwnerDashboardPage() {
 
               {activeSection === "reviews" && (
                 <div className="space-y-6">
-                  <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+                  <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                     Reviews
                   </h1>
                   
                   {reviews.length === 0 ? (
-                    <Card className="border-teal-200 bg-gray-50">
+                    <Card className="border-amber-900/20 bg-stone-900/30">
                       <CardContent className="p-8 text-center">
                         <Star className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                        <p className="text-gray-500">No reviews yet.</p>
+                        <p className="text-stone-400">No reviews yet.</p>
                       </CardContent>
                     </Card>
                   ) : (
                     <div className="space-y-4">
                       {reviews.map(review => (
-                        <Card key={review.id} className="border-teal-200 bg-gray-50">
+                        <Card key={review.id} className="border-amber-900/20 bg-stone-900/30">
                           <CardContent className="p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <div className="flex">
                                 {[1,2,3,4,5].map(i => (
                                   <Star 
                                     key={i}
-                                    className={`h-4 w-4 ${i <= review.rating ? "text-teal-500 fill-amber-400" : "text-stone-600"}`}
+                                    className={`h-4 w-4 ${i <= review.rating ? "text-amber-400 fill-amber-400" : "text-stone-600"}`}
                                   />
                                 ))}
                               </div>
-                              <span className="text-gray-500 text-sm">by {review.authorName}</span>
+                              <span className="text-stone-400 text-sm">by {review.authorName}</span>
                             </div>
-                            <p className="text-gray-600">{review.content}</p>
+                            <p className="text-stone-300">{review.content}</p>
                             {review.ownerResponse && (
-                              <div className="mt-3 pl-4 border-l-2 border-teal-300">
+                              <div className="mt-3 pl-4 border-l-2 border-amber-900/30">
                                 <p className="text-stone-500 text-sm">Your response:</p>
-                                <p className="text-gray-500 text-sm">{review.ownerResponse}</p>
+                                <p className="text-stone-400 text-sm">{review.ownerResponse}</p>
                               </div>
                             )}
                           </CardContent>
@@ -593,27 +593,27 @@ export default function OwnerDashboardPage() {
               {activeSection === "transport" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+                    <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                       Transport Marketplace
                     </h1>
                   </div>
 
                   <Tabs value={transportTab} onValueChange={setTransportTab} className="w-full">
-                    <TabsList className="bg-gray-100 border border-teal-200">
-                      <TabsTrigger value="browse" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600">
+                    <TabsList className="bg-stone-900/50 border border-amber-900/20">
+                      <TabsTrigger value="browse" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200">
                         Browse Providers
                       </TabsTrigger>
-                      <TabsTrigger value="saved" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600">
+                      <TabsTrigger value="saved" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200">
                         Saved ({savedProviders.length})
                       </TabsTrigger>
-                      <TabsTrigger value="bookings" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-600">
+                      <TabsTrigger value="bookings" className="data-[state=active]:bg-amber-900/30 data-[state=active]:text-amber-200">
                         My Bookings ({transportBookings.length})
                       </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="browse" className="mt-6">
-                      <div className="mb-6 p-4 bg-gray-50 border border-teal-200 rounded-lg">
-                        <p className="text-gray-600 text-sm">
+                      <div className="mb-6 p-4 bg-stone-900/30 border border-amber-900/20 rounded-lg">
+                        <p className="text-stone-300 text-sm">
                           Browse trusted non-emergency medical transport (NEMT) providers serving Washington State. 
                           Compare services, pricing, and reviews to find the best option for your residents.
                         </p>
@@ -621,13 +621,13 @@ export default function OwnerDashboardPage() {
 
                       {loadingProviders ? (
                         <div className="flex items-center justify-center py-12">
-                          <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+                          <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
                         </div>
                       ) : transportProviders.length === 0 ? (
-                        <Card className="border-teal-200 bg-gray-50">
+                        <Card className="border-amber-900/20 bg-stone-900/30">
                           <CardContent className="p-8 text-center">
                             <Car className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                            <p className="text-gray-500">No transport providers available yet.</p>
+                            <p className="text-stone-400">No transport providers available yet.</p>
                           </CardContent>
                         </Card>
                       ) : (
@@ -635,19 +635,19 @@ export default function OwnerDashboardPage() {
                           {transportProviders.map(provider => {
                             const isSaved = savedProviders.some((s: any) => s.providerId === provider.id);
                             return (
-                              <Card key={provider.id} className="border-teal-200 bg-gray-50 hover:border-amber-600/40 transition-colors">
+                              <Card key={provider.id} className="border-amber-900/20 bg-stone-900/30 hover:border-amber-600/40 transition-colors">
                                 <CardHeader className="pb-3">
                                   <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                       {provider.logoUrl ? (
                                         <img src={provider.logoUrl} alt={provider.name} className="h-12 w-12 rounded-lg object-cover" />
                                       ) : (
-                                        <div className="h-12 w-12 rounded-lg bg-teal-100 flex items-center justify-center">
-                                          <Car className="h-6 w-6 text-teal-500" />
+                                        <div className="h-12 w-12 rounded-lg bg-amber-900/30 flex items-center justify-center">
+                                          <Car className="h-6 w-6 text-amber-400" />
                                         </div>
                                       )}
                                       <div>
-                                        <CardTitle className="text-gray-700 text-lg flex items-center gap-2">
+                                        <CardTitle className="text-stone-200 text-lg flex items-center gap-2">
                                           {provider.name}
                                           {provider.isFeatured && (
                                             <Badge className="bg-amber-600 text-xs">Featured</Badge>
@@ -655,8 +655,8 @@ export default function OwnerDashboardPage() {
                                         </CardTitle>
                                         {provider.rating && parseFloat(provider.rating) > 0 && (
                                           <div className="flex items-center gap-1 mt-1">
-                                            <Star className="h-3.5 w-3.5 text-teal-500 fill-amber-400" />
-                                            <span className="text-teal-600 text-sm">{provider.rating}</span>
+                                            <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+                                            <span className="text-amber-200 text-sm">{provider.rating}</span>
                                             <span className="text-stone-500 text-xs">({provider.reviewCount} reviews)</span>
                                           </div>
                                         )}
@@ -665,7 +665,7 @@ export default function OwnerDashboardPage() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className={isSaved ? "text-teal-500" : "text-stone-500 hover:text-teal-500"}
+                                      className={isSaved ? "text-amber-400" : "text-stone-500 hover:text-amber-400"}
                                       onClick={() => isSaved 
                                         ? unsaveProviderMutation.mutate(provider.id)
                                         : saveProviderMutation.mutate(provider.id)
@@ -678,12 +678,12 @@ export default function OwnerDashboardPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                   {provider.description && (
-                                    <p className="text-gray-500 text-sm line-clamp-2">{provider.description}</p>
+                                    <p className="text-stone-400 text-sm line-clamp-2">{provider.description}</p>
                                   )}
                                   
                                   <div className="flex flex-wrap gap-2">
                                     {(provider.vehicleTypes as string[] || []).slice(0, 3).map((type, i) => (
-                                      <Badge key={i} variant="outline" className="border-gray-200 text-gray-500 text-xs">
+                                      <Badge key={i} variant="outline" className="border-stone-700 text-stone-400 text-xs">
                                         {type}
                                       </Badge>
                                     ))}
@@ -721,7 +721,7 @@ export default function OwnerDashboardPage() {
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        className="border-teal-300 text-gray-600"
+                                        className="border-amber-900/30 text-stone-300"
                                         asChild
                                       >
                                         <a href={provider.website} target="_blank" rel="noopener noreferrer">
@@ -740,25 +740,25 @@ export default function OwnerDashboardPage() {
 
                     <TabsContent value="saved" className="mt-6">
                       {savedProviders.length === 0 ? (
-                        <Card className="border-teal-200 bg-gray-50">
+                        <Card className="border-amber-900/20 bg-stone-900/30">
                           <CardContent className="p-8 text-center">
                             <Bookmark className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                            <p className="text-gray-500">No saved providers yet.</p>
+                            <p className="text-stone-400">No saved providers yet.</p>
                             <p className="text-stone-500 text-sm mt-1">Browse providers and save your favorites for quick access.</p>
                           </CardContent>
                         </Card>
                       ) : (
                         <div className="grid md:grid-cols-2 gap-4">
                           {savedProviders.map((saved: any) => (
-                            <Card key={saved.id} className="border-teal-200 bg-gray-50">
+                            <Card key={saved.id} className="border-amber-900/20 bg-stone-900/30">
                               <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-lg bg-teal-100 flex items-center justify-center">
-                                      <Car className="h-5 w-5 text-teal-500" />
+                                    <div className="h-10 w-10 rounded-lg bg-amber-900/30 flex items-center justify-center">
+                                      <Car className="h-5 w-5 text-amber-400" />
                                     </div>
                                     <div>
-                                      <div className="text-gray-700 font-medium">{saved.provider?.name}</div>
+                                      <div className="text-stone-200 font-medium">{saved.provider?.name}</div>
                                       <div className="text-stone-500 text-xs">Saved provider</div>
                                     </div>
                                   </div>
@@ -792,22 +792,22 @@ export default function OwnerDashboardPage() {
 
                     <TabsContent value="bookings" className="mt-6">
                       {transportBookings.length === 0 ? (
-                        <Card className="border-teal-200 bg-gray-50">
+                        <Card className="border-amber-900/20 bg-stone-900/30">
                           <CardContent className="p-8 text-center">
                             <Calendar className="h-12 w-12 text-stone-600 mx-auto mb-3" />
-                            <p className="text-gray-500">No bookings yet.</p>
+                            <p className="text-stone-400">No bookings yet.</p>
                             <p className="text-stone-500 text-sm mt-1">Browse transport providers and schedule rides for your residents.</p>
                           </CardContent>
                         </Card>
                       ) : (
                         <div className="space-y-4">
                           {transportBookings.map(booking => (
-                            <Card key={booking.id} className="border-teal-200 bg-gray-50">
+                            <Card key={booking.id} className="border-amber-900/20 bg-stone-900/30">
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between">
                                   <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-gray-700 font-medium">#{booking.bookingNumber}</span>
+                                      <span className="text-stone-200 font-medium">#{booking.bookingNumber}</span>
                                       <Badge 
                                         className={
                                           booking.status === 'confirmed' ? 'bg-green-600' :
@@ -820,7 +820,7 @@ export default function OwnerDashboardPage() {
                                         {booking.status}
                                       </Badge>
                                     </div>
-                                    <div className="text-gray-500 text-sm space-y-1">
+                                    <div className="text-stone-400 text-sm space-y-1">
                                       <div className="flex items-center gap-2">
                                         <Calendar className="h-3.5 w-3.5" />
                                         {new Date(booking.pickupDate).toLocaleDateString()} at {booking.pickupTime}
@@ -865,28 +865,28 @@ export default function OwnerDashboardPage() {
 
               {activeSection === "settings" && (
                 <div className="space-y-6">
-                  <h1 className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+                  <h1 className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                     Settings
                   </h1>
                   
-                  <Card className="border-teal-200 bg-gray-50">
+                  <Card className="border-amber-900/20 bg-stone-900/30">
                     <CardHeader>
-                      <CardTitle className="text-gray-700">Account Information</CardTitle>
+                      <CardTitle className="text-stone-200">Account Information</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
                         <label className="text-stone-500 text-sm">Name</label>
-                        <div className="text-gray-700">{owner?.name}</div>
+                        <div className="text-stone-200">{owner?.name}</div>
                       </div>
-                      <Separator className="bg-teal-50" />
+                      <Separator className="bg-amber-900/20" />
                       <div>
                         <label className="text-stone-500 text-sm">Email</label>
-                        <div className="text-gray-700">{owner?.email}</div>
+                        <div className="text-stone-200">{owner?.email}</div>
                       </div>
-                      <Separator className="bg-teal-50" />
+                      <Separator className="bg-amber-900/20" />
                       <div>
                         <label className="text-stone-500 text-sm">Phone</label>
-                        <div className="text-gray-700">{owner?.phone || "Not set"}</div>
+                        <div className="text-stone-200">{owner?.phone || "Not set"}</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -898,12 +898,12 @@ export default function OwnerDashboardPage() {
       </div>
 
       <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
-        <DialogContent className="bg-white border-teal-300 max-w-lg">
+        <DialogContent className="bg-stone-900 border-amber-900/30 max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+            <DialogTitle className="text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
               Request Transport
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-stone-400">
               {selectedProvider?.name ? `Schedule a ride with ${selectedProvider.name}` : "Schedule transport for your resident"}
             </DialogDescription>
           </DialogHeader>
@@ -938,10 +938,10 @@ export default function OwnerDashboardPage() {
 
       {/* Add Team Member Dialog */}
       <Dialog open={showAddTeamMemberDialog} onOpenChange={setShowAddTeamMemberDialog}>
-        <DialogContent className="bg-white border-teal-300">
+        <DialogContent className="bg-stone-900 border-amber-900/30">
           <DialogHeader>
-            <DialogTitle className="text-gray-700">Add Team Member</DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogTitle className="text-stone-200">Add Team Member</DialogTitle>
+            <DialogDescription className="text-stone-400">
               Add a new team member to your facility
             </DialogDescription>
           </DialogHeader>
@@ -949,62 +949,62 @@ export default function OwnerDashboardPage() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-600">First Name *</Label>
+                <Label className="text-stone-300">First Name *</Label>
                 <Input
                   value={teamMemberForm.firstName}
                   onChange={(e) => setTeamMemberForm({ ...teamMemberForm, firstName: e.target.value })}
                   placeholder="John"
-                  className="bg-gray-50 border-teal-300 text-gray-700"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-600">Last Name *</Label>
+                <Label className="text-stone-300">Last Name *</Label>
                 <Input
                   value={teamMemberForm.lastName}
                   onChange={(e) => setTeamMemberForm({ ...teamMemberForm, lastName: e.target.value })}
                   placeholder="Smith"
-                  className="bg-gray-50 border-teal-300 text-gray-700"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-600">Email (optional)</Label>
+              <Label className="text-stone-300">Email (optional)</Label>
               <Input
                 type="email"
                 value={teamMemberForm.email}
                 onChange={(e) => setTeamMemberForm({ ...teamMemberForm, email: e.target.value })}
                 placeholder="john@example.com"
-                className="bg-gray-50 border-teal-300 text-gray-700"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-600">Phone (optional)</Label>
+              <Label className="text-stone-300">Phone (optional)</Label>
               <Input
                 type="tel"
                 value={teamMemberForm.phone}
                 onChange={(e) => setTeamMemberForm({ ...teamMemberForm, phone: e.target.value })}
                 placeholder="(555) 123-4567"
-                className="bg-gray-50 border-teal-300 text-gray-700"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-600">Role *</Label>
+              <Label className="text-stone-300">Role *</Label>
               <Select
                 value={teamMemberForm.role}
                 onValueChange={(value) => setTeamMemberForm({ ...teamMemberForm, role: value })}
               >
-                <SelectTrigger className="bg-gray-50 border-teal-300 text-gray-700">
+                <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-50 border-teal-300">
+                <SelectContent className="bg-stone-800 border-amber-900/30">
                   {TEAM_ROLES.map((role) => (
                     <SelectItem
                       key={role.value}
                       value={role.value}
-                      className="text-gray-700 focus:bg-teal-100"
+                      className="text-stone-200 focus:bg-amber-900/30"
                     >
                       {role.label}
                     </SelectItem>
@@ -1014,12 +1014,12 @@ export default function OwnerDashboardPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-600">Hire Date (optional)</Label>
+              <Label className="text-stone-300">Hire Date (optional)</Label>
               <Input
                 type="date"
                 value={teamMemberForm.hireDate}
                 onChange={(e) => setTeamMemberForm({ ...teamMemberForm, hireDate: e.target.value })}
-                className="bg-gray-50 border-teal-300 text-gray-700"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
             </div>
           </div>
@@ -1028,7 +1028,7 @@ export default function OwnerDashboardPage() {
             <Button
               variant="outline"
               onClick={() => setShowAddTeamMemberDialog(false)}
-              className="border-teal-300 text-gray-600"
+              className="border-amber-900/30 text-stone-300"
             >
               Cancel
             </Button>
@@ -1108,20 +1108,20 @@ function BookingForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-gray-500 text-sm">Resident Initials *</label>
+          <label className="text-stone-400 text-sm">Resident Initials *</label>
           <Input
             required
             value={formData.residentInitials}
             onChange={(e) => setFormData({ ...formData, residentInitials: e.target.value })}
             placeholder="e.g. JD"
-            className="bg-gray-50 border-teal-300 text-gray-700"
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
             data-testid="input-resident-initials"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-gray-500 text-sm">Mobility Type *</label>
+          <label className="text-stone-400 text-sm">Mobility Type *</label>
           <Select value={formData.residentMobility} onValueChange={(value) => setFormData({ ...formData, residentMobility: value })}>
-            <SelectTrigger className="bg-gray-50 border-teal-300 text-gray-700">
+            <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1136,58 +1136,58 @@ function BookingForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-gray-500 text-sm">Pickup Date *</label>
+          <label className="text-stone-400 text-sm">Pickup Date *</label>
           <Input
             required
             type="date"
             value={formData.pickupDate}
             onChange={(e) => setFormData({ ...formData, pickupDate: e.target.value })}
-            className="bg-gray-50 border-teal-300 text-gray-700"
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
             data-testid="input-pickup-date"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-gray-500 text-sm">Pickup Time *</label>
+          <label className="text-stone-400 text-sm">Pickup Time *</label>
           <Input
             required
             type="time"
             value={formData.pickupTime}
             onChange={(e) => setFormData({ ...formData, pickupTime: e.target.value })}
-            className="bg-gray-50 border-teal-300 text-gray-700"
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
             data-testid="input-pickup-time"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="text-gray-500 text-sm">Pickup Location *</label>
+        <label className="text-stone-400 text-sm">Pickup Location *</label>
         <Input
           required
           value={formData.pickupLocation}
           onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
           placeholder="e.g. Sunny Care Home, 123 Main St, Seattle"
-          className="bg-gray-50 border-teal-300 text-gray-700"
+          className="bg-stone-800 border-amber-900/30 text-stone-200"
           data-testid="input-pickup-location"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-gray-500 text-sm">Dropoff Location *</label>
+        <label className="text-stone-400 text-sm">Dropoff Location *</label>
         <Input
           required
           value={formData.dropoffLocation}
           onChange={(e) => setFormData({ ...formData, dropoffLocation: e.target.value })}
           placeholder="e.g. Dr. Smith's Office, 456 Medical Center Dr"
-          className="bg-gray-50 border-teal-300 text-gray-700"
+          className="bg-stone-800 border-amber-900/30 text-stone-200"
           data-testid="input-dropoff-location"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-gray-500 text-sm">Trip Type</label>
+          <label className="text-stone-400 text-sm">Trip Type</label>
           <Select value={formData.tripType} onValueChange={(value) => setFormData({ ...formData, tripType: value })}>
-            <SelectTrigger className="bg-gray-50 border-teal-300 text-gray-700">
+            <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1198,24 +1198,24 @@ function BookingForm({
           </Select>
         </div>
         <div className="space-y-2">
-          <label className="text-gray-500 text-sm">Appointment Time</label>
+          <label className="text-stone-400 text-sm">Appointment Time</label>
           <Input
             type="time"
             value={formData.appointmentTime}
             onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
-            className="bg-gray-50 border-teal-300 text-gray-700"
+            className="bg-stone-800 border-amber-900/30 text-stone-200"
             data-testid="input-appointment-time"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="text-gray-500 text-sm">Special Needs</label>
+        <label className="text-stone-400 text-sm">Special Needs</label>
         <Textarea
           value={formData.specialNeeds}
           onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
           placeholder="Any mobility needs, assistance requirements, oxygen, or other notes..."
-          className="bg-gray-50 border-teal-300 text-gray-700 min-h-[80px]"
+          className="bg-stone-800 border-amber-900/30 text-stone-200 min-h-[80px]"
           data-testid="input-special-needs"
         />
       </div>
@@ -1225,7 +1225,7 @@ function BookingForm({
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-teal-300 text-gray-600"
+          className="border-amber-900/30 text-stone-300"
           data-testid="button-cancel-booking"
         >
           Cancel

@@ -103,15 +103,15 @@ export default function OwnerSetup() {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f9fafb' }}>
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d1a14' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f9fafb' }}>
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-teal-200">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0d1a14' }}>
+      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/20">
         <Link href="/" className="flex items-center gap-1.5">
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
@@ -122,7 +122,7 @@ export default function OwnerSetup() {
         </Link>
         
         <Link href="/">
-          <Button variant="ghost" className="text-gray-500 hover:text-teal-600">
+          <Button variant="ghost" className="text-stone-400 hover:text-amber-200">
             <Home className="h-4 w-4 mr-2" />
             Home
           </Button>
@@ -131,12 +131,12 @@ export default function OwnerSetup() {
 
       <div className="flex-1 flex items-center justify-center p-4">
         {!isValid ? (
-          <Card className="w-full max-w-md border-teal-200" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
+          <Card className="w-full max-w-md border-amber-900/20" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-red-400" style={{ fontFamily: "'Cormorant', serif" }}>
                 Invalid or Expired Link
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-stone-400">
                 This setup link is no longer valid. It may have expired or already been used.
               </CardDescription>
             </CardHeader>
@@ -149,15 +149,15 @@ export default function OwnerSetup() {
             </CardFooter>
           </Card>
         ) : setupComplete ? (
-          <Card className="w-full max-w-md border-teal-200" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
+          <Card className="w-full max-w-md border-amber-900/20" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center">
                 <CheckCircle2 className="h-8 w-8 text-green-400" />
               </div>
-              <CardTitle className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+              <CardTitle className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                 Account Ready!
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-stone-400">
                 Your password has been set. You can now sign in to manage your listings.
               </CardDescription>
             </CardHeader>
@@ -170,12 +170,12 @@ export default function OwnerSetup() {
             </CardFooter>
           </Card>
         ) : (
-          <Card className="w-full max-w-md border-teal-200" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
+          <Card className="w-full max-w-md border-amber-900/20" style={{ backgroundColor: 'rgba(20, 35, 28, 0.8)' }}>
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-teal-700" style={{ fontFamily: "'Cormorant', serif" }}>
+              <CardTitle className="text-2xl text-amber-100" style={{ fontFamily: "'Cormorant', serif" }}>
                 Complete Your Account
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-stone-400">
                 {ownerName ? `Welcome, ${ownerName}! ` : ""}
                 Set a password to access your provider dashboard.
               </CardDescription>
@@ -183,7 +183,7 @@ export default function OwnerSetup() {
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-600">Create Password</Label>
+                  <Label htmlFor="password" className="text-stone-300">Create Password</Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -192,20 +192,20 @@ export default function OwnerSetup() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isSubmitting}
-                      className="bg-gray-100 border-teal-300 text-gray-800 pr-10"
+                      className="bg-stone-900/50 border-amber-900/30 text-stone-100 pr-10"
                       data-testid="input-setup-password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-gray-600">Confirm Password</Label>
+                  <Label htmlFor="confirm-password" className="text-stone-300">Confirm Password</Label>
                   <Input
                     id="confirm-password"
                     type={showPassword ? "text" : "password"}
@@ -213,7 +213,7 @@ export default function OwnerSetup() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isSubmitting}
-                    className="bg-gray-100 border-teal-300 text-gray-800"
+                    className="bg-stone-900/50 border-amber-900/30 text-stone-100"
                     data-testid="input-setup-confirm-password"
                   />
                 </div>

@@ -100,13 +100,13 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-white border-teal-300 max-w-md">
+      <DialogContent className="bg-stone-900 border-amber-900/30 max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-teal-700 flex items-center gap-2" style={{ fontFamily: "'Cormorant', serif" }}>
+          <DialogTitle className="text-amber-100 flex items-center gap-2" style={{ fontFamily: "'Cormorant', serif" }}>
             <UserPlus className="h-5 w-5" />
             Invite Staff Member
           </DialogTitle>
-          <DialogDescription className="text-gray-500">
+          <DialogDescription className="text-stone-400">
             Send an invitation to join your facility's care portal
           </DialogDescription>
         </DialogHeader>
@@ -121,18 +121,18 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
             </Alert>
 
             <div className="space-y-2">
-              <Label className="text-gray-500">Invite Link</Label>
+              <Label className="text-stone-400">Invite Link</Label>
               <div className="flex gap-2">
                 <Input
                   value={inviteLink}
                   readOnly
-                  className="bg-gray-50 border-teal-300 text-gray-700 text-sm"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200 text-sm"
                 />
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={copyLink}
-                  className="border-teal-300 text-gray-600 hover:text-teal-600 shrink-0"
+                  className="border-amber-900/30 text-stone-300 hover:text-amber-200 shrink-0"
                 >
                   {copied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -155,46 +155,46 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-gray-500">First Name *</Label>
+                <Label className="text-stone-400">First Name *</Label>
                 <Input
                   required
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   placeholder="Jane"
-                  className="bg-gray-50 border-teal-300 text-gray-700"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-500">Last Name *</Label>
+                <Label className="text-stone-400">Last Name *</Label>
                 <Input
                   required
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   placeholder="Smith"
-                  className="bg-gray-50 border-teal-300 text-gray-700"
+                  className="bg-stone-800 border-amber-900/30 text-stone-200"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-500">Email Address *</Label>
+              <Label className="text-stone-400">Email Address *</Label>
               <Input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="jane.smith@example.com"
-                className="bg-gray-50 border-teal-300 text-gray-700"
+                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-500">Role</Label>
+              <Label className="text-stone-400">Role</Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) => setFormData({ ...formData, role: value })}
               >
-                <SelectTrigger className="bg-gray-50 border-teal-300 text-gray-700">
+                <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -215,7 +215,7 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="border-teal-300 text-gray-600"
+                className="border-amber-900/30 text-stone-300"
               >
                 Cancel
               </Button>
