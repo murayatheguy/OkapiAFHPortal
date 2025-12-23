@@ -913,7 +913,21 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Access denied" });
       }
 
-      const incidents = await storage.getIncidentReportsByFacility(facilityId);
+      let incidents = await storage.getIncidentReportsByFacility(facilityId);
+
+      // Filter by date range if provided
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+
+      if (startDate || endDate) {
+        incidents = incidents.filter((incident) => {
+          const incidentDate = incident.incidentDate;
+          if (startDate && incidentDate < startDate) return false;
+          if (endDate && incidentDate > endDate) return false;
+          return true;
+        });
+      }
+
       res.json(incidents);
     } catch (error) {
       console.error("Error getting facility incidents:", error);
@@ -936,10 +950,19 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Access denied" });
       }
 
-      const days = parseInt(req.query.days as string) || 30;
-      const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      // Support explicit startDate/endDate or fallback to days parameter
+      let startDate: string;
+      let endDate: string | undefined;
 
-      const logs = await storage.getMedicationLogsByFacilityDateRange(facilityId, startDate);
+      if (req.query.startDate) {
+        startDate = req.query.startDate as string;
+        endDate = req.query.endDate as string || undefined;
+      } else {
+        const days = parseInt(req.query.days as string) || 30;
+        startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      }
+
+      const logs = await storage.getMedicationLogsByFacilityDateRange(facilityId, startDate, endDate);
       res.json(logs);
     } catch (error) {
       console.error("Error getting medication logs:", error);

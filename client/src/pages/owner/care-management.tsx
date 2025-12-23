@@ -311,7 +311,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     enabled: !!facilityId,
   });
 
-  // Fetch full incident reports for reports
+  // Fetch full incident reports for reports (with date filtering)
   const { data: fullIncidents = [] } = useQuery<Array<{
     id: string;
     residentId?: string;
@@ -323,9 +323,13 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     dshsReportable: boolean;
     reportedBy: string;
   }>>({
-    queryKey: ["owner-facility-full-incidents", facilityId],
+    queryKey: ["owner-facility-full-incidents", facilityId, reportStartDate, reportEndDate],
     queryFn: async () => {
-      const response = await fetch(`/api/owners/facilities/${facilityId}/ehr/incidents`, {
+      const params = new URLSearchParams();
+      if (reportStartDate) params.set("startDate", reportStartDate);
+      if (reportEndDate) params.set("endDate", reportEndDate);
+      const url = `/api/owners/facilities/${facilityId}/ehr/incidents${params.toString() ? `?${params}` : ""}`;
+      const response = await fetch(url, {
         credentials: "include",
       });
       if (!response.ok) return [];
@@ -334,7 +338,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     enabled: !!facilityId && activeReport === "incident",
   });
 
-  // Fetch medication logs for compliance report
+  // Fetch medication logs for compliance report (with date filtering)
   const { data: medicationLogs = [] } = useQuery<Array<{
     id: string;
     residentId: string;
@@ -343,9 +347,13 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     scheduledTime: string;
     administeredAt?: string;
   }>>({
-    queryKey: ["owner-facility-med-logs", facilityId],
+    queryKey: ["owner-facility-med-logs", facilityId, reportStartDate, reportEndDate],
     queryFn: async () => {
-      const response = await fetch(`/api/owners/facilities/${facilityId}/ehr/medication-logs?days=30`, {
+      const params = new URLSearchParams();
+      if (reportStartDate) params.set("startDate", reportStartDate);
+      if (reportEndDate) params.set("endDate", reportEndDate);
+      const url = `/api/owners/facilities/${facilityId}/ehr/medication-logs?${params}`;
+      const response = await fetch(url, {
         credentials: "include",
       });
       if (!response.ok) return [];
