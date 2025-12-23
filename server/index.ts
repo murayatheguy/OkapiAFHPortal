@@ -28,6 +28,9 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Trust proxy for Railway/production (needed for secure cookies behind load balancer)
+app.set('trust proxy', 1);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "okapi-care-network-secret-key-2024",
@@ -40,6 +43,7 @@ app.use(
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
     },
   })
 );
