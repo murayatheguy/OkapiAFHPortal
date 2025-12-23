@@ -223,6 +223,15 @@ export const facilities = pgTable("facilities", {
   // Staff Access
   facilityPin: text("facility_pin"), // 4-digit PIN for staff quick login
 
+  // Listing customization fields
+  ownerBio: text("owner_bio"),
+  carePhilosophy: text("care_philosophy"),
+  dailyRoutine: text("daily_routine"),
+  uniqueFeatures: text("unique_features"),
+  roomTypes: text("room_types").array(),
+  acceptsLTCInsurance: boolean("accepts_ltc_insurance").default(false),
+  acceptsVABenefits: boolean("accepts_va_benefits").default(false),
+
   // Claim Status
   claimStatus: text("claim_status").notNull().default("unclaimed"), // unclaimed, pending, claimed
   claimedAt: timestamp("claimed_at"),

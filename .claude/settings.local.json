@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git pull:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx tsx:*)",
+      "Bash(set PORT=3000)",
+      "Bash(curl:*)",
+      "Bash(if not exist \"client\\\\src\\\\components\\\\staff\" mkdir \"client\\\\src\\\\components\\\\staff\")",
+      "Bash(if not exist \"client\\\\src\\\\pages\\\\staff\" mkdir \"client\\\\src\\\\pages\\\\staff\")",
+      "Bash(npx kill-port:*)",
+      "Bash(node -e:*)",
+      "Bash(npx tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(if exist node_modulestypescripttsbuildinfo del node_modulestypescripttsbuildinfo)",
+      "Bash(timeout /t)",
+      "Bash(timeout /t 5)",
+      "Bash(git reset:*)",
+      "Bash(timeout /t 8)",
+      "Bash(cat:*)",
+      "Bash(if not exist \"docs\" mkdir docs)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(FACILITY_ID=\"2ee2d72a-c02c-4b3b-8b1e-a322b93d42e0\":*)",
+      "Bash(RESIDENT_ID=\"34e59785-f6f7-44cd-868f-ea88867cda2b\":*)",
+      "Bash(__NEW_LINE__ echo \"=== Resident Profile ===\")",
+      "Bash(jq '.[] | select\\(.id==\"\"'$RESIDENT_ID'\"\"\\)')",
+      "Bash(__NEW_LINE__ echo \"\")",
+      "Bash(__NEW_LINE__ echo \"=== TEST 8a: Census Report ===\")",
+      "Bash(__NEW_LINE__ echo \"=== TEST 10: Get Staff Credentials ===\")",
+      "Bash(timeout /t 3)",
+      "Bash(git revert:*)"
+    ]
+  }
+}
