@@ -208,6 +208,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const [reportEndDate, setReportEndDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
+  const [selectedReportType, setSelectedReportType] = useState<string>("incident");
 
   // Credentials state
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
@@ -1502,8 +1503,21 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Date Range Picker */}
-              <div className="flex flex-wrap gap-4 p-4 bg-stone-800/50 rounded-lg border border-amber-900/20">
+              {/* Report Generator */}
+              <div className="flex flex-wrap items-end gap-4 p-4 bg-stone-800/50 rounded-lg border border-amber-900/20">
+                <div>
+                  <label className="block text-sm text-stone-400 mb-1">Report Type</label>
+                  <select
+                    value={selectedReportType}
+                    onChange={(e) => setSelectedReportType(e.target.value)}
+                    className="bg-stone-900 border border-amber-900/30 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-600 min-w-[200px]"
+                  >
+                    <option value="incident">Monthly Incident Summary</option>
+                    <option value="medCompliance">Medication Log Report</option>
+                    <option value="census">Current Clients Report</option>
+                    <option value="staffActivity">Staff Activity Report</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm text-stone-400 mb-1">Start Date</label>
                   <input
@@ -1522,88 +1536,33 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                     className="bg-stone-900 border border-amber-900/30 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-600"
                   />
                 </div>
+                <Button
+                  className="bg-amber-600 hover:bg-amber-500 text-white gap-2"
+                  onClick={() => setActiveReport(selectedReportType as ReportType)}
+                >
+                  <Download className="h-4 w-4" />
+                  Generate Report
+                </Button>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card className="border-amber-900/20 bg-stone-800/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-stone-200 font-medium">Monthly Incident Summary</h4>
-                        <p className="text-stone-500 text-sm">DSHS incident report</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
-                        onClick={() => setActiveReport("incident")}
-                      >
-                        <Download className="h-4 w-4" />
-                        Generate
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-amber-900/20 bg-stone-800/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-stone-200 font-medium">Medication Log Report</h4>
-                        <p className="text-stone-500 text-sm">Summary of all medications given</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
-                        onClick={() => setActiveReport("medCompliance")}
-                      >
-                        <Download className="h-4 w-4" />
-                        Generate
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-amber-900/20 bg-stone-800/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-stone-200 font-medium">Current Clients Report</h4>
-                        <p className="text-stone-500 text-sm">List of all residents and their status</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
-                        onClick={() => setActiveReport("census")}
-                      >
-                        <Download className="h-4 w-4" />
-                        Generate
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-amber-900/20 bg-stone-800/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-stone-200 font-medium">Staff Activity Report</h4>
-                        <p className="text-stone-500 text-sm">Login and documentation activity</p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-amber-900/30 text-stone-300 gap-2"
-                        onClick={() => setActiveReport("staffActivity")}
-                      >
-                        <Download className="h-4 w-4" />
-                        Generate
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Report Type Descriptions */}
+              <div className="grid md:grid-cols-2 gap-3 text-sm">
+                <div className="p-3 bg-stone-800/30 rounded border border-amber-900/10">
+                  <span className="text-stone-300 font-medium">Incident Summary</span>
+                  <span className="text-stone-500"> - DSHS reportable incidents</span>
+                </div>
+                <div className="p-3 bg-stone-800/30 rounded border border-amber-900/10">
+                  <span className="text-stone-300 font-medium">Medication Log</span>
+                  <span className="text-stone-500"> - All medications given</span>
+                </div>
+                <div className="p-3 bg-stone-800/30 rounded border border-amber-900/10">
+                  <span className="text-stone-300 font-medium">Current Clients</span>
+                  <span className="text-stone-500"> - Census and status</span>
+                </div>
+                <div className="p-3 bg-stone-800/30 rounded border border-amber-900/10">
+                  <span className="text-stone-300 font-medium">Staff Activity</span>
+                  <span className="text-stone-500"> - Login and documentation</span>
+                </div>
               </div>
             </CardContent>
           </Card>
