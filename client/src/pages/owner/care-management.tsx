@@ -202,6 +202,12 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   type ReportType = "incident" | "medCompliance" | "census" | "staffActivity" | "medList" | null;
   const [activeReport, setActiveReport] = useState<ReportType>(null);
   const [medListResident, setMedListResident] = useState<ResidentSummary | null>(null);
+  const [reportStartDate, setReportStartDate] = useState<string>(
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+  );
+  const [reportEndDate, setReportEndDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
   // Credentials state
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
@@ -1496,6 +1502,28 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Date Range Picker */}
+              <div className="flex flex-wrap gap-4 p-4 bg-stone-800/50 rounded-lg border border-amber-900/20">
+                <div>
+                  <label className="block text-sm text-stone-400 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={reportStartDate}
+                    onChange={(e) => setReportStartDate(e.target.value)}
+                    className="bg-stone-900 border border-amber-900/30 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-stone-400 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={reportEndDate}
+                    onChange={(e) => setReportEndDate(e.target.value)}
+                    className="bg-stone-900 border border-amber-900/30 rounded px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-600"
+                  />
+                </div>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <Card className="border-amber-900/20 bg-stone-800/50">
                   <CardContent className="p-4">
@@ -1716,8 +1744,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           facilityPhone={facilityData?.phone}
           incidents={fullIncidents}
           residents={residents}
-          startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
-          endDate={new Date().toISOString().split("T")[0]}
+          startDate={reportStartDate}
+          endDate={reportEndDate}
         />
       </ReportViewerDialog>
 
@@ -1733,8 +1761,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           facilityPhone={facilityData?.phone}
           logs={medicationLogs}
           residents={residents}
-          startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
-          endDate={new Date().toISOString().split("T")[0]}
+          startDate={reportStartDate}
+          endDate={reportEndDate}
         />
       </ReportViewerDialog>
 
@@ -1771,8 +1799,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
             lastLoginAt: s.lastLoginAt,
           }))}
           activityData={[]}
-          startDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
-          endDate={new Date().toISOString().split("T")[0]}
+          startDate={reportStartDate}
+          endDate={reportEndDate}
         />
       </ReportViewerDialog>
 
