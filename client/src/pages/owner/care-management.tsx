@@ -200,18 +200,65 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const [profileResident, setProfileResident] = useState<ResidentSummary | null>(null);
 
   // Reports state
-  type ReportType = "incident" | "medCompliance" | "census" | "staffActivity" | "medList" | null;
+  type ReportType = "incidentSummary" | "individualIncident" | "mar" | "medCompliance" | "medList" | "census" | "staffActivity" | "credentialStatus" | null;
   const [activeReport, setActiveReport] = useState<ReportType>(null);
-  const [medListResident, setMedListResident] = useState<ResidentSummary | null>(null);
+  const [selectedReportType, setSelectedReportType] = useState<string>("incidentSummary");
   const [reportStartDate, setReportStartDate] = useState<string>(
     new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
   const [reportEndDate, setReportEndDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-  const [selectedReportType, setSelectedReportType] = useState<string>("incident");
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [reportResidentId, setReportResidentId] = useState<string | null>(null);
   const [reportIncidentId, setReportIncidentId] = useState<string | null>(null);
+  const [reportStatusFilter, setReportStatusFilter] = useState<string>("all");
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+
+  // Report config type
+  interface ReportConfig {
+    value: string;
+    label: string;
+    description: string;
+    needsDateRange?: boolean;
+    needsResident?: boolean;
+    needsIncident?: boolean;
+  }
+
+  // Report type definitions with grouping
+  const REPORT_TYPES: Record<string, { label: string; reports: ReportConfig[] }> = {
+    compliance: {
+      label: "Compliance",
+      reports: [
+        { value: "incidentSummary", label: "Incident Summary", description: "Monthly incident overview for DSHS", needsDateRange: true },
+        { value: "individualIncident", label: "Individual Incident", description: "Detailed single incident report", needsIncident: true },
+      ]
+    },
+    clinical: {
+      label: "Clinical",
+      reports: [
+        { value: "mar", label: "Medication Administration Record", description: "Daily MAR log for all residents", needsDateRange: true },
+        { value: "medCompliance", label: "Medication Compliance", description: "Medication adherence rates", needsDateRange: true },
+        { value: "medList", label: "Client Medication Sheet", description: "Current medications for a resident", needsResident: true },
+      ]
+    },
+    operational: {
+      label: "Operational",
+      reports: [
+        { value: "census", label: "Census Report", description: "Current resident census and status", needsDateRange: false },
+        { value: "staffActivity", label: "Staff Activity", description: "Staff login and documentation activity", needsDateRange: true },
+        { value: "credentialStatus", label: "Credential Status", description: "Staff credential expiration overview", needsDateRange: false },
+      ]
+    }
+  };
+
+  // Get current report config
+  const getCurrentReportConfig = (): ReportConfig | null => {
+    for (const group of Object.values(REPORT_TYPES)) {
+      const found = group.reports.find(r => r.value === selectedReportType);
+      if (found) return found;
+    }
+    return null;
+  };
 
   // Credentials state
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
@@ -340,7 +387,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!facilityId && activeReport === "incident",
+    enabled: !!facilityId && activeReport === "incidentSummary",
   });
 
   // Fetch all incidents for individual incident report dropdown
@@ -405,16 +452,16 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     startDate?: string;
     status: string;
   }>>({
-    queryKey: ["owner-resident-medications", medListResident?.id],
+    queryKey: ["owner-resident-medications", reportResidentId],
     queryFn: async () => {
-      if (!medListResident) return [];
-      const response = await fetch(`/api/owners/facilities/${facilityId}/residents/${medListResident.id}/medications`, {
+      if (!reportResidentId) return [];
+      const response = await fetch(`/api/owners/facilities/${facilityId}/residents/${reportResidentId}/medications`, {
         credentials: "include",
       });
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!facilityId && !!medListResident,
+    enabled: !!facilityId && !!reportResidentId && activeReport === "medList",
   });
 
   // Fetch facility PIN
@@ -442,6 +489,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     },
     enabled: !!facilityId,
   });
+
+  // Get selected resident for medication list report
+  const medListResident = reportResidentId ? residents.find(r => r.id === reportResidentId) : null;
 
   // Fetch team members for credentials (synced with owner-dashboard Team section)
   const { data: teamMembers = [] } = useQuery<TeamMember[]>({
@@ -1537,210 +1587,284 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         </TabsContent>
 
         {/* Reports Tab */}
-        <TabsContent value="reports" className="mt-6 space-y-6">
-          {/* DSHS Reports Card */}
+        <TabsContent value="reports" className="mt-6">
           <Card className="border-gray-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Facility Reports</CardTitle>
-              <CardDescription className="text-gray-500">
-                Generate and print regulatory and operational reports
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Report Generator */}
-              <div className="flex flex-wrap items-end gap-4 p-4 bg-gray-100 rounded-lg border border-gray-200">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Report Type</label>
-                  <select
-                    value={selectedReportType}
-                    onChange={(e) => setSelectedReportType(e.target.value)}
-                    className="bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:border-teal-500 min-w-[200px]"
-                  >
-                    <option value="incident">Monthly Incident Summary</option>
-                    <option value="medCompliance">Medication Log Report</option>
-                    <option value="census">Current Clients Report</option>
-                    <option value="staffActivity">Staff Activity Report</option>
-                  </select>
+            <CardHeader className="border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-teal-50 rounded-lg">
+                  <FileText className="h-5 w-5 text-teal-600" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    value={reportStartDate}
-                    onChange={(e) => setReportStartDate(e.target.value)}
-                    className="bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:border-teal-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    value={reportEndDate}
-                    onChange={(e) => setReportEndDate(e.target.value)}
-                    className="bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:border-teal-500"
-                  />
-                </div>
-                <Button
-                  className="bg-teal-600 hover:bg-teal-500 text-white gap-2"
-                  onClick={() => setActiveReport(selectedReportType as ReportType)}
-                >
-                  <Download className="h-4 w-4" />
-                  Generate Report
-                </Button>
-              </div>
-
-              {/* Report Type Descriptions */}
-              <div className="grid md:grid-cols-2 gap-3 text-sm">
-                <div className="p-3 bg-gray-100/30 rounded border border-gray-100">
-                  <span className="text-gray-700 font-medium">Incident Summary</span>
-                  <span className="text-gray-500"> - DSHS reportable incidents</span>
-                </div>
-                <div className="p-3 bg-gray-100/30 rounded border border-gray-100">
-                  <span className="text-gray-700 font-medium">Medication Log</span>
-                  <span className="text-gray-500"> - All medications given</span>
-                </div>
-                <div className="p-3 bg-gray-100/30 rounded border border-gray-100">
-                  <span className="text-gray-700 font-medium">Current Clients</span>
-                  <span className="text-gray-500"> - Census and status</span>
-                </div>
-                <div className="p-3 bg-gray-100/30 rounded border border-gray-100">
-                  <span className="text-gray-700 font-medium">Staff Activity</span>
-                  <span className="text-gray-500"> - Login and documentation</span>
+                  <CardTitle className="text-gray-900">Report Center</CardTitle>
+                  <CardDescription className="text-gray-500">
+                    Generate compliance, clinical, and operational reports
+                  </CardDescription>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Medication List Report Card */}
-          <Card className="border-gray-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Client Medication Sheet</CardTitle>
-              <CardDescription className="text-gray-500">
-                Generate a printable medication list for a specific resident
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                <Select
-                  value={medListResident?.id || ""}
-                  onValueChange={(value) => {
-                    const resident = residents.find((r) => r.id === value);
-                    setMedListResident(resident || null);
-                  }}
-                >
-                  <SelectTrigger className="w-full md:w-72 bg-gray-100 border-gray-300 text-gray-900">
-                    <SelectValue placeholder="Select a resident..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-100 border-gray-300">
-                    {residents.filter((r) => r.status === "active").map((resident) => (
-                      <SelectItem
-                        key={resident.id}
-                        value={resident.id}
-                        className="text-gray-900 focus:bg-teal-50"
+            <CardContent className="p-6">
+              <div className="grid lg:grid-cols-3 gap-6">
+                {/* Left Column - Report Selection */}
+                <div className="lg:col-span-1 space-y-4">
+                  <div>
+                    <Label className="text-gray-700 font-medium mb-2 block">Select Report</Label>
+                    <Select
+                      value={selectedReportType}
+                      onValueChange={(value) => {
+                        setSelectedReportType(value);
+                        // Reset parameters when report type changes
+                        setReportResidentId(null);
+                        setReportIncidentId(null);
+                        setReportStatusFilter("all");
+                      }}
+                    >
+                      <SelectTrigger className="w-full bg-white border-gray-300 text-gray-900">
+                        <SelectValue placeholder="Choose a report..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {Object.entries(REPORT_TYPES).map(([groupKey, group]) => (
+                          <div key={groupKey}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50">
+                              {group.label}
+                            </div>
+                            {group.reports.map((report) => (
+                              <SelectItem
+                                key={report.value}
+                                value={report.value}
+                                className="text-gray-900 focus:bg-teal-50 pl-4"
+                              >
+                                {report.label}
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Report Description */}
+                  {getCurrentReportConfig() && (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <p className="text-sm text-gray-600">
+                        {getCurrentReportConfig()?.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Middle Column - Parameters */}
+                <div className="lg:col-span-1 space-y-4">
+                  <Label className="text-gray-700 font-medium mb-2 block">Parameters</Label>
+
+                  {/* Date Range - for reports that need it */}
+                  {getCurrentReportConfig()?.needsDateRange && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={reportStartDate}
+                          onChange={(e) => setReportStartDate(e.target.value)}
+                          className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={reportEndDate}
+                          onChange={(e) => setReportEndDate(e.target.value)}
+                          className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resident Selection - for client-specific reports */}
+                  {getCurrentReportConfig()?.needsResident && (
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Select Client</label>
+                      <Select
+                        value={reportResidentId || ""}
+                        onValueChange={(value) => setReportResidentId(value)}
                       >
-                        {resident.firstName} {resident.lastName}
-                        {resident.roomNumber && ` (Room ${resident.roomNumber})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  className="bg-teal-600 hover:bg-teal-500 gap-2"
-                  disabled={!medListResident}
-                  onClick={() => setActiveReport("medList")}
-                >
-                  <Download className="h-4 w-4" />
-                  Generate Medication Sheet
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                        <SelectTrigger className="w-full bg-white border-gray-300 text-gray-900">
+                          <SelectValue placeholder="Choose a client..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200">
+                          {residents.filter((r) => r.status === "active").map((resident) => (
+                            <SelectItem
+                              key={resident.id}
+                              value={resident.id}
+                              className="text-gray-900 focus:bg-teal-50"
+                            >
+                              {resident.firstName} {resident.lastName}
+                              {resident.roomNumber && ` (Room ${resident.roomNumber})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-          {/* Individual Incident Report Card */}
-          <Card className="border-gray-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Individual Incident Report</CardTitle>
-              <CardDescription className="text-gray-500">
-                View and print a detailed report for a specific incident
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                <Select
-                  value={reportIncidentId || ""}
-                  onValueChange={(value) => setReportIncidentId(value)}
-                >
-                  <SelectTrigger className="w-full md:w-96 bg-gray-100 border-gray-300 text-gray-900">
-                    <SelectValue placeholder="Select an incident..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-100 border-gray-300 max-h-64">
-                    {allIncidents.map((incident) => (
-                      <SelectItem
-                        key={incident.id}
-                        value={incident.id}
-                        className="text-gray-900 focus:bg-teal-50"
+                  {/* Incident Selection - for individual incident report */}
+                  {getCurrentReportConfig()?.needsIncident && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Status Filter</label>
+                        <Select
+                          value={reportStatusFilter}
+                          onValueChange={(value) => setReportStatusFilter(value)}
+                        >
+                          <SelectTrigger className="w-full bg-white border-gray-300 text-gray-900">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200">
+                            <SelectItem value="all" className="text-gray-900 focus:bg-teal-50">All Incidents</SelectItem>
+                            <SelectItem value="open" className="text-gray-900 focus:bg-teal-50">Open Only</SelectItem>
+                            <SelectItem value="investigating" className="text-gray-900 focus:bg-teal-50">Investigating</SelectItem>
+                            <SelectItem value="resolved" className="text-gray-900 focus:bg-teal-50">Resolved</SelectItem>
+                            <SelectItem value="closed" className="text-gray-900 focus:bg-teal-50">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Select Incident</label>
+                        <Select
+                          value={reportIncidentId || ""}
+                          onValueChange={(value) => setReportIncidentId(value)}
+                        >
+                          <SelectTrigger className="w-full bg-white border-gray-300 text-gray-900">
+                            <SelectValue placeholder="Choose an incident..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200 max-h-64">
+                            {allIncidents
+                              .filter(i => reportStatusFilter === "all" || i.status === reportStatusFilter)
+                              .map((incident) => (
+                                <SelectItem
+                                  key={incident.id}
+                                  value={incident.id}
+                                  className="text-gray-900 focus:bg-teal-50"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                      incident.status === "open" ? "bg-red-500" :
+                                      incident.status === "investigating" ? "bg-blue-500" :
+                                      incident.status === "resolved" ? "bg-green-500" : "bg-gray-500"
+                                    }`} />
+                                    <span className="truncate">
+                                      {formatDate(incident.incidentDate)} - {incident.type.replace(/_/g, " ")}
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No parameters needed message */}
+                  {!getCurrentReportConfig()?.needsDateRange &&
+                   !getCurrentReportConfig()?.needsResident &&
+                   !getCurrentReportConfig()?.needsIncident && (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-center">
+                      <p className="text-sm text-gray-500">No additional parameters needed</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column - Actions */}
+                <div className="lg:col-span-1 space-y-4">
+                  <Label className="text-gray-700 font-medium mb-2 block">Actions</Label>
+                  <div className="space-y-3">
+                    <Button
+                      className="w-full bg-teal-600 hover:bg-teal-500 text-white gap-2 justify-center"
+                      disabled={
+                        (getCurrentReportConfig()?.needsResident && !reportResidentId) ||
+                        (getCurrentReportConfig()?.needsIncident && !reportIncidentId)
+                      }
+                      onClick={() => {
+                        if (selectedReportType === "individualIncident" && reportIncidentId) {
+                          setSelectedIncidentId(reportIncidentId);
+                        } else if (selectedReportType === "medList" && reportResidentId) {
+                          const resident = residents.find(r => r.id === reportResidentId);
+                          if (resident) {
+                            setActiveReport("medList");
+                          }
+                        } else {
+                          setActiveReport(selectedReportType as ReportType);
+                        }
+                      }}
+                    >
+                      <FileText className="h-4 w-4" />
+                      Preview Report
+                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        className="border-gray-300 text-gray-700 gap-2 justify-center"
+                        disabled={
+                          (getCurrentReportConfig()?.needsResident && !reportResidentId) ||
+                          (getCurrentReportConfig()?.needsIncident && !reportIncidentId)
+                        }
+                        onClick={() => {
+                          // Open report and trigger print
+                          if (selectedReportType === "individualIncident" && reportIncidentId) {
+                            setSelectedIncidentId(reportIncidentId);
+                          } else {
+                            setActiveReport(selectedReportType as ReportType);
+                          }
+                          // Note: Print will be triggered from within the dialog
+                        }}
                       >
-                        <span className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${
-                            incident.status === "open" ? "bg-red-500" :
-                            incident.status === "investigating" ? "bg-blue-500" :
-                            incident.status === "resolved" ? "bg-green-500" : "bg-gray-500"
-                          }`} />
-                          {formatDate(incident.incidentDate)} - {incident.type.replace(/_/g, " ")}
-                          {incident.residentName && ` (${incident.residentName})`}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  className="bg-teal-600 hover:bg-teal-500 gap-2"
-                  disabled={!reportIncidentId}
-                  onClick={() => setSelectedIncidentId(reportIncidentId)}
-                >
-                  <FileText className="h-4 w-4" />
-                  View Incident Details
-                </Button>
-              </div>
-              {allIncidents.length === 0 && (
-                <p className="text-gray-500 text-sm mt-3">No incidents recorded yet.</p>
-              )}
-            </CardContent>
-          </Card>
+                        <Download className="h-4 w-4" />
+                        Print
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-gray-300 text-gray-700 gap-2 justify-center"
+                        disabled={
+                          (getCurrentReportConfig()?.needsResident && !reportResidentId) ||
+                          (getCurrentReportConfig()?.needsIncident && !reportIncidentId)
+                        }
+                        onClick={() => {
+                          // Same as preview for now - PDF generation can be added
+                          if (selectedReportType === "individualIncident" && reportIncidentId) {
+                            setSelectedIncidentId(reportIncidentId);
+                          } else {
+                            setActiveReport(selectedReportType as ReportType);
+                          }
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                        PDF
+                      </Button>
+                    </div>
+                  </div>
 
-          {/* Compliance Overview */}
-          <Card className="border-gray-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Compliance Overview</CardTitle>
-              <CardDescription className="text-gray-500">
-                {medCompliance?.period || "Last 7 days"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-gray-100 rounded-lg">
-                  <p className="text-3xl font-bold text-green-400">
-                    {medCompliance?.summary?.given || 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Meds Given</p>
-                </div>
-                <div className="text-center p-4 bg-gray-100 rounded-lg">
-                  <p className="text-3xl font-bold text-teal-600">
-                    {medCompliance?.summary?.refused || 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Refused</p>
-                </div>
-                <div className="text-center p-4 bg-gray-100 rounded-lg">
-                  <p className="text-3xl font-bold text-blue-400">
-                    {medCompliance?.summary?.held || 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Held</p>
-                </div>
-                <div className="text-center p-4 bg-gray-100 rounded-lg">
-                  <p className="text-3xl font-bold text-red-400">
-                    {medCompliance?.summary?.missed || 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Missed</p>
+                  {/* Quick Stats */}
+                  <div className="mt-6 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Stats</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="p-2 bg-gray-50 rounded">
+                        <p className="text-gray-500 text-xs">Open Incidents</p>
+                        <p className="font-semibold text-gray-900">{incidentSummary?.byStatus?.open || 0}</p>
+                      </div>
+                      <div className="p-2 bg-gray-50 rounded">
+                        <p className="text-gray-500 text-xs">DSHS Reportable</p>
+                        <p className="font-semibold text-gray-900">{incidentSummary?.dshsReportable || 0}</p>
+                      </div>
+                      <div className="p-2 bg-gray-50 rounded">
+                        <p className="text-gray-500 text-xs">Med Compliance</p>
+                        <p className="font-semibold text-gray-900">{medCompliance?.summary?.complianceRate || "N/A"}</p>
+                      </div>
+                      <div className="p-2 bg-gray-50 rounded">
+                        <p className="text-gray-500 text-xs">Active Clients</p>
+                        <p className="font-semibold text-gray-900">{residents.filter(r => r.status === "active").length}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -1789,7 +1913,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
       {/* Report Dialogs */}
       {/* Incident Summary Report */}
       <ReportViewerDialog
-        open={activeReport === "incident"}
+        open={activeReport === "incidentSummary"}
         onOpenChange={(open) => !open && setActiveReport(null)}
         title="Monthly Incident Summary"
       >
