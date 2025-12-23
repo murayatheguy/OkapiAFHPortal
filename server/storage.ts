@@ -260,6 +260,7 @@ export interface IStorage {
   // Residents
   getResident(id: string): Promise<Resident | undefined>;
   getResidentsByFacility(facilityId: string, status?: string): Promise<Resident[]>;
+  getActiveResidentCount(facilityId: string): Promise<number>;
   createResident(resident: InsertResident): Promise<Resident>;
   updateResident(id: string, data: Partial<InsertResident>): Promise<Resident | undefined>;
   deleteResident(id: string): Promise<void>;
@@ -1263,6 +1264,17 @@ export class DatabaseStorage implements IStorage {
       .from(residents)
       .where(and(...conditions))
       .orderBy(residents.lastName, residents.firstName);
+  }
+
+  async getActiveResidentCount(facilityId: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(residents)
+      .where(and(
+        eq(residents.facilityId, facilityId),
+        eq(residents.status, "active")
+      ));
+    return result[0]?.count ?? 0;
   }
 
   async createResident(resident: InsertResident): Promise<Resident> {

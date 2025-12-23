@@ -22,7 +22,21 @@ export async function registerRoutes(
     try {
       const limit = req.query.limit ? parseInt(String(req.query.limit)) : 6;
       const featuredFacilities = await storage.getFeaturedFacilities(limit);
-      res.json(featuredFacilities);
+
+      // Calculate availableBeds dynamically for each facility
+      const facilitiesWithCalculatedBeds = await Promise.all(
+        featuredFacilities.map(async (facility) => {
+          const activeResidentCount = await storage.getActiveResidentCount(facility.id);
+          const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
+          return {
+            ...facility,
+            availableBeds: calculatedAvailableBeds,
+            currentOccupancy: activeResidentCount
+          };
+        })
+      );
+
+      res.json(facilitiesWithCalculatedBeds);
     } catch (error) {
       console.error("Error getting featured facilities:", error);
       res.status(500).json({ error: "Failed to get featured facilities" });
@@ -51,25 +65,43 @@ export async function registerRoutes(
   app.get("/api/facilities", async (req, res) => {
     try {
       const { city, county, specialties, acceptsMedicaid, availableBeds } = req.query;
-      
+
       const searchParams: any = {};
-      
+
       if (city) searchParams.city = String(city);
       if (county) searchParams.county = String(county);
       if (specialties) {
-        searchParams.specialties = typeof specialties === 'string' 
-          ? [specialties] 
+        searchParams.specialties = typeof specialties === 'string'
+          ? [specialties]
           : specialties;
       }
       if (acceptsMedicaid !== undefined) {
         searchParams.acceptsMedicaid = acceptsMedicaid === 'true';
       }
-      if (availableBeds !== undefined) {
-        searchParams.availableBeds = availableBeds === 'true';
-      }
-      
+      // Note: availableBeds filter will be applied after dynamic calculation
+      const filterByAvailableBeds = availableBeds === 'true';
+
       const facilities = await storage.searchFacilities(searchParams);
-      res.json(facilities);
+
+      // Calculate availableBeds dynamically for each facility
+      const facilitiesWithCalculatedBeds = await Promise.all(
+        facilities.map(async (facility) => {
+          const activeResidentCount = await storage.getActiveResidentCount(facility.id);
+          const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
+          return {
+            ...facility,
+            availableBeds: calculatedAvailableBeds,
+            currentOccupancy: activeResidentCount
+          };
+        })
+      );
+
+      // Apply availableBeds filter if requested
+      const filteredFacilities = filterByAvailableBeds
+        ? facilitiesWithCalculatedBeds.filter(f => f.availableBeds > 0)
+        : facilitiesWithCalculatedBeds;
+
+      res.json(filteredFacilities);
     } catch (error) {
       console.error("Error searching facilities:", error);
       res.status(500).json({ error: "Failed to search facilities" });
@@ -83,7 +115,16 @@ export async function registerRoutes(
       if (!facility) {
         return res.status(404).json({ error: "Facility not found" });
       }
-      res.json(facility);
+
+      // Calculate availableBeds dynamically: capacity - active residents count
+      const activeResidentCount = await storage.getActiveResidentCount(facility.id);
+      const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
+
+      res.json({
+        ...facility,
+        availableBeds: calculatedAvailableBeds,
+        currentOccupancy: activeResidentCount
+      });
     } catch (error) {
       console.error("Error getting facility:", error);
       res.status(500).json({ error: "Failed to get facility" });
@@ -553,7 +594,21 @@ export async function registerRoutes(
       }
 
       const facilitiesList = await storage.getFacilitiesByOwner(ownerId);
-      res.json(facilitiesList);
+
+      // Calculate availableBeds dynamically for each facility
+      const facilitiesWithCalculatedBeds = await Promise.all(
+        facilitiesList.map(async (facility) => {
+          const activeResidentCount = await storage.getActiveResidentCount(facility.id);
+          const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
+          return {
+            ...facility,
+            availableBeds: calculatedAvailableBeds,
+            currentOccupancy: activeResidentCount
+          };
+        })
+      );
+
+      res.json(facilitiesWithCalculatedBeds);
     } catch (error) {
       console.error("Error getting owner facilities:", error);
       res.status(500).json({ error: "Failed to get facilities" });
@@ -580,9 +635,10 @@ export async function registerRoutes(
       }
 
       // Only allow updating specific fields
+      // Note: availableBeds and currentOccupancy are calculated dynamically from resident count
       const allowedFields = [
         'name', 'description', 'phone', 'email', 'website',
-        'capacity', 'availableBeds', 'currentOccupancy',
+        'capacity', // capacity is editable, but availableBeds is auto-calculated
         'amenities', 'specialties', 'careTypes',
         'acceptsMedicaid', 'acceptsMedicare', 'acceptsPrivatePay',
         'priceMin', 'priceMax', 'images', 'acceptingInquiries',

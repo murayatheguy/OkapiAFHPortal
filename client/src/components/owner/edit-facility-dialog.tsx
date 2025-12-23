@@ -287,14 +287,10 @@ export function EditFacilityDialog({ open, onOpenChange, facility, onSuccess }: 
                 </div>
                 <div className="space-y-2">
                   <Label className="text-gray-600">Available Beds</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max={formData.capacity}
-                    value={formData.availableBeds}
-                    onChange={(e) => setFormData({ ...formData, availableBeds: parseInt(e.target.value) || 0 })}
-                    className="bg-gray-50 border-gray-300 text-gray-900"
-                  />
+                  <div className="bg-gray-100 border border-gray-300 rounded-md px-3 py-2 text-gray-700">
+                    <span className="font-medium">{formData.availableBeds}</span>
+                    <span className="text-gray-500 text-sm ml-2">(auto-calculated from resident count)</span>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
