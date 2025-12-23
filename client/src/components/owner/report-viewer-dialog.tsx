@@ -20,7 +20,65 @@ export function ReportViewerDialog({
   children,
 }: ReportViewerDialogProps) {
   const handlePrint = () => {
-    window.print();
+    const reportContent = document.querySelector('.report-content');
+    if (!reportContent) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              padding: 0.5in;
+              color: black;
+              background: white;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 1rem 0;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f5f5f5;
+            }
+            h1, h2, h3 {
+              margin-top: 1rem;
+            }
+            .text-red-600 { color: #dc2626; }
+            .text-green-600 { color: #16a34a; }
+            .text-amber-600 { color: #d97706; }
+            .text-blue-600 { color: #2563eb; }
+            .bg-red-100 { background-color: #fee2e2; padding: 8px; border-radius: 4px; }
+            .bg-amber-50 { background-color: #fffbeb; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          ${reportContent.innerHTML}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    // Wait for content to load, then print
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   return (
@@ -65,57 +123,6 @@ export function ReportViewerDialog({
           </div>
         </div>
 
-        {/* Print Styles */}
-        <style>{`
-          @media print {
-            /* Hide the entire page */
-            body > *:not([data-radix-portal]) {
-              display: none !important;
-            }
-
-            /* Hide dialog overlay/backdrop */
-            [data-radix-portal] > div:first-child {
-              display: none !important;
-            }
-
-            /* Style the dialog for printing */
-            [data-radix-portal] [role="dialog"] {
-              position: fixed !important;
-              top: 0 !important;
-              left: 0 !important;
-              right: 0 !important;
-              bottom: 0 !important;
-              max-width: 100% !important;
-              max-height: 100% !important;
-              width: 100% !important;
-              height: auto !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              border: none !important;
-              box-shadow: none !important;
-              background: white !important;
-              overflow: visible !important;
-            }
-
-            /* Show report content */
-            .report-content {
-              width: 100% !important;
-              max-width: 100% !important;
-              padding: 0.5in !important;
-            }
-
-            /* Hide print buttons */
-            .print\\:hidden {
-              display: none !important;
-            }
-
-            /* Page setup */
-            @page {
-              margin: 0.5in;
-              size: letter;
-            }
-          }
-        `}</style>
       </DialogContent>
     </Dialog>
   );
