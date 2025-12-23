@@ -68,23 +68,48 @@ export function ReportViewerDialog({
         {/* Print Styles */}
         <style>{`
           @media print {
-            body * {
-              visibility: hidden;
+            /* Hide the entire page */
+            body > *:not([data-radix-portal]) {
+              display: none !important;
             }
-            .report-content,
-            .report-content * {
-              visibility: visible;
+
+            /* Hide dialog overlay/backdrop */
+            [data-radix-portal] > div:first-child {
+              display: none !important;
             }
+
+            /* Style the dialog for printing */
+            [data-radix-portal] [role="dialog"] {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              right: 0 !important;
+              bottom: 0 !important;
+              max-width: 100% !important;
+              max-height: 100% !important;
+              width: 100% !important;
+              height: auto !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+              background: white !important;
+              overflow: visible !important;
+            }
+
+            /* Show report content */
             .report-content {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              padding: 0.5in;
+              width: 100% !important;
+              max-width: 100% !important;
+              padding: 0.5in !important;
             }
+
+            /* Hide print buttons */
             .print\\:hidden {
               display: none !important;
             }
+
+            /* Page setup */
             @page {
               margin: 0.5in;
               size: letter;
