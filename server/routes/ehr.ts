@@ -926,8 +926,9 @@ export function registerEhrRoutes(app: Express) {
     requirePermission("canAdministerMeds"),
     async (req, res) => {
       try {
-        const staffId = req.staff!.id;
+        let staffId = req.staff!.id;
         const facilityId = req.staff!.facilityId;
+        const isTempStaff = req.session.isTempStaff === true;
 
         const {
           medicationId,
@@ -966,6 +967,34 @@ export function registerEhrRoutes(app: Express) {
           return res.status(400).json({
             error: "Controlled substance administration requires a witness",
           });
+        }
+
+        // Handle temp staff - create or find a placeholder staff record
+        if (isTempStaff && req.session.staffName) {
+          const nameParts = req.session.staffName.split(" ");
+          const firstName = nameParts[0] || "Staff";
+          const lastName = nameParts.slice(1).join(" ") || "Member";
+
+          // Look for existing temp staff record with same name
+          const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+          const matchingStaff = existingStaff.find(
+            s => s.firstName === firstName && s.lastName === lastName && s.role === "temp"
+          );
+
+          if (matchingStaff) {
+            staffId = matchingStaff.id;
+          } else {
+            // Create a temp staff record
+            const tempStaff = await storage.createStaffAuth({
+              facilityId,
+              email: `temp-${Date.now()}@temp.local`,
+              firstName,
+              lastName,
+              role: "temp",
+              status: "active",
+            });
+            staffId = tempStaff.id;
+          }
         }
 
         const log = await storage.createMedicationLog({
@@ -1094,8 +1123,9 @@ export function registerEhrRoutes(app: Express) {
    */
   app.post("/api/ehr/notes", requireStaffAuth, async (req, res) => {
     try {
-      const staffId = req.staff!.id;
+      let staffId = req.staff!.id;
       const facilityId = req.staff!.facilityId;
+      const isTempStaff = req.session.isTempStaff === true;
 
       const {
         residentId,
@@ -1125,6 +1155,32 @@ export function registerEhrRoutes(app: Express) {
 
       if (resident.facilityId !== facilityId) {
         return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Handle temp staff - create or find a placeholder staff record
+      if (isTempStaff && req.session.staffName) {
+        const nameParts = req.session.staffName.split(" ");
+        const firstName = nameParts[0] || "Staff";
+        const lastName = nameParts.slice(1).join(" ") || "Member";
+
+        const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+        const matchingStaff = existingStaff.find(
+          s => s.firstName === firstName && s.lastName === lastName && s.role === "temp"
+        );
+
+        if (matchingStaff) {
+          staffId = matchingStaff.id;
+        } else {
+          const tempStaff = await storage.createStaffAuth({
+            facilityId,
+            email: `temp-${Date.now()}@temp.local`,
+            firstName,
+            lastName,
+            role: "temp",
+            status: "active",
+          });
+          staffId = tempStaff.id;
+        }
       }
 
       const dailyNote = await storage.createDailyNote({
@@ -1292,8 +1348,9 @@ export function registerEhrRoutes(app: Express) {
     requirePermission("canFileIncidents"),
     async (req, res) => {
       try {
-        const staffId = req.staff!.id;
+        let staffId = req.staff!.id;
         const facilityId = req.staff!.facilityId;
+        const isTempStaff = req.session.isTempStaff === true;
 
         const {
           residentId,
@@ -1325,6 +1382,32 @@ export function registerEhrRoutes(app: Express) {
 
           if (resident.facilityId !== facilityId) {
             return res.status(403).json({ error: "Access denied" });
+          }
+        }
+
+        // Handle temp staff - create or find a placeholder staff record
+        if (isTempStaff && req.session.staffName) {
+          const nameParts = req.session.staffName.split(" ");
+          const firstName = nameParts[0] || "Staff";
+          const lastName = nameParts.slice(1).join(" ") || "Member";
+
+          const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+          const matchingStaff = existingStaff.find(
+            s => s.firstName === firstName && s.lastName === lastName && s.role === "temp"
+          );
+
+          if (matchingStaff) {
+            staffId = matchingStaff.id;
+          } else {
+            const tempStaff = await storage.createStaffAuth({
+              facilityId,
+              email: `temp-${Date.now()}@temp.local`,
+              firstName,
+              lastName,
+              role: "temp",
+              status: "active",
+            });
+            staffId = tempStaff.id;
           }
         }
 
