@@ -2,9 +2,15 @@ import type { Facility, TeamMember, Credential, Inquiry, ClaimRequest, Owner } f
 
 const API_BASE = "/api";
 
+// Helper to create fetch options with credentials
+const fetchWithCredentials = (options: RequestInit = {}): RequestInit => ({
+  ...options,
+  credentials: "include",
+});
+
 // Featured Facilities API
 export async function getFeaturedFacilities(limit: number = 6): Promise<Facility[]> {
-  const response = await fetch(`${API_BASE}/facilities/featured?limit=${limit}`);
+  const response = await fetch(`${API_BASE}/facilities/featured?limit=${limit}`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch featured facilities");
   return response.json();
 }
@@ -14,7 +20,7 @@ export type AutocompleteResult = Pick<Facility, 'id' | 'name' | 'city' | 'zipCod
 
 export async function autocompleteFacilities(query: string, limit: number = 10): Promise<AutocompleteResult[]> {
   if (query.length < 2) return [];
-  const response = await fetch(`${API_BASE}/facilities/autocomplete?q=${encodeURIComponent(query)}&limit=${limit}`);
+  const response = await fetch(`${API_BASE}/facilities/autocomplete?q=${encodeURIComponent(query)}&limit=${limit}`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to search facilities");
   return response.json();
 }
@@ -41,13 +47,13 @@ export async function searchFacilities(params?: {
     searchParams.append("availableBeds", String(params.availableBeds));
   }
 
-  const response = await fetch(`${API_BASE}/facilities?${searchParams}`);
+  const response = await fetch(`${API_BASE}/facilities?${searchParams}`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch facilities");
   return response.json();
 }
 
 export async function getFacility(id: string): Promise<Facility> {
-  const response = await fetch(`${API_BASE}/facilities/${id}`);
+  const response = await fetch(`${API_BASE}/facilities/${id}`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch facility");
   return response.json();
 }
@@ -56,14 +62,14 @@ export async function getFacilityWithTeam(id: string): Promise<{
   facility: Facility;
   team: Array<TeamMember & { credentials: Credential[] }>;
 }> {
-  const response = await fetch(`${API_BASE}/facilities/${id}/full`);
+  const response = await fetch(`${API_BASE}/facilities/${id}/full`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch facility details");
   return response.json();
 }
 
 // Team Members API
 export async function getTeamMembers(facilityId: string): Promise<Array<TeamMember & { credentials: Credential[] }>> {
-  const response = await fetch(`${API_BASE}/facilities/${facilityId}/team`);
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/team`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch team members");
   return response.json();
 }
@@ -76,11 +82,11 @@ export async function createTeamMember(data: {
   status: string;
   isManualEntry: boolean;
 }): Promise<TeamMember> {
-  const response = await fetch(`${API_BASE}/team-members`, {
+  const response = await fetch(`${API_BASE}/team-members`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) throw new Error("Failed to create team member");
   return response.json();
 }
@@ -89,19 +95,19 @@ export async function updateTeamMember(
   id: string,
   data: Partial<TeamMember>
 ): Promise<TeamMember> {
-  const response = await fetch(`${API_BASE}/team-members/${id}`, {
+  const response = await fetch(`${API_BASE}/team-members/${id}`, fetchWithCredentials({
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) throw new Error("Failed to update team member");
   return response.json();
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/team-members/${id}`, {
+  const response = await fetch(`${API_BASE}/team-members/${id}`, fetchWithCredentials({
     method: "DELETE",
-  });
+  }));
   if (!response.ok) throw new Error("Failed to delete team member");
 }
 
@@ -116,11 +122,11 @@ export async function createCredential(data: {
   source: string;
   issuer?: string;
 }): Promise<Credential> {
-  const response = await fetch(`${API_BASE}/credentials`, {
+  const response = await fetch(`${API_BASE}/credentials`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) throw new Error("Failed to create credential");
   return response.json();
 }
@@ -129,25 +135,25 @@ export async function updateCredential(
   id: string,
   data: Partial<Credential>
 ): Promise<Credential> {
-  const response = await fetch(`${API_BASE}/credentials/${id}`, {
+  const response = await fetch(`${API_BASE}/credentials/${id}`, fetchWithCredentials({
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) throw new Error("Failed to update credential");
   return response.json();
 }
 
 export async function deleteCredential(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/credentials/${id}`, {
+  const response = await fetch(`${API_BASE}/credentials/${id}`, fetchWithCredentials({
     method: "DELETE",
-  });
+  }));
   if (!response.ok) throw new Error("Failed to delete credential");
 }
 
 // Inquiries API
 export async function getInquiries(facilityId: string): Promise<Inquiry[]> {
-  const response = await fetch(`${API_BASE}/facilities/${facilityId}/inquiries`);
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/inquiries`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch inquiries");
   return response.json();
 }
@@ -161,11 +167,11 @@ export async function createInquiry(data: {
   careType?: string;
   moveInTimeline?: string;
 }): Promise<Inquiry> {
-  const response = await fetch(`${API_BASE}/inquiries`, {
+  const response = await fetch(`${API_BASE}/inquiries`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) throw new Error("Failed to create inquiry");
   return response.json();
 }
@@ -174,11 +180,11 @@ export async function updateInquiry(
   id: string,
   data: Partial<Inquiry>
 ): Promise<Inquiry> {
-  const response = await fetch(`${API_BASE}/inquiries/${id}`, {
+  const response = await fetch(`${API_BASE}/inquiries/${id}`, fetchWithCredentials({
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) throw new Error("Failed to update inquiry");
   return response.json();
 }
@@ -191,11 +197,11 @@ export async function submitClaimRequest(data: {
   requesterPhone?: string;
   relationship?: string;
 }): Promise<{ claim: Partial<ClaimRequest>; message: string }> {
-  const response = await fetch(`${API_BASE}/claims`, {
+  const response = await fetch(`${API_BASE}/claims`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to submit claim request");
@@ -207,11 +213,11 @@ export async function verifyClaimRequest(
   claimId: string,
   verificationCode: string
 ): Promise<{ claim: ClaimRequest; message: string }> {
-  const response = await fetch(`${API_BASE}/claims/${claimId}/verify`, {
+  const response = await fetch(`${API_BASE}/claims/${claimId}/verify`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ verificationCode }),
-  });
+  }));
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to verify claim");
@@ -220,18 +226,18 @@ export async function verifyClaimRequest(
 }
 
 export async function getClaimsByFacility(facilityId: string): Promise<ClaimRequest[]> {
-  const response = await fetch(`${API_BASE}/facilities/${facilityId}/claims`);
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/claims`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch claims");
   return response.json();
 }
 
 // Owner API
 export async function loginOwner(email: string, password: string): Promise<{ owner: Owner }> {
-  const response = await fetch(`${API_BASE}/owners/login`, {
+  const response = await fetch(`${API_BASE}/owners/login`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
-  });
+  }));
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Login failed");
@@ -244,11 +250,11 @@ export async function setupOwnerAccount(data: {
   password: string;
   token?: string;
 }): Promise<{ owner: Owner; message: string }> {
-  const response = await fetch(`${API_BASE}/owners/setup`, {
+  const response = await fetch(`${API_BASE}/owners/setup`, fetchWithCredentials({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
-  });
+  }));
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Account setup failed");
@@ -257,7 +263,7 @@ export async function setupOwnerAccount(data: {
 }
 
 export async function getOwnerFacilities(ownerId: string): Promise<Facility[]> {
-  const response = await fetch(`${API_BASE}/owners/${ownerId}/facilities`);
+  const response = await fetch(`${API_BASE}/owners/${ownerId}/facilities`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch owner facilities");
   return response.json();
 }
@@ -276,7 +282,7 @@ export interface DshsInspection {
 }
 
 export async function getFacilityInspections(facilityId: string): Promise<DshsInspection[]> {
-  const response = await fetch(`${API_BASE}/facilities/${facilityId}/inspections`);
+  const response = await fetch(`${API_BASE}/facilities/${facilityId}/inspections`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch inspections");
   return response.json();
 }
