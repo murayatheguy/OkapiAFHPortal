@@ -1089,7 +1089,9 @@ export const incidentReports = pgTable("incident_reports", {
   familyNotified: boolean("family_notified").default(false),
   dshsReportable: boolean("dshs_reportable").default(false),
 
-  status: text("status").notNull().default("open"), // open, investigating, closed
+  status: text("status").notNull().default("open"), // open, investigating, resolved, closed
+  followUpNotes: text("follow_up_notes"),
+  witnesses: json("witnesses").$type<string[]>(),
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

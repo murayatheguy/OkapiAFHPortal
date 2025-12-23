@@ -13,6 +13,7 @@ import { AddClientDialog } from "@/components/owner/add-client-dialog";
 import { ResidentMedicationsDialog } from "@/components/owner/resident-medications-dialog";
 import { ResidentProfileDialog } from "@/components/owner/resident-profile-dialog";
 import { ReportViewerDialog } from "@/components/owner/report-viewer-dialog";
+import { IncidentDetailDialog } from "@/components/owner/incident-detail-dialog";
 import { IncidentSummaryReport } from "@/components/owner/reports/incident-summary-report";
 import { MedicationComplianceReport } from "@/components/owner/reports/medication-compliance-report";
 import { CensusReport } from "@/components/owner/reports/census-report";
@@ -209,6 +210,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     new Date().toISOString().split("T")[0]
   );
   const [selectedReportType, setSelectedReportType] = useState<string>("incident");
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [reportIncidentId, setReportIncidentId] = useState<string | null>(null);
 
   // Credentials state
   const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
@@ -322,6 +325,8 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     status: string;
     dshsReportable: boolean;
     reportedBy: string;
+    residentName?: string;
+    reportedByName?: string;
   }>>({
     queryKey: ["owner-facility-full-incidents", facilityId, reportStartDate, reportEndDate],
     queryFn: async () => {
@@ -336,6 +341,31 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
       return response.json();
     },
     enabled: !!facilityId && activeReport === "incident",
+  });
+
+  // Fetch all incidents for individual incident report dropdown
+  const { data: allIncidents = [] } = useQuery<Array<{
+    id: string;
+    residentId?: string;
+    type: string;
+    description: string;
+    incidentDate: string;
+    incidentTime: string;
+    status: string;
+    dshsReportable: boolean;
+    reportedBy: string;
+    residentName?: string;
+    reportedByName?: string;
+  }>>({
+    queryKey: ["owner-facility-all-incidents", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}/ehr/incidents`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId,
   });
 
   // Fetch medication logs for compliance report (with date filtering)
@@ -1445,7 +1475,11 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                     </TableHeader>
                     <TableBody>
                       {incidentSummary?.recent?.map((incident) => (
-                        <TableRow key={incident.id} className="border-gray-200">
+                        <TableRow
+                          key={incident.id}
+                          className="border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => setSelectedIncidentId(incident.id)}
+                        >
                           <TableCell className="text-gray-900">
                             {formatDate(incident.incidentDate)}
                           </TableCell>
@@ -1456,10 +1490,12 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                             <Badge
                               className={
                                 incident.status === "open"
-                                  ? "bg-teal-600"
+                                  ? "bg-red-600"
                                   : incident.status === "investigating"
                                   ? "bg-blue-600"
-                                  : "bg-green-600"
+                                  : incident.status === "resolved"
+                                  ? "bg-green-600"
+                                  : "bg-gray-600"
                               }
                             >
                               {incident.status}
@@ -1617,6 +1653,58 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                   Generate Medication Sheet
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Individual Incident Report Card */}
+          <Card className="border-gray-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-gray-900">Individual Incident Report</CardTitle>
+              <CardDescription className="text-gray-500">
+                View and print a detailed report for a specific incident
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                <Select
+                  value={reportIncidentId || ""}
+                  onValueChange={(value) => setReportIncidentId(value)}
+                >
+                  <SelectTrigger className="w-full md:w-96 bg-gray-100 border-gray-300 text-gray-900">
+                    <SelectValue placeholder="Select an incident..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-100 border-gray-300 max-h-64">
+                    {allIncidents.map((incident) => (
+                      <SelectItem
+                        key={incident.id}
+                        value={incident.id}
+                        className="text-gray-900 focus:bg-teal-50"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${
+                            incident.status === "open" ? "bg-red-500" :
+                            incident.status === "investigating" ? "bg-blue-500" :
+                            incident.status === "resolved" ? "bg-green-500" : "bg-gray-500"
+                          }`} />
+                          {formatDate(incident.incidentDate)} - {incident.type.replace(/_/g, " ")}
+                          {incident.residentName && ` (${incident.residentName})`}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  className="bg-teal-600 hover:bg-teal-500 gap-2"
+                  disabled={!reportIncidentId}
+                  onClick={() => setSelectedIncidentId(reportIncidentId)}
+                >
+                  <FileText className="h-4 w-4" />
+                  View Incident Details
+                </Button>
+              </div>
+              {allIncidents.length === 0 && (
+                <p className="text-gray-500 text-sm mt-3">No incidents recorded yet.</p>
+              )}
             </CardContent>
           </Card>
 
@@ -1920,6 +2008,14 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Incident Detail Dialog */}
+      <IncidentDetailDialog
+        incidentId={selectedIncidentId}
+        facilityId={facilityId}
+        open={!!selectedIncidentId}
+        onOpenChange={(open) => !open && setSelectedIncidentId(null)}
+      />
     </div>
   );
 }

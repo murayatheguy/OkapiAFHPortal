@@ -364,6 +364,143 @@ export function registerOwnerEhrRoutes(app: Express) {
   );
 
   /**
+   * Get all incidents for facility with full details (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/incidents",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const incidents = await storage.getIncidentReportsByFacility(facilityId, {});
+
+        // Get resident names for each incident
+        const incidentsWithNames = await Promise.all(
+          incidents.map(async (incident) => {
+            let residentName = "Unknown";
+            if (incident.residentId) {
+              const resident = await storage.getResident(incident.residentId);
+              if (resident) {
+                residentName = `${resident.firstName} ${resident.lastName}`;
+              }
+            }
+
+            let reportedByName = "Unknown";
+            if (incident.reportedBy) {
+              const staff = await storage.getStaffAuth(incident.reportedBy);
+              if (staff) {
+                reportedByName = `${staff.firstName} ${staff.lastName}`;
+              }
+            }
+
+            return {
+              ...incident,
+              residentName,
+              reportedByName,
+            };
+          })
+        );
+
+        res.json(incidentsWithNames);
+      } catch (error) {
+        console.error("Error getting incidents:", error);
+        res.status(500).json({ error: "Failed to get incidents" });
+      }
+    }
+  );
+
+  /**
+   * Get single incident with full details (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/incidents/:incidentId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, incidentId } = req.params;
+        const incident = await storage.getIncidentReport(incidentId);
+
+        if (!incident) {
+          return res.status(404).json({ error: "Incident not found" });
+        }
+
+        if (incident.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Not authorized to view this incident" });
+        }
+
+        // Get resident name
+        let residentName = "Unknown";
+        if (incident.residentId) {
+          const resident = await storage.getResident(incident.residentId);
+          if (resident) {
+            residentName = `${resident.firstName} ${resident.lastName}`;
+          }
+        }
+
+        // Get reporter name
+        let reportedByName = "Unknown";
+        if (incident.reportedBy) {
+          const staff = await storage.getStaffAuth(incident.reportedBy);
+          if (staff) {
+            reportedByName = `${staff.firstName} ${staff.lastName}`;
+          }
+        }
+
+        res.json({
+          ...incident,
+          residentName,
+          reportedByName,
+        });
+      } catch (error) {
+        console.error("Error getting incident:", error);
+        res.status(500).json({ error: "Failed to get incident" });
+      }
+    }
+  );
+
+  /**
+   * Update incident status and follow-up notes (owner view)
+   */
+  app.patch(
+    "/api/owners/facilities/:facilityId/ehr/incidents/:incidentId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, incidentId } = req.params;
+        const { status, followUpNotes } = req.body;
+
+        const incident = await storage.getIncidentReport(incidentId);
+
+        if (!incident) {
+          return res.status(404).json({ error: "Incident not found" });
+        }
+
+        if (incident.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Not authorized to update this incident" });
+        }
+
+        // Only allow updating status and follow-up notes
+        const updateData: any = {};
+        if (status && ["open", "investigating", "resolved", "closed"].includes(status)) {
+          updateData.status = status;
+        }
+        if (followUpNotes !== undefined) {
+          updateData.followUpNotes = followUpNotes;
+        }
+
+        const updated = await storage.updateIncidentReport(incidentId, updateData);
+        res.json(updated);
+      } catch (error) {
+        console.error("Error updating incident:", error);
+        res.status(500).json({ error: "Failed to update incident" });
+      }
+    }
+  );
+
+  /**
    * Get medication compliance summary for facility (owner view)
    */
   app.get(
