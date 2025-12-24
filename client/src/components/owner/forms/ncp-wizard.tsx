@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   ChevronLeft,
@@ -25,6 +29,7 @@ import {
   PenLine,
   Loader2,
   X,
+  Info,
 } from "lucide-react";
 
 // NCP Form Sections
@@ -45,15 +50,47 @@ const NCP_SECTIONS = [
 // Initial form data structure
 const getInitialFormData = () => ({
   residentInfo: {
+    // Provider Information
+    providerName: "",
+    ncpStartDate: "",
+    movedInDate: "",
+    dateCompleted: "",
+    dateDischarge: "",
+    // Resident Information
     firstName: "",
     lastName: "",
     preferredName: "",
+    pronouns: "",
     dateOfBirth: "",
+    primaryLanguage: "",
+    speaksEnglish: false,
+    interpreterNeeded: false,
+    allergies: "",
+    // Legacy fields
     ssn: "",
     admissionDate: "",
     roomNumber: "",
     medicaidId: "",
     diagnosisCodes: [] as string[],
+    // Legal Documents
+    legalDocuments: {
+      powerOfAttorney: false,
+      guardian: false,
+      healthcareDirective: false,
+      polst: false,
+      dnr: false,
+      other: false,
+      otherText: "",
+    },
+    // Specialty Needs
+    specialtyNeeds: {
+      dialysis: false,
+      hospice: false,
+      behavioralHealth: false,
+      memoryCare: false,
+      other: false,
+      otherText: "",
+    },
   },
   emergencyContacts: {
     contacts: [] as Array<{
@@ -176,6 +213,19 @@ export function NCPWizard({
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
 
+  // Fetch facility data for provider name
+  const { data: facility } = useQuery({
+    queryKey: ["owner-facility", facilityId],
+    queryFn: async () => {
+      const response = await fetch(`/api/owners/facilities/${facilityId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!facilityId,
+  });
+
   // Fetch resident data to pre-fill form
   const { data: resident } = useQuery({
     queryKey: ["owner-resident", facilityId, residentId],
@@ -206,9 +256,27 @@ export function NCPWizard({
     enabled: !!formSubmissionId,
   });
 
+  // Pre-fill form data from facility
+  useEffect(() => {
+    if (facility) {
+      setFormData((prev) => ({
+        ...prev,
+        residentInfo: {
+          ...prev.residentInfo,
+          providerName: facility.name || "",
+        },
+      }));
+    }
+  }, [facility]);
+
   // Pre-fill form data from resident
   useEffect(() => {
     if (resident) {
+      // Calculate allergies string from array if needed
+      const allergiesText = Array.isArray(resident.allergies)
+        ? resident.allergies.join(", ")
+        : resident.allergies || "";
+
       setFormData((prev) => ({
         ...prev,
         residentInfo: {
@@ -216,7 +284,11 @@ export function NCPWizard({
           firstName: resident.firstName || "",
           lastName: resident.lastName || "",
           preferredName: resident.preferredName || "",
+          pronouns: resident.pronouns || "",
           dateOfBirth: resident.dateOfBirth || "",
+          movedInDate: resident.admissionDate || "",
+          primaryLanguage: resident.primaryLanguage || "",
+          allergies: allergiesText,
           admissionDate: resident.admissionDate || "",
           roomNumber: resident.roomNumber || "",
         },
@@ -348,12 +420,385 @@ export function NCPWizard({
     }));
   };
 
-  // Render section content placeholder
+  // Helper to calculate age from date of birth
+  const calculateAge = (dob: string): string => {
+    if (!dob) return "";
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age.toString() : "";
+  };
+
+  // Auto-fill hint component
+  const AutoFillHint = () => (
+    <span className="text-xs text-teal-600 ml-1">(Auto-filled)</span>
+  );
+
+  // Render Section 1: Resident Information
+  const renderResidentInfoSection = () => {
+    const data = formData.residentInfo;
+
+    return (
+      <div className="space-y-8">
+        {/* Provider Information */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <Home className="h-4 w-4 text-teal-600" />
+            Provider Information
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-gray-700">
+                Provider Name
+                {facility?.name && <AutoFillHint />}
+              </Label>
+              <Input
+                value={data.providerName}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { providerName: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="Facility name"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">NCP Start Date</Label>
+              <Input
+                type="date"
+                value={data.ncpStartDate}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { ncpStartDate: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">
+                Date Moved In
+                {resident?.admissionDate && <AutoFillHint />}
+              </Label>
+              <Input
+                type="date"
+                value={data.movedInDate}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { movedInDate: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Date Completed</Label>
+              <Input
+                type="date"
+                value={data.dateCompleted}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { dateCompleted: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-gray-700">Date of Discharge/Transfer (if applicable)</Label>
+              <Input
+                type="date"
+                value={data.dateDischarge}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { dateDischarge: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500 max-w-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Resident Information */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <User className="h-4 w-4 text-teal-600" />
+            Resident Information
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-gray-700">
+                Resident Name
+                {resident?.firstName && <AutoFillHint />}
+              </Label>
+              <Input
+                value={`${data.firstName} ${data.lastName}`.trim()}
+                readOnly
+                className="mt-1 bg-gray-50 border-gray-300 text-gray-700"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Pronouns</Label>
+              <select
+                value={data.pronouns}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { pronouns: e.target.value })
+                }
+                className="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:border-teal-500 focus:ring-teal-500 focus:outline-none text-sm"
+              >
+                <option value="">Select pronouns</option>
+                <option value="He/Him">He/Him</option>
+                <option value="She/Her">She/Her</option>
+                <option value="They/Them">They/Them</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-gray-700">
+                Date of Birth
+                {resident?.dateOfBirth && <AutoFillHint />}
+              </Label>
+              <Input
+                type="date"
+                value={data.dateOfBirth}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { dateOfBirth: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Age</Label>
+              <Input
+                value={calculateAge(data.dateOfBirth)}
+                readOnly
+                className="mt-1 bg-gray-50 border-gray-300 text-gray-700"
+                placeholder="Calculated from DOB"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">
+                Primary Language
+                {resident?.primaryLanguage && <AutoFillHint />}
+              </Label>
+              <Input
+                value={data.primaryLanguage}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { primaryLanguage: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="e.g., English, Spanish"
+              />
+            </div>
+            <div className="flex items-center gap-6 pt-6">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="speaksEnglish"
+                  checked={data.speaksEnglish}
+                  onCheckedChange={(checked) =>
+                    updateSectionData("residentInfo", { speaksEnglish: checked === true })
+                  }
+                  className="border-gray-300 data-[state=checked]:bg-teal-600"
+                />
+                <Label htmlFor="speaksEnglish" className="text-gray-700 cursor-pointer">
+                  Speaks English
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="interpreterNeeded"
+                  checked={data.interpreterNeeded}
+                  onCheckedChange={(checked) =>
+                    updateSectionData("residentInfo", { interpreterNeeded: checked === true })
+                  }
+                  className="border-gray-300 data-[state=checked]:bg-teal-600"
+                />
+                <Label htmlFor="interpreterNeeded" className="text-gray-700 cursor-pointer">
+                  Interpreter Needed
+                </Label>
+              </div>
+            </div>
+            <div className="col-span-2">
+              <Label className="text-gray-700">
+                Allergies
+                {resident?.allergies && <AutoFillHint />}
+              </Label>
+              <Textarea
+                value={data.allergies}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { allergies: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="List all known allergies (medications, food, environmental)"
+                rows={2}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Legal Documents */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-teal-600" />
+            Legal Documents on File
+          </h4>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { key: "powerOfAttorney", label: "Power of Attorney" },
+              { key: "guardian", label: "Guardian" },
+              { key: "healthcareDirective", label: "Healthcare Directive" },
+              { key: "polst", label: "POLST" },
+              { key: "dnr", label: "DNR" },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <Checkbox
+                  id={`legal-${key}`}
+                  checked={(data.legalDocuments as any)[key]}
+                  onCheckedChange={(checked) =>
+                    updateSectionData("residentInfo", {
+                      legalDocuments: {
+                        ...data.legalDocuments,
+                        [key]: checked === true,
+                      },
+                    })
+                  }
+                  className="border-gray-300 data-[state=checked]:bg-teal-600"
+                />
+                <Label htmlFor={`legal-${key}`} className="text-gray-700 cursor-pointer">
+                  {label}
+                </Label>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="legal-other"
+                checked={data.legalDocuments.other}
+                onCheckedChange={(checked) =>
+                  updateSectionData("residentInfo", {
+                    legalDocuments: {
+                      ...data.legalDocuments,
+                      other: checked === true,
+                    },
+                  })
+                }
+                className="border-gray-300 data-[state=checked]:bg-teal-600"
+              />
+              <Label htmlFor="legal-other" className="text-gray-700 cursor-pointer">
+                Other
+              </Label>
+            </div>
+          </div>
+          {data.legalDocuments.other && (
+            <div className="mt-3">
+              <Input
+                value={data.legalDocuments.otherText}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", {
+                    legalDocuments: {
+                      ...data.legalDocuments,
+                      otherText: e.target.value,
+                    },
+                  })
+                }
+                className="bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="Please specify other legal documents"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Specialty Needs */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <Heart className="h-4 w-4 text-teal-600" />
+            Specialty Needs
+          </h4>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { key: "dialysis", label: "Dialysis" },
+              { key: "hospice", label: "Hospice" },
+              { key: "behavioralHealth", label: "Behavioral Health" },
+              { key: "memoryCare", label: "Memory Care" },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <Checkbox
+                  id={`specialty-${key}`}
+                  checked={(data.specialtyNeeds as any)[key]}
+                  onCheckedChange={(checked) =>
+                    updateSectionData("residentInfo", {
+                      specialtyNeeds: {
+                        ...data.specialtyNeeds,
+                        [key]: checked === true,
+                      },
+                    })
+                  }
+                  className="border-gray-300 data-[state=checked]:bg-teal-600"
+                />
+                <Label htmlFor={`specialty-${key}`} className="text-gray-700 cursor-pointer">
+                  {label}
+                </Label>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="specialty-other"
+                checked={data.specialtyNeeds.other}
+                onCheckedChange={(checked) =>
+                  updateSectionData("residentInfo", {
+                    specialtyNeeds: {
+                      ...data.specialtyNeeds,
+                      other: checked === true,
+                    },
+                  })
+                }
+                className="border-gray-300 data-[state=checked]:bg-teal-600"
+              />
+              <Label htmlFor="specialty-other" className="text-gray-700 cursor-pointer">
+                Other
+              </Label>
+            </div>
+          </div>
+          {data.specialtyNeeds.other && (
+            <div className="mt-3">
+              <Input
+                value={data.specialtyNeeds.otherText}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", {
+                    specialtyNeeds: {
+                      ...data.specialtyNeeds,
+                      otherText: e.target.value,
+                    },
+                  })
+                }
+                className="bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="Please specify other specialty needs"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Info note */}
+        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800">
+            <p className="font-medium">Auto-filled Information</p>
+            <p className="text-blue-700 mt-1">
+              Fields marked with "(Auto-filled)" have been pre-populated from the resident's profile.
+              You can edit these values if needed.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render section content
   const renderSectionContent = () => {
     const section = NCP_SECTIONS.find((s) => s.id === currentSection);
     if (!section) return null;
 
-    // For now, render a placeholder - we'll add real forms later
+    // Section 1: Resident Information
+    if (currentSection === 1) {
+      return renderResidentInfoSection();
+    }
+
+    // Placeholder for other sections
     return (
       <div className="space-y-6">
         <div className="p-8 border-2 border-dashed border-gray-200 rounded-lg text-center">
