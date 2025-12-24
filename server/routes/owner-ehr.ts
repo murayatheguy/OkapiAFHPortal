@@ -1084,4 +1084,190 @@ export function registerOwnerEhrRoutes(app: Express) {
       }
     }
   );
+
+  // ============================================================================
+  // FORM SUBMISSIONS (NCP, ISP, etc.)
+  // ============================================================================
+
+  /**
+   * Get all form submissions for a facility
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/forms",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { formType } = req.query;
+
+        const submissions = await storage.getFormSubmissionsByFacility(
+          facilityId,
+          formType as string | undefined
+        );
+        res.json(submissions);
+      } catch (error) {
+        console.error("Error fetching form submissions:", error);
+        res.status(500).json({ error: "Failed to fetch form submissions" });
+      }
+    }
+  );
+
+  /**
+   * Get a specific form submission
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/forms/:formId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { formId } = req.params;
+        const submission = await storage.getFormSubmission(formId);
+
+        if (!submission) {
+          return res.status(404).json({ error: "Form submission not found" });
+        }
+
+        res.json(submission);
+      } catch (error) {
+        console.error("Error fetching form submission:", error);
+        res.status(500).json({ error: "Failed to fetch form submission" });
+      }
+    }
+  );
+
+  /**
+   * Create a new form submission (draft or completed)
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/forms",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const {
+          residentId,
+          formType,
+          formTitle,
+          status,
+          currentSection,
+          totalSections,
+          completionPercentage,
+          formData,
+        } = req.body;
+
+        const submission = await storage.createFormSubmission({
+          facilityId,
+          residentId: residentId || null,
+          formType,
+          formTitle,
+          status: status || "draft",
+          currentSection: currentSection || 1,
+          totalSections: totalSections || 1,
+          completionPercentage: completionPercentage || 0,
+          formData: formData || "{}",
+        });
+
+        res.status(201).json(submission);
+      } catch (error) {
+        console.error("Error creating form submission:", error);
+        res.status(500).json({ error: "Failed to create form submission" });
+      }
+    }
+  );
+
+  /**
+   * Update an existing form submission
+   */
+  app.put(
+    "/api/owners/facilities/:facilityId/forms/:formId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { formId } = req.params;
+        const {
+          residentId,
+          formTitle,
+          status,
+          currentSection,
+          totalSections,
+          completionPercentage,
+          formData,
+        } = req.body;
+
+        // Check if submission exists
+        const existing = await storage.getFormSubmission(formId);
+        if (!existing) {
+          return res.status(404).json({ error: "Form submission not found" });
+        }
+
+        const updated = await storage.updateFormSubmission(formId, {
+          residentId: residentId !== undefined ? residentId : existing.residentId,
+          formTitle: formTitle || existing.formTitle,
+          status: status || existing.status,
+          currentSection: currentSection !== undefined ? currentSection : existing.currentSection,
+          totalSections: totalSections !== undefined ? totalSections : existing.totalSections,
+          completionPercentage: completionPercentage !== undefined ? completionPercentage : existing.completionPercentage,
+          formData: formData || existing.formData,
+        });
+
+        res.json(updated);
+      } catch (error) {
+        console.error("Error updating form submission:", error);
+        res.status(500).json({ error: "Failed to update form submission" });
+      }
+    }
+  );
+
+  /**
+   * Delete a form submission
+   */
+  app.delete(
+    "/api/owners/facilities/:facilityId/forms/:formId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { formId } = req.params;
+
+        const existing = await storage.getFormSubmission(formId);
+        if (!existing) {
+          return res.status(404).json({ error: "Form submission not found" });
+        }
+
+        await storage.deleteFormSubmission(formId);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting form submission:", error);
+        res.status(500).json({ error: "Failed to delete form submission" });
+      }
+    }
+  );
+
+  /**
+   * Get form submissions for a specific resident
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/residents/:residentId/forms",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { residentId } = req.params;
+        const { formType } = req.query;
+
+        const submissions = await storage.getFormSubmissionsByResident(
+          residentId,
+          formType as string | undefined
+        );
+        res.json(submissions);
+      } catch (error) {
+        console.error("Error fetching resident form submissions:", error);
+        res.status(500).json({ error: "Failed to fetch form submissions" });
+      }
+    }
+  );
 }

@@ -25,6 +25,7 @@ import {
   dailyNotes,
   incidentReports,
   vitals,
+  formSubmissions,
   type User,
   type InsertUser,
   type Facility,
@@ -72,7 +73,9 @@ import {
   type IncidentReport,
   type InsertIncidentReport,
   type Vitals,
-  type InsertVitals
+  type InsertVitals,
+  type FormSubmission,
+  type InsertFormSubmission
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
@@ -1731,6 +1734,76 @@ export class DatabaseStorage implements IStorage {
       if (v.painLevel && v.painLevel > 5) return true;
       return false;
     });
+  }
+
+  // ============================================================================
+  // FORM SUBMISSIONS (NCP, ISP, etc.)
+  // ============================================================================
+
+  async createFormSubmission(data: InsertFormSubmission): Promise<FormSubmission> {
+    const [result] = await db.insert(formSubmissions).values(data).returning();
+    return result;
+  }
+
+  async updateFormSubmission(id: string, data: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined> {
+    const [result] = await db
+      .update(formSubmissions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(formSubmissions.id, id))
+      .returning();
+    return result;
+  }
+
+  async getFormSubmission(id: string): Promise<FormSubmission | undefined> {
+    const [result] = await db
+      .select()
+      .from(formSubmissions)
+      .where(eq(formSubmissions.id, id));
+    return result;
+  }
+
+  async getFormSubmissionsByFacility(facilityId: string, formType?: string): Promise<FormSubmission[]> {
+    if (formType) {
+      return db
+        .select()
+        .from(formSubmissions)
+        .where(and(
+          eq(formSubmissions.facilityId, facilityId),
+          eq(formSubmissions.formType, formType)
+        ))
+        .orderBy(desc(formSubmissions.updatedAt));
+    }
+    return db
+      .select()
+      .from(formSubmissions)
+      .where(eq(formSubmissions.facilityId, facilityId))
+      .orderBy(desc(formSubmissions.updatedAt));
+  }
+
+  async getFormSubmissionsByResident(residentId: string, formType?: string): Promise<FormSubmission[]> {
+    if (formType) {
+      return db
+        .select()
+        .from(formSubmissions)
+        .where(and(
+          eq(formSubmissions.residentId, residentId),
+          eq(formSubmissions.formType, formType)
+        ))
+        .orderBy(desc(formSubmissions.updatedAt));
+    }
+    return db
+      .select()
+      .from(formSubmissions)
+      .where(eq(formSubmissions.residentId, residentId))
+      .orderBy(desc(formSubmissions.updatedAt));
+  }
+
+  async deleteFormSubmission(id: string): Promise<boolean> {
+    const result = await db
+      .delete(formSubmissions)
+      .where(eq(formSubmissions.id, id))
+      .returning();
+    return result.length > 0;
   }
 }
 
