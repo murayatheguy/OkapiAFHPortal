@@ -33,6 +33,7 @@ import {
   Plus,
   Trash2,
   Mail,
+  Printer,
 } from "lucide-react";
 
 // NCP Form Sections
@@ -3213,30 +3214,32 @@ export function NCPWizard({
   // Section 11: Review & Signatures
   const renderSignaturesSection = () => {
     const data = formData.signatures;
+
+    // Signature row component for print layout
+    const SignatureRow = ({ label }: { label: string }) => (
+      <div className="grid grid-cols-12 gap-4 py-3 border-b border-gray-300">
+        <div className="col-span-4">
+          <div className="text-sm font-medium text-gray-700 mb-1">{label}</div>
+          <div className="border-b-2 border-gray-400 h-8 print:h-6"></div>
+        </div>
+        <div className="col-span-5">
+          <div className="text-sm font-medium text-gray-700 mb-1">SIGNATURE</div>
+          <div className="border-b-2 border-gray-400 h-8 print:h-6"></div>
+        </div>
+        <div className="col-span-3">
+          <div className="text-sm font-medium text-gray-700 mb-1">DATE</div>
+          <div className="border-b-2 border-gray-400 h-8 print:h-6"></div>
+        </div>
+      </div>
+    );
+
     return (
       <div className="space-y-6">
-        {/* NCP Review Info */}
-        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium">NCP Review Policy</p>
-              <p className="mt-1">{data.ncpReviewInfo}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Resident Participation */}
-        <div>
-          <Label className="text-gray-700">Resident Participation in NCP Development</Label>
-          <Textarea value={data.residentParticipation}
-            onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentParticipation: e.target.value } }))}
-            className="mt-1 bg-white border-gray-300" placeholder="How did the resident participate in developing this NCP?" rows={3} />
-        </div>
-
         {/* Involved in NCP Development */}
         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Involved in NCP Development</h4>
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+            INVOLVED IN NCP DEVELOPMENT
+          </h4>
           <div className="grid grid-cols-2 gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <Checkbox checked={data.involved.resident}
@@ -3273,80 +3276,91 @@ export function NCPWizard({
                     <Checkbox checked={data.involved[key]}
                       onCheckedChange={(checked) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, involved: { ...prev.signatures.involved, [key]: checked === true } } }))}
                       className="border-gray-300 data-[state=checked]:bg-teal-600" />
-                    <span className="text-gray-700">Other {num}:</span>
+                    <span className="text-gray-700">Other:</span>
                   </label>
-                  {data.involved[key] && (
-                    <Input value={data.involved[nameKey]}
-                      onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, involved: { ...prev.signatures.involved, [nameKey]: e.target.value } } }))}
-                      className="flex-1 bg-white border-gray-300" placeholder="Name" />
-                  )}
+                  <Input value={data.involved[nameKey]}
+                    onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, involved: { ...prev.signatures.involved, [nameKey]: e.target.value } } }))}
+                    className="flex-1 bg-white border-gray-300" placeholder="Name/Role" />
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-gray-700">Date of Original Plan</Label>
-            <Input type="date" value={data.dateOfOriginalPlan}
-              onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, dateOfOriginalPlan: e.target.value } }))}
-              className="mt-1 bg-white border-gray-300" />
-          </div>
-          <div>
-            <Label className="text-gray-700">Review Dates</Label>
-            <Textarea value={data.reviewDates}
-              onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, reviewDates: e.target.value } }))}
-              className="mt-1 bg-white border-gray-300" placeholder="List review/revision dates..." rows={2} />
+        {/* Signature Lines */}
+        <div className="p-4 bg-white border border-gray-200 rounded-lg">
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+            PERSON APPROVING PLAN
+          </h4>
+          <div className="space-y-2">
+            <SignatureRow label="PROVIDER" />
+            <SignatureRow label="RESIDENT" />
+            <SignatureRow label="RESIDENT REPRESENTATIVE" />
+            <SignatureRow label="OTHER" />
+            <SignatureRow label="OTHER" />
+            <SignatureRow label="OTHER" />
           </div>
         </div>
 
-        {/* Final Actions */}
+        {/* Additional Items */}
         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Final Actions</h4>
+          <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+            ADDITIONAL ITEMS
+          </h4>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={data.residentVerballyAgreed}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentVerballyAgreed: checked === true } } ))}
+                  className="border-gray-300 data-[state=checked]:bg-teal-600" />
+                <span className="text-gray-700">Resident verbally agreed to NCP</span>
+              </label>
+              <span className="text-gray-500">– Date:</span>
+              <Input type="date" value={data.residentVerballyAgreedDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentVerballyAgreedDate: e.target.value } }))}
+                className="w-40 bg-white border-gray-300" />
+            </div>
+            <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox checked={data.ncpSentToCM}
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, ncpSentToCM: checked === true } }))}
                   className="border-gray-300 data-[state=checked]:bg-teal-600" />
-                <span className="text-gray-700">NCP Sent to Case Manager</span>
+                <span className="text-gray-700">NCP sent to DSHS CM on:</span>
               </label>
-              {data.ncpSentToCM && (
-                <div>
-                  <Input type="date" value={data.ncpSentToCMDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, ncpSentToCMDate: e.target.value } }))}
-                    className="bg-white border-gray-300" />
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox checked={data.residentVerballyAgreed}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentVerballyAgreed: checked === true } }))}
-                  className="border-gray-300 data-[state=checked]:bg-teal-600" />
-                <span className="text-gray-700">Resident Verbally Agreed</span>
-              </label>
-              {data.residentVerballyAgreed && (
-                <div>
-                  <Input type="date" value={data.residentVerballyAgreedDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentVerballyAgreedDate: e.target.value } }))}
-                    className="bg-white border-gray-300" />
-                </div>
-              )}
-            </div>
-            <div>
-              <Label className="text-gray-700">Resident Recommendations</Label>
-              <Textarea value={data.residentRecommendations}
-                onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentRecommendations: e.target.value } }))}
-                className="mt-1 bg-white border-gray-300" placeholder="Any recommendations from the resident..." rows={2} />
+              <Input type="date" value={data.ncpSentToCMDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, ncpSentToCMDate: e.target.value } }))}
+                className="w-40 bg-white border-gray-300" />
             </div>
           </div>
         </div>
 
-        {/* Signatures Notice */}
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        {/* Resident Recommendations */}
+        <div>
+          <Label className="text-gray-700 font-semibold">Resident Recommendations</Label>
+          <Textarea value={data.residentRecommendations}
+            onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, residentRecommendations: e.target.value } }))}
+            className="mt-1 bg-white border-gray-300"
+            placeholder="Enter any recommendations from the resident regarding their care plan..."
+            rows={4} />
+        </div>
+
+        {/* Info Box */}
+        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-800">
+              <p>
+                *The person signing writes the date they actually read and agreed to the plan. If the participant
+                has verbally agreed to the plan, the provider should note below: (a) the name and role of the
+                participant; (b) the date the participant had the plan read to them; and (c) what if any changes
+                the participant recommended for the plan.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Print Notice */}
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg print:hidden">
           <div className="flex items-start gap-3">
             <PenLine className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-yellow-800">
@@ -3394,9 +3408,64 @@ export function NCPWizard({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-50 overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+    <div className="fixed inset-0 z-50 bg-gray-50 overflow-hidden flex flex-col print:static print:overflow-visible print:bg-white">
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          @page {
+            size: letter;
+            margin: 0.5in;
+          }
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+          .print\\:block {
+            display: block !important;
+          }
+          .print\\:static {
+            position: static !important;
+          }
+          .print\\:overflow-visible {
+            overflow: visible !important;
+          }
+          .print\\:bg-white {
+            background-color: white !important;
+          }
+          .print\\:h-6 {
+            height: 1.5rem !important;
+          }
+        }
+      `}</style>
+
+      {/* Print Header (only visible when printing) */}
+      <div className="hidden print:block print:mb-6 print:border-b-2 print:border-gray-800 print:pb-4">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-900">
+            {facility?.name || "Adult Family Home"}
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {facility?.address}, {facility?.city}, {facility?.state} {facility?.zipCode}
+          </p>
+          <h2 className="text-lg font-semibold text-gray-800 mt-4">
+            NEGOTIATED CARE PLAN (NCP)
+          </h2>
+          {resident && (
+            <p className="text-gray-700 mt-2">
+              Resident: {resident.firstName} {resident.lastName}
+            </p>
+          )}
+          <p className="text-xs text-gray-500 mt-2">
+            Generated: {new Date().toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+
+      {/* Header (hidden on print) */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 print:hidden">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -3436,7 +3505,7 @@ export function NCPWizard({
               size="sm"
               onClick={handleSaveDraft}
               disabled={isSaving}
-              className="gap-2 border-gray-300"
+              className="gap-2 border-gray-300 print:hidden"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -3445,19 +3514,28 @@ export function NCPWizard({
               )}
               Save Draft
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              className="gap-2 border-gray-300 print:hidden"
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="max-w-6xl mx-auto mt-4">
+        <div className="max-w-6xl mx-auto mt-4 print:hidden">
           <Progress value={completionPercentage} className="h-2" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex">
-        {/* Sidebar - Section Navigation */}
-        <div className="w-72 bg-white border-r border-gray-200 overflow-y-auto">
+      <div className="flex-1 overflow-hidden flex print:block print:overflow-visible">
+        {/* Sidebar - Section Navigation (hidden on print) */}
+        <div className="w-72 bg-white border-r border-gray-200 overflow-y-auto print:hidden">
           <div className="p-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Sections
@@ -3538,8 +3616,8 @@ export function NCPWizard({
               </CardContent>
             </Card>
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-6">
+            {/* Navigation Buttons (hidden on print) */}
+            <div className="flex items-center justify-between mt-6 print:hidden">
               <Button
                 variant="outline"
                 onClick={goPrevious}
