@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { NCPPrintPreview } from "./ncp-print-preview";
 import {
   ChevronLeft,
   ChevronRight,
@@ -34,6 +35,7 @@ import {
   Trash2,
   Mail,
   Printer,
+  Eye,
 } from "lucide-react";
 
 // NCP Form Sections
@@ -557,6 +559,7 @@ export function NCPWizard({
   const [formData, setFormData] = useState<NCPFormData>(getInitialFormData());
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Fetch facility data for provider name
   const { data: facility } = useQuery({
@@ -3437,11 +3440,11 @@ export function NCPWizard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.print()}
+              onClick={() => setShowPrintPreview(true)}
               className="gap-2 border-gray-300 print:hidden"
             >
-              <Printer className="h-4 w-4" />
-              Print
+              <Eye className="h-4 w-4" />
+              Print Preview
             </Button>
           </div>
         </div>
@@ -3581,6 +3584,15 @@ export function NCPWizard({
           </div>
         </div>
       </div>
+
+      {/* Print Preview Modal */}
+      {showPrintPreview && (
+        <NCPPrintPreview
+          formData={formData}
+          facility={facility}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
     </div>
   );
 }
