@@ -30,6 +30,9 @@ import {
   Loader2,
   X,
   Info,
+  Plus,
+  Trash2,
+  Mail,
 } from "lucide-react";
 
 // NCP Form Sections
@@ -93,12 +96,26 @@ const getInitialFormData = () => ({
     },
   },
   emergencyContacts: {
-    contacts: [] as Array<{
+    contacts: [
+      {
+        name: "",
+        relationship: "",
+        homePhone: "",
+        cellPhone: "",
+        fax: "",
+        email: "",
+        address: "",
+        preferredContact: "cell" as "home" | "cell" | "email",
+      },
+    ] as Array<{
       name: string;
       relationship: string;
-      phone: string;
-      altPhone: string;
-      isHealthcareProxy: boolean;
+      homePhone: string;
+      cellPhone: string;
+      fax: string;
+      email: string;
+      address: string;
+      preferredContact: "home" | "cell" | "email";
     }>,
   },
   evacuation: {
@@ -293,13 +310,18 @@ export function NCPWizard({
           roomNumber: resident.roomNumber || "",
         },
         emergencyContacts: {
-          contacts: (resident.emergencyContacts || []).map((c: any) => ({
-            name: c.name || "",
-            relationship: c.relationship || "",
-            phone: c.phone || "",
-            altPhone: "",
-            isHealthcareProxy: c.isPrimary || false,
-          })),
+          contacts: (resident.emergencyContacts && resident.emergencyContacts.length > 0)
+            ? resident.emergencyContacts.map((c: any) => ({
+                name: c.name || "",
+                relationship: c.relationship || "Family",
+                homePhone: c.phone || "",
+                cellPhone: c.altPhone || c.cellPhone || "",
+                fax: "",
+                email: c.email || "",
+                address: c.address || "",
+                preferredContact: "cell" as "home" | "cell" | "email",
+              }))
+            : prev.emergencyContacts.contacts,
         },
         medication: {
           ...prev.medication,
@@ -788,6 +810,292 @@ export function NCPWizard({
     );
   };
 
+  // Relationship options for emergency contacts
+  const RELATIONSHIP_OPTIONS = [
+    "Family",
+    "Case Manager",
+    "DPOA",
+    "Guardian",
+    "Physician",
+    "Pharmacy",
+    "Hospice",
+    "Other",
+  ];
+
+  // Helper to create empty contact
+  const createEmptyContact = () => ({
+    name: "",
+    relationship: "",
+    homePhone: "",
+    cellPhone: "",
+    fax: "",
+    email: "",
+    address: "",
+    preferredContact: "cell" as "home" | "cell" | "email",
+  });
+
+  // Add a new contact
+  const addContact = () => {
+    const contacts = formData.emergencyContacts.contacts;
+    if (contacts.length >= 6) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      emergencyContacts: {
+        contacts: [...prev.emergencyContacts.contacts, createEmptyContact()],
+      },
+    }));
+  };
+
+  // Remove a contact by index
+  const removeContact = (index: number) => {
+    if (index === 0) return; // Can't remove first contact
+
+    setFormData((prev) => ({
+      ...prev,
+      emergencyContacts: {
+        contacts: prev.emergencyContacts.contacts.filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  // Update a specific contact field
+  const updateContact = (index: number, field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      emergencyContacts: {
+        contacts: prev.emergencyContacts.contacts.map((contact, i) =>
+          i === index ? { ...contact, [field]: value } : contact
+        ),
+      },
+    }));
+  };
+
+  // Render Section 2: Emergency Contacts
+  const renderEmergencyContactsSection = () => {
+    const contacts = formData.emergencyContacts.contacts;
+    const hasAutoFilledContacts = resident?.emergencyContacts && resident.emergencyContacts.length > 0;
+
+    return (
+      <div className="space-y-6">
+        {/* Section description */}
+        <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <Phone className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-gray-700">
+            <p className="font-medium">Care Planning Contacts</p>
+            <p className="text-gray-600 mt-1">
+              Add up to 6 contacts for care planning purposes. Include case managers,
+              healthcare providers, pharmacies, and family members who should be
+              contacted regarding the resident's care.
+            </p>
+          </div>
+        </div>
+
+        {/* Auto-fill notice */}
+        {hasAutoFilledContacts && (
+          <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-800">
+              <p className="font-medium">Auto-filled from Resident Profile</p>
+              <p className="text-blue-700 mt-1">
+                Emergency contacts have been pre-populated from the resident's profile.
+                You can edit or add additional contacts as needed.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Contact Cards */}
+        {contacts.map((contact, index) => (
+          <div
+            key={index}
+            className="border border-gray-200 rounded-lg bg-white overflow-hidden"
+          >
+            {/* Contact Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-sm font-medium">
+                  {index + 1}
+                </div>
+                <span className="font-medium text-gray-700">
+                  Contact {index + 1}
+                  {contact.name && ` - ${contact.name}`}
+                </span>
+                {index === 0 && hasAutoFilledContacts && (
+                  <span className="text-xs text-teal-600 ml-2">(Auto-filled)</span>
+                )}
+              </div>
+              {index > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeContact(index)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove
+                </Button>
+              )}
+            </div>
+
+            {/* Contact Form */}
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Name */}
+                <div>
+                  <Label className="text-gray-700">Name</Label>
+                  <Input
+                    value={contact.name}
+                    onChange={(e) => updateContact(index, "name", e.target.value)}
+                    className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                    placeholder="Full name"
+                  />
+                </div>
+
+                {/* Relationship */}
+                <div>
+                  <Label className="text-gray-700">Relationship</Label>
+                  <select
+                    value={contact.relationship}
+                    onChange={(e) => updateContact(index, "relationship", e.target.value)}
+                    className="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:border-teal-500 focus:ring-teal-500 focus:outline-none text-sm"
+                  >
+                    <option value="">Select relationship</option>
+                    {RELATIONSHIP_OPTIONS.map((rel) => (
+                      <option key={rel} value={rel}>
+                        {rel}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Home Phone */}
+                <div>
+                  <Label className="text-gray-700">Home Phone</Label>
+                  <Input
+                    value={contact.homePhone}
+                    onChange={(e) => updateContact(index, "homePhone", e.target.value)}
+                    className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                    placeholder="(555) 555-5555"
+                  />
+                </div>
+
+                {/* Cell Phone */}
+                <div>
+                  <Label className="text-gray-700">Cell Phone</Label>
+                  <Input
+                    value={contact.cellPhone}
+                    onChange={(e) => updateContact(index, "cellPhone", e.target.value)}
+                    className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                    placeholder="(555) 555-5555"
+                  />
+                </div>
+
+                {/* Fax */}
+                <div>
+                  <Label className="text-gray-700">Fax</Label>
+                  <Input
+                    value={contact.fax}
+                    onChange={(e) => updateContact(index, "fax", e.target.value)}
+                    className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                    placeholder="(555) 555-5555"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <Label className="text-gray-700">Email</Label>
+                  <Input
+                    type="email"
+                    value={contact.email}
+                    onChange={(e) => updateContact(index, "email", e.target.value)}
+                    className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                    placeholder="email@example.com"
+                  />
+                </div>
+
+                {/* Address - Full width */}
+                <div className="col-span-2">
+                  <Label className="text-gray-700">Address</Label>
+                  <Input
+                    value={contact.address}
+                    onChange={(e) => updateContact(index, "address", e.target.value)}
+                    className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                    placeholder="Street, City, State, ZIP"
+                  />
+                </div>
+
+                {/* Preferred Contact Method - Full width */}
+                <div className="col-span-2">
+                  <Label className="text-gray-700 mb-2 block">Preferred Contact Method</Label>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`preferredContact-${index}`}
+                        value="home"
+                        checked={contact.preferredContact === "home"}
+                        onChange={() => updateContact(index, "preferredContact", "home")}
+                        className="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500"
+                      />
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700">Home</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`preferredContact-${index}`}
+                        value="cell"
+                        checked={contact.preferredContact === "cell"}
+                        onChange={() => updateContact(index, "preferredContact", "cell")}
+                        className="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500"
+                      />
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700">Cell</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`preferredContact-${index}`}
+                        value="email"
+                        checked={contact.preferredContact === "email"}
+                        onChange={() => updateContact(index, "preferredContact", "email")}
+                        className="w-4 h-4 text-teal-600 border-gray-300 focus:ring-teal-500"
+                      />
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700">Email</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Add Contact Button */}
+        {contacts.length < 6 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addContact}
+            className="w-full border-dashed border-gray-300 text-gray-600 hover:text-teal-600 hover:border-teal-300 hover:bg-teal-50 gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Contact ({contacts.length}/6)
+          </Button>
+        )}
+
+        {/* Max contacts notice */}
+        {contacts.length >= 6 && (
+          <div className="text-center text-sm text-gray-500 py-2">
+            Maximum of 6 contacts reached
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Render section content
   const renderSectionContent = () => {
     const section = NCP_SECTIONS.find((s) => s.id === currentSection);
@@ -796,6 +1104,11 @@ export function NCPWizard({
     // Section 1: Resident Information
     if (currentSection === 1) {
       return renderResidentInfoSection();
+    }
+
+    // Section 2: Emergency Contacts
+    if (currentSection === 2) {
+      return renderEmergencyContactsSection();
     }
 
     // Placeholder for other sections
