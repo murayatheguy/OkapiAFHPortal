@@ -20,7 +20,8 @@ import {
   Home, Users, MessageSquare, Star, Settings, LogOut, Building2,
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
-  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil, UserPlus
+  Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil, UserPlus,
+  FileText
 } from "lucide-react";
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
@@ -264,6 +265,7 @@ export default function OwnerDashboardPage() {
               { id: "team", label: "Team", icon: Users },
               { id: "inquiries", label: "Inquiries", icon: MessageSquare, badge: newInquiries },
               { id: "reviews", label: "Reviews", icon: Star },
+              { id: "resources", label: "Resources", icon: FileText },
               { id: "settings", label: "Settings", icon: Settings },
             ].map(item => (
               <button
@@ -901,6 +903,85 @@ export default function OwnerDashboardPage() {
                   facilityName={selectedFacility?.name}
                   facility={selectedFacility}
                 />
+              )}
+
+              {activeSection === "resources" && selectedFacilityId && (
+                <div className="space-y-6">
+                  <h1 className="text-2xl text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
+                    Resources
+                  </h1>
+                  <p className="text-gray-600">
+                    Access fillable DSHS forms, care plan templates, and compliance documents.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* NCP Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-teal-50 rounded-lg">
+                            <FileText className="h-5 w-5 text-teal-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Negotiated Care Plan</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS Form 10-503</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Required care plan documenting resident needs, preferences, and services.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Required</Badge>
+                          <Button size="sm" className="bg-teal-600 hover:bg-teal-500 text-white gap-1">
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Placeholder for future forms */}
+                    <Card className="border-gray-200 bg-gray-50 shadow-sm opacity-60">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <FileText className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-500 text-base">Resident Rights</CardTitle>
+                            <CardDescription className="text-gray-400 text-xs">Coming Soon</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-400">
+                          Documentation of resident rights acknowledgment and signatures.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-gray-200 bg-gray-50 shadow-sm opacity-60">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <FileText className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-500 text-base">Incident Report</CardTitle>
+                            <CardDescription className="text-gray-400 text-xs">Coming Soon</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-400">
+                          Detailed incident documentation for DSHS reporting requirements.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               )}
 
               {activeSection === "settings" && (

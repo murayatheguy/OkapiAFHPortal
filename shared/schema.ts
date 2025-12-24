@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, date, timestamp, decimal, index, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, date, timestamp, decimal, index, json, serial } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -894,6 +894,7 @@ export const residents = pgTable("residents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
 
+  // Basic Info
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   preferredName: text("preferred_name"),
@@ -903,6 +904,12 @@ export const residents = pgTable("residents", {
 
   admissionDate: date("admission_date"),
   status: text("status").notNull().default("active"), // active, discharged, deceased, hospital
+
+  // Previous Address
+  previousAddress: text("previous_address"),
+  previousCity: text("previous_city"),
+  previousState: text("previous_state"),
+  previousZip: text("previous_zip"),
 
   // JSON fields for complex data
   primaryPhysician: json("primary_physician").$type<{
@@ -924,9 +931,25 @@ export const residents = pgTable("residents", {
     primary?: string;
     primaryId?: string;
     medicaidId?: string;
+    groupNumber?: string;
   }>(),
   preferences: json("preferences").$type<Record<string, any>>(),
   notes: text("notes"),
+
+  // Pharmacy
+  pharmacyName: text("pharmacy_name"),
+  pharmacyPhone: text("pharmacy_phone"),
+  pharmacyAddress: text("pharmacy_address"),
+
+  // End of Life Preferences
+  funeralHome: text("funeral_home"),
+  funeralHomePhone: text("funeral_home_phone"),
+  advanceDirectives: boolean("advance_directives").default(false),
+  dnrStatus: boolean("dnr_status").default(false),
+
+  // Personal Preferences
+  religion: text("religion"),
+  culturalNotes: text("cultural_notes"),
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1247,5 +1270,43 @@ export const vitalsRelations = relations(vitals, ({ one }) => ({
   facility: one(facilities, {
     fields: [vitals.facilityId],
     references: [facilities.id],
+  }),
+}));
+
+// Form Submissions table - for fillable DSHS forms (NCP, etc.)
+export const formSubmissions = pgTable("form_submissions", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  residentId: varchar("resident_id").references(() => residents.id, { onDelete: "set null" }), // optional - some forms aren't resident-specific
+  formType: text("form_type").notNull(), // 'ncp', 'resident_rights', 'incident_detailed', etc.
+  formTitle: text("form_title").notNull(),
+  status: text("status").notNull().default("draft"), // draft, completed
+  currentSection: integer("current_section").default(1),
+  totalSections: integer("total_sections").notNull(),
+  completionPercentage: integer("completion_percentage").default(0),
+  formData: text("form_data").notNull(), // JSON string of all form fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  createdBy: varchar("created_by"), // staff/owner who created
+}, (table) => ({
+  facilityIdx: index("form_submissions_facility_idx").on(table.facilityId),
+  residentIdx: index("form_submissions_resident_idx").on(table.residentId),
+  typeIdx: index("form_submissions_type_idx").on(table.formType),
+}));
+
+export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
+export type FormSubmission = typeof formSubmissions.$inferSelect;
+
+// Form Submissions relations
+export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [formSubmissions.facilityId],
+    references: [facilities.id],
+  }),
+  resident: one(residents, {
+    fields: [formSubmissions.residentId],
+    references: [residents.id],
   }),
 }));
