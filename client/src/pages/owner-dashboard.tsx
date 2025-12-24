@@ -26,6 +26,7 @@ import {
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
 import { NCPWizard } from "@/components/owner/forms/ncp-wizard";
+import { DisclosureWizard } from "@/components/owner/forms/disclosure-wizard";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -49,6 +50,7 @@ export default function OwnerDashboardPage() {
   // Add Team Member dialog state
   const [showAddTeamMemberDialog, setShowAddTeamMemberDialog] = useState(false);
   const [showNCPWizard, setShowNCPWizard] = useState(false);
+  const [showDisclosureWizard, setShowDisclosureWizard] = useState(false);
   const [teamMemberForm, setTeamMemberForm] = useState({
     firstName: "",
     lastName: "",
@@ -948,23 +950,34 @@ export default function OwnerDashboardPage() {
                       </CardContent>
                     </Card>
 
-                    {/* Placeholder for future forms */}
-                    <Card className="border-gray-200 bg-gray-50 shadow-sm opacity-60">
+                    {/* Disclosure of Charges Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gray-100 rounded-lg">
-                            <FileText className="h-5 w-5 text-gray-400" />
+                          <div className="p-2 bg-teal-50 rounded-lg">
+                            <DollarSign className="h-5 w-5 text-teal-600" />
                           </div>
                           <div>
-                            <CardTitle className="text-gray-500 text-base">Resident Rights</CardTitle>
-                            <CardDescription className="text-gray-400 text-xs">Coming Soon</CardDescription>
+                            <CardTitle className="text-gray-900 text-base">Disclosure of Charges</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 15-449</CardDescription>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <p className="text-sm text-gray-400">
-                          Documentation of resident rights acknowledgment and signatures.
+                        <p className="text-sm text-gray-600 mb-4">
+                          Required disclosure of rates, fees, and services provided to residents.
                         </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Required</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowDisclosureWizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
 
@@ -1178,6 +1191,14 @@ export default function OwnerDashboardPage() {
         <NCPWizard
           facilityId={selectedFacilityId}
           onClose={() => setShowNCPWizard(false)}
+        />
+      )}
+
+      {/* Disclosure of Charges Wizard */}
+      {showDisclosureWizard && selectedFacilityId && (
+        <DisclosureWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowDisclosureWizard(false)}
         />
       )}
     </div>
