@@ -19,6 +19,8 @@ import { MedicationComplianceReport } from "@/components/owner/reports/medicatio
 import { CensusReport } from "@/components/owner/reports/census-report";
 import { StaffActivityReport } from "@/components/owner/reports/staff-activity-report";
 import { MedicationListReport } from "@/components/owner/reports/medication-list-report";
+import { VitalsReport } from "@/components/owner/reports/vitals-report";
+import { CredentialStatusReport } from "@/components/owner/reports/credential-status-report";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Users,
@@ -200,7 +202,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const [profileResident, setProfileResident] = useState<ResidentSummary | null>(null);
 
   // Reports state
-  type ReportType = "incidentSummary" | "individualIncident" | "mar" | "medCompliance" | "medList" | "census" | "staffActivity" | "credentialStatus" | null;
+  type ReportType = "incidentSummary" | "individualIncident" | "mar" | "medCompliance" | "medList" | "vitalsHistory" | "census" | "staffActivity" | "credentialStatus" | null;
   const [activeReport, setActiveReport] = useState<ReportType>(null);
   const [selectedReportType, setSelectedReportType] = useState<string>("incidentSummary");
   const [reportStartDate, setReportStartDate] = useState<string>(
@@ -213,6 +215,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const [reportIncidentId, setReportIncidentId] = useState<string | null>(null);
   const [reportStatusFilter, setReportStatusFilter] = useState<string>("all");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [reportStaffId, setReportStaffId] = useState<string | null>(null); // null = all staff
 
   // Report config type
   interface ReportConfig {
@@ -222,6 +225,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     needsDateRange?: boolean;
     needsResident?: boolean;
     needsIncident?: boolean;
+    needsStaffMember?: boolean;
   }
 
   // Report type definitions with grouping
@@ -239,6 +243,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         { value: "mar", label: "Medication Administration Record", description: "Daily MAR log for all residents", needsDateRange: true },
         { value: "medCompliance", label: "Medication Compliance", description: "Medication adherence rates", needsDateRange: true },
         { value: "medList", label: "Client Medication Sheet", description: "Current medications for a resident", needsResident: true },
+        { value: "vitalsHistory", label: "Vitals History", description: "Vital signs history for a resident", needsResident: true, needsDateRange: true },
       ]
     },
     operational: {
@@ -246,7 +251,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
       reports: [
         { value: "census", label: "Census Report", description: "Current resident census and status", needsDateRange: false },
         { value: "staffActivity", label: "Staff Activity", description: "Staff login and documentation activity", needsDateRange: true },
-        { value: "credentialStatus", label: "Credential Status", description: "Staff credential expiration overview", needsDateRange: false },
+        { value: "credentialStatus", label: "Credential Status", description: "Staff credential expiration overview", needsStaffMember: true },
       ]
     }
   };
@@ -464,6 +469,40 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     enabled: !!facilityId && !!reportResidentId && activeReport === "medList",
   });
 
+  // Fetch vitals for selected resident (for vitals history report)
+  const { data: residentVitals = [] } = useQuery<Array<{
+    id: string;
+    residentId: string;
+    recordedAt: string;
+    recordedBy: string;
+    bloodPressureSystolic?: number;
+    bloodPressureDiastolic?: number;
+    heartRate?: number;
+    temperature?: number;
+    respiratoryRate?: number;
+    oxygenSaturation?: number;
+    weight?: number;
+    bloodSugar?: number;
+    painLevel?: number;
+    notes?: string;
+    recordedByName?: string;
+  }>>({
+    queryKey: ["owner-resident-vitals", reportResidentId, reportStartDate, reportEndDate],
+    queryFn: async () => {
+      if (!reportResidentId) return [];
+      const params = new URLSearchParams();
+      if (reportStartDate) params.set("startDate", reportStartDate);
+      if (reportEndDate) params.set("endDate", reportEndDate);
+      const url = `/api/owners/facilities/${facilityId}/ehr/residents/${reportResidentId}/vitals${params.toString() ? `?${params}` : ""}`;
+      const response = await fetch(url, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!facilityId && !!reportResidentId && activeReport === "vitalsHistory",
+  });
+
   // Fetch facility PIN
   const { data: facilityPinData, refetch: refetchPin } = useQuery<{ pin: string | null }>({
     queryKey: ["owner-facility-pin", facilityId],
@@ -492,6 +531,9 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
 
   // Get selected resident for medication list report
   const medListResident = reportResidentId ? residents.find(r => r.id === reportResidentId) : null;
+
+  // Get selected resident for vitals history report
+  const vitalsResident = reportResidentId ? residents.find(r => r.id === reportResidentId) : null;
 
   // Fetch team members for credentials (synced with owner-dashboard Team section)
   const { data: teamMembers = [] } = useQuery<TeamMember[]>({
@@ -1616,6 +1658,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                         setReportResidentId(null);
                         setReportIncidentId(null);
                         setReportStatusFilter("all");
+                        setReportStaffId(null);
                       }}
                     >
                       <SelectTrigger className="w-full bg-white border-gray-300 text-gray-900">
@@ -1764,10 +1807,44 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                     </div>
                   )}
 
+                  {/* Staff Member Selection - for credential status report */}
+                  {getCurrentReportConfig()?.needsStaffMember && (
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Select Staff Member</label>
+                      <Select
+                        value={reportStaffId || "all"}
+                        onValueChange={(value) => setReportStaffId(value === "all" ? null : value)}
+                      >
+                        <SelectTrigger className="w-full bg-white border-gray-300 text-gray-900">
+                          <SelectValue placeholder="Choose staff member..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200 max-h-64">
+                          <SelectItem
+                            value="all"
+                            className="text-gray-900 focus:bg-teal-50 font-medium"
+                          >
+                            All Staff Members
+                          </SelectItem>
+                          {teamMembers.map((member) => (
+                            <SelectItem
+                              key={member.id}
+                              value={member.id}
+                              className="text-gray-900 focus:bg-teal-50"
+                            >
+                              {member.name}
+                              <span className="text-gray-400 ml-2">• {member.role}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   {/* No parameters needed message */}
                   {!getCurrentReportConfig()?.needsDateRange &&
                    !getCurrentReportConfig()?.needsResident &&
-                   !getCurrentReportConfig()?.needsIncident && (
+                   !getCurrentReportConfig()?.needsIncident &&
+                   !getCurrentReportConfig()?.needsStaffMember && (
                     <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-center">
                       <p className="text-sm text-gray-500">No additional parameters needed</p>
                     </div>
@@ -2003,6 +2080,49 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           />
         </ReportViewerDialog>
       )}
+
+      {/* Vitals History Report */}
+      {vitalsResident && (
+        <ReportViewerDialog
+          open={activeReport === "vitalsHistory"}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActiveReport(null);
+            }
+          }}
+          title={`Vitals History - ${vitalsResident.firstName} ${vitalsResident.lastName}`}
+        >
+          <VitalsReport
+            facilityName={facilityData?.name || "Facility"}
+            facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+            facilityPhone={facilityData?.phone}
+            resident={vitalsResident}
+            vitals={residentVitals}
+            startDate={reportStartDate}
+            endDate={reportEndDate}
+          />
+        </ReportViewerDialog>
+      )}
+
+      {/* Credential Status Report */}
+      <ReportViewerDialog
+        open={activeReport === "credentialStatus"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveReport(null);
+          }
+        }}
+        title={`Credential Status - ${reportStaffId ? teamMembers.find(m => m.id === reportStaffId)?.name || "Staff Member" : "All Staff"}`}
+      >
+        <CredentialStatusReport
+          facilityName={facilityData?.name || "Facility"}
+          facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
+          facilityPhone={facilityData?.phone}
+          teamMember={reportStaffId ? teamMembers.find(m => m.id === reportStaffId) || null : null}
+          teamMembers={teamMembers}
+          credentials={allCredentials}
+        />
+      </ReportViewerDialog>
 
       {/* Add/Edit Credential Dialog */}
       <Dialog open={credentialDialogOpen} onOpenChange={setCredentialDialogOpen}>

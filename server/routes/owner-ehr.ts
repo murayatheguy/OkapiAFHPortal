@@ -501,6 +501,42 @@ export function registerOwnerEhrRoutes(app: Express) {
   );
 
   /**
+   * Get vitals history for a resident (owner view)
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/ehr/residents/:residentId/vitals",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, residentId } = req.params;
+        const { startDate, endDate } = req.query;
+
+        // Verify resident belongs to facility
+        const resident = await storage.getResident(residentId);
+        if (!resident || resident.facilityId !== facilityId) {
+          return res.status(404).json({ error: "Resident not found" });
+        }
+
+        // Build date range if provided
+        let dateRange: { start: Date; end: Date } | undefined;
+        if (startDate && endDate) {
+          dateRange = {
+            start: new Date(startDate as string),
+            end: new Date(endDate as string + "T23:59:59"),
+          };
+        }
+
+        const vitals = await storage.getVitalsByResident(residentId, dateRange);
+        res.json(vitals);
+      } catch (error) {
+        console.error("Error getting vitals:", error);
+        res.status(500).json({ error: "Failed to get vitals" });
+      }
+    }
+  );
+
+  /**
    * Get medication compliance summary for facility (owner view)
    */
   app.get(
