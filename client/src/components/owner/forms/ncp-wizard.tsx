@@ -539,7 +539,6 @@ export type NCPFormData = ReturnType<typeof getInitialFormData>;
 
 interface NCPWizardProps {
   facilityId: string;
-  residentId?: string;
   formSubmissionId?: number; // For editing existing drafts
   onClose: () => void;
   onComplete?: () => void;
@@ -547,7 +546,6 @@ interface NCPWizardProps {
 
 export function NCPWizard({
   facilityId,
-  residentId,
   formSubmissionId,
   onClose,
   onComplete,
@@ -573,21 +571,6 @@ export function NCPWizard({
     enabled: !!facilityId,
   });
 
-  // Fetch resident data to pre-fill form
-  const { data: resident } = useQuery({
-    queryKey: ["owner-resident", facilityId, residentId],
-    queryFn: async () => {
-      if (!residentId) return null;
-      const response = await fetch(
-        `/api/owners/facilities/${facilityId}/residents/${residentId}`,
-        { credentials: "include" }
-      );
-      if (!response.ok) return null;
-      return response.json();
-    },
-    enabled: !!residentId && !!facilityId,
-  });
-
   // Fetch existing form submission if editing
   const { data: existingSubmission } = useQuery({
     queryKey: ["form-submission", formSubmissionId],
@@ -603,7 +586,7 @@ export function NCPWizard({
     enabled: !!formSubmissionId,
   });
 
-  // Pre-fill form data from facility
+  // Pre-fill form data from facility (provider name only)
   useEffect(() => {
     if (facility) {
       setFormData((prev) => ({
@@ -615,57 +598,6 @@ export function NCPWizard({
       }));
     }
   }, [facility]);
-
-  // Pre-fill form data from resident
-  useEffect(() => {
-    if (resident) {
-      // Calculate allergies string from array if needed
-      const allergiesText = Array.isArray(resident.allergies)
-        ? resident.allergies.join(", ")
-        : resident.allergies || "";
-
-      setFormData((prev) => ({
-        ...prev,
-        residentInfo: {
-          ...prev.residentInfo,
-          firstName: resident.firstName || "",
-          lastName: resident.lastName || "",
-          preferredName: resident.preferredName || "",
-          pronouns: resident.pronouns || "",
-          dateOfBirth: resident.dateOfBirth || "",
-          movedInDate: resident.admissionDate || "",
-          primaryLanguage: resident.primaryLanguage || "",
-          allergies: allergiesText,
-          admissionDate: resident.admissionDate || "",
-          roomNumber: resident.roomNumber || "",
-        },
-        emergencyContacts: {
-          contacts: (resident.emergencyContacts && resident.emergencyContacts.length > 0)
-            ? resident.emergencyContacts.map((c: any) => ({
-                name: c.name || "",
-                relationship: c.relationship || "Family",
-                homePhone: c.phone || "",
-                cellPhone: c.altPhone || c.cellPhone || "",
-                fax: "",
-                email: c.email || "",
-                address: c.address || "",
-                preferredContact: "cell" as "home" | "cell" | "email",
-              }))
-            : prev.emergencyContacts.contacts,
-        },
-        medication: {
-          ...prev.medication,
-          medicationAllergies: allergiesText,
-          hasMedicationAllergies: allergiesText.length > 0,
-          pharmacyName: resident.pharmacyName || "",
-        },
-        communication: {
-          ...prev.communication,
-          preferredLanguage: resident.primaryLanguage || "",
-        },
-      }));
-    }
-  }, [resident]);
 
   // Load existing form data if editing
   useEffect(() => {
@@ -712,11 +644,14 @@ export function NCPWizard({
   // Save draft mutation
   const saveDraftMutation = useMutation({
     mutationFn: async () => {
+      const residentName = formData.residentInfo.firstName && formData.residentInfo.lastName
+        ? `${formData.residentInfo.firstName} ${formData.residentInfo.lastName}`
+        : "New Resident";
       const payload = {
         facilityId,
-        residentId: residentId || null,
+        residentId: null, // Manual entry - not linked to system resident
         formType: "ncp",
-        formTitle: `NCP - ${formData.residentInfo.firstName} ${formData.residentInfo.lastName}`,
+        formTitle: `NCP - ${residentName}`,
         status: "draft",
         currentSection,
         totalSections: NCP_SECTIONS.length,
@@ -787,10 +722,6 @@ export function NCPWizard({
     return age >= 0 ? age.toString() : "";
   };
 
-  // Auto-fill hint component
-  const AutoFillHint = () => (
-    <span className="text-xs text-teal-600 ml-1">(Auto-filled)</span>
-  );
 
   // Render Section 1: Resident Information
   const renderResidentInfoSection = () => {
@@ -798,6 +729,19 @@ export function NCPWizard({
 
     return (
       <div className="space-y-8">
+        {/* Manual Entry Notice */}
+        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800">
+            <p className="font-medium">Manual Entry Form</p>
+            <p className="text-blue-700 mt-1">
+              Fill out this Negotiated Care Plan for any resident. All fields are editable.
+              This form can be used for prospective residents, printed as a blank template,
+              or completed before full system adoption.
+            </p>
+          </div>
+        </div>
+
         {/* Provider Information */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
@@ -806,10 +750,7 @@ export function NCPWizard({
           </h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-700">
-                Provider Name
-                {facility?.name && <AutoFillHint />}
-              </Label>
+              <Label className="text-gray-700">Provider Name</Label>
               <Input
                 value={data.providerName}
                 onChange={(e) =>
@@ -831,10 +772,7 @@ export function NCPWizard({
               />
             </div>
             <div>
-              <Label className="text-gray-700">
-                Date Moved In
-                {resident?.admissionDate && <AutoFillHint />}
-              </Label>
+              <Label className="text-gray-700">Date Moved In</Label>
               <Input
                 type="date"
                 value={data.movedInDate}
@@ -877,14 +815,36 @@ export function NCPWizard({
           </h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-700">
-                Resident Name
-                {resident?.firstName && <AutoFillHint />}
-              </Label>
+              <Label className="text-gray-700">First Name</Label>
               <Input
-                value={`${data.firstName} ${data.lastName}`.trim()}
-                readOnly
-                className="mt-1 bg-gray-50 border-gray-300 text-gray-700"
+                value={data.firstName}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { firstName: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="Resident's first name"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Last Name</Label>
+              <Input
+                value={data.lastName}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { lastName: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="Resident's last name"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-700">Preferred Name</Label>
+              <Input
+                value={data.preferredName}
+                onChange={(e) =>
+                  updateSectionData("residentInfo", { preferredName: e.target.value })
+                }
+                className="mt-1 bg-white border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                placeholder="Nickname or preferred name"
               />
             </div>
             <div>
@@ -904,10 +864,7 @@ export function NCPWizard({
               </select>
             </div>
             <div>
-              <Label className="text-gray-700">
-                Date of Birth
-                {resident?.dateOfBirth && <AutoFillHint />}
-              </Label>
+              <Label className="text-gray-700">Date of Birth</Label>
               <Input
                 type="date"
                 value={data.dateOfBirth}
@@ -927,10 +884,7 @@ export function NCPWizard({
               />
             </div>
             <div>
-              <Label className="text-gray-700">
-                Primary Language
-                {resident?.primaryLanguage && <AutoFillHint />}
-              </Label>
+              <Label className="text-gray-700">Primary Language</Label>
               <Input
                 value={data.primaryLanguage}
                 onChange={(e) =>
@@ -969,10 +923,7 @@ export function NCPWizard({
               </div>
             </div>
             <div className="col-span-2">
-              <Label className="text-gray-700">
-                Allergies
-                {resident?.allergies && <AutoFillHint />}
-              </Label>
+              <Label className="text-gray-700">Allergies</Label>
               <Textarea
                 value={data.allergies}
                 onChange={(e) =>
@@ -1127,17 +1078,6 @@ export function NCPWizard({
           )}
         </div>
 
-        {/* Info note */}
-        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-800">
-            <p className="font-medium">Auto-filled Information</p>
-            <p className="text-blue-700 mt-1">
-              Fields marked with "(Auto-filled)" have been pre-populated from the resident's profile.
-              You can edit these values if needed.
-            </p>
-          </div>
-        </div>
       </div>
     );
   };
@@ -1206,7 +1146,6 @@ export function NCPWizard({
   // Render Section 2: Emergency Contacts
   const renderEmergencyContactsSection = () => {
     const contacts = formData.emergencyContacts.contacts;
-    const hasAutoFilledContacts = resident?.emergencyContacts && resident.emergencyContacts.length > 0;
 
     return (
       <div className="space-y-6">
@@ -1222,20 +1161,6 @@ export function NCPWizard({
             </p>
           </div>
         </div>
-
-        {/* Auto-fill notice */}
-        {hasAutoFilledContacts && (
-          <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium">Auto-filled from Resident Profile</p>
-              <p className="text-blue-700 mt-1">
-                Emergency contacts have been pre-populated from the resident's profile.
-                You can edit or add additional contacts as needed.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Contact Cards */}
         {contacts.map((contact, index) => (
@@ -1253,9 +1178,6 @@ export function NCPWizard({
                   Contact {index + 1}
                   {contact.name && ` - ${contact.name}`}
                 </span>
-                {index === 0 && hasAutoFilledContacts && (
-                  <span className="text-xs text-teal-600 ml-2">(Auto-filled)</span>
-                )}
               </div>
               {index > 0 && (
                 <Button
@@ -3453,9 +3375,9 @@ export function NCPWizard({
           <h2 className="text-lg font-semibold text-gray-800 mt-4">
             NEGOTIATED CARE PLAN (NCP)
           </h2>
-          {resident && (
+          {(formData.residentInfo.firstName || formData.residentInfo.lastName) && (
             <p className="text-gray-700 mt-2">
-              Resident: {resident.firstName} {resident.lastName}
+              Resident: {formData.residentInfo.firstName} {formData.residentInfo.lastName}
             </p>
           )}
           <p className="text-xs text-gray-500 mt-2">
@@ -3483,11 +3405,9 @@ export function NCPWizard({
               <span className="font-semibold text-gray-900">
                 Negotiated Care Plan (NCP)
               </span>
-              {residentId && resident && (
-                <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                  {resident.firstName} {resident.lastName}
-                </Badge>
-              )}
+              <Badge variant="secondary" className="bg-blue-50 text-blue-700 border border-blue-200">
+                Manual Entry
+              </Badge>
             </div>
           </div>
 
