@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
+import { NCPWizard } from "@/components/owner/forms/ncp-wizard";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -47,6 +48,7 @@ export default function OwnerDashboardPage() {
 
   // Add Team Member dialog state
   const [showAddTeamMemberDialog, setShowAddTeamMemberDialog] = useState(false);
+  const [showNCPWizard, setShowNCPWizard] = useState(false);
   const [teamMemberForm, setTeamMemberForm] = useState({
     firstName: "",
     lastName: "",
@@ -934,7 +936,11 @@ export default function OwnerDashboardPage() {
                         </p>
                         <div className="flex items-center justify-between">
                           <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Required</Badge>
-                          <Button size="sm" className="bg-teal-600 hover:bg-teal-500 text-white gap-1">
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowNCPWizard(true)}
+                          >
                             Start Form
                             <ArrowRight className="h-3 w-3" />
                           </Button>
@@ -1166,6 +1172,14 @@ export default function OwnerDashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* NCP Wizard */}
+      {showNCPWizard && selectedFacilityId && (
+        <NCPWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowNCPWizard(false)}
+        />
+      )}
     </div>
   );
 }
