@@ -145,31 +145,37 @@ export default function Home() {
       />
 
       {/* Header - Compact */}
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/20">
+      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-amber-900/30 bg-[#0d1a14]/80 backdrop-blur-sm">
         <div className="flex items-center gap-1.5">
-          <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
+          <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#d4b56a', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
           </span>
-          <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#e8e4dc', fontSize: '1.25rem' }}>
+          <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, fontStyle: 'italic', color: '#f5f3ef', fontSize: '1.25rem' }}>
             Care Network
           </span>
         </div>
-        
+
         <nav className="hidden md:flex items-center gap-8">
           {[
             { label: 'Find Homes', href: '/search' },
             { label: 'How It Works', href: '#how-it-works' },
-            { label: 'For Providers', href: '/owner/login' },
           ].map((item) => (
-            <Link 
+            <Link
               key={item.label}
               href={item.href}
-              className="text-stone-400 hover:text-amber-200 transition-colors"
-              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.85rem', letterSpacing: '0.1em' }}
+              className="text-stone-300 hover:text-amber-300 transition-colors"
+              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.85rem', letterSpacing: '0.1em' }}
             >
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/owner/login"
+            className="px-4 py-1.5 bg-amber-600/90 hover:bg-amber-500 text-white transition-colors rounded"
+            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, fontSize: '0.8rem', letterSpacing: '0.08em' }}
+          >
+            For Providers
+          </Link>
         </nav>
 
         {/* Mobile menu icon */}
@@ -212,40 +218,40 @@ export default function Home() {
         <div className="absolute top-0 right-1/4 w-48 h-48 bg-emerald-900/20 rounded-full blur-3xl" />
         
         <div className="relative z-10 px-5 md:px-12 max-w-5xl mx-auto text-center">
-          <p 
-            className="mb-2 tracking-[0.2em] uppercase"
-            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.6rem', color: '#c9a962' }}
+          <p
+            className="mb-3 tracking-[0.2em] uppercase"
+            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, fontSize: '0.7rem', color: '#d4b56a', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
             data-testid="text-tagline"
           >
             Washington State's Premier Care Network
           </p>
 
-          <h1 
-            className="mb-3"
-            style={{ fontFamily: "'Cormorant', serif", fontSize: 'clamp(1.75rem, 5vw, 3rem)', fontWeight: 300, color: '#e8e4dc', lineHeight: 1.15 }}
+          <h1
+            className="mb-4"
+            style={{ fontFamily: "'Cormorant', serif", fontSize: 'clamp(2rem, 5.5vw, 3.25rem)', fontWeight: 500, color: '#ffffff', lineHeight: 1.15, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
             data-testid="text-headline"
           >
             Exceptional care,
-            <span style={{ fontStyle: 'italic', color: '#c9a962' }}> thoughtfully curated.</span>
+            <span style={{ fontStyle: 'italic', color: '#e8c55a', fontWeight: 400 }}> thoughtfully curated.</span>
           </h1>
-          
-          <p 
-            className="max-w-md mx-auto mb-6 hidden sm:block"
-            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.9rem', color: '#9a978f', lineHeight: 1.6 }}
+
+          <p
+            className="max-w-lg mx-auto mb-8 hidden sm:block"
+            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '1rem', color: '#c8c4bc', lineHeight: 1.7 }}
             data-testid="text-description"
           >
             Connect with verified care facilities offering personalized attention and certified professionals.
           </p>
 
           {/* Facility Type Selector */}
-          <div className="max-w-2xl mx-auto mb-6">
-            <p 
-              className="mb-3 text-center"
-              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.75rem', color: '#9a978f', letterSpacing: '0.1em' }}
+          <div className="max-w-2xl mx-auto mb-8">
+            <p
+              className="mb-4 text-center"
+              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.85rem', color: '#c8c4bc', letterSpacing: '0.08em' }}
             >
               What type of care are you looking for?
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {FACILITY_TYPES.map((type) => {
                 const Icon = type.icon;
                 const isSelected = selectedFacilityTypes.includes(type.id);
@@ -253,40 +259,41 @@ export default function Home() {
                   <button
                     key={type.id}
                     onClick={() => toggleFacilityType(type.id)}
-                    className="relative p-3 md:p-4 rounded-lg transition-all duration-300 text-center group"
-                    style={{ 
-                      backgroundColor: isSelected ? 'rgba(201, 169, 98, 0.15)' : 'rgba(232, 228, 220, 0.05)',
+                    className="relative p-4 md:p-5 rounded-lg transition-all duration-300 text-center group hover:scale-[1.02]"
+                    style={{
+                      backgroundColor: isSelected ? 'rgba(212, 181, 106, 0.2)' : 'rgba(255, 255, 255, 0.08)',
                       border: '1px solid',
-                      borderColor: isSelected ? '#c9a962' : 'rgba(201, 169, 98, 0.2)',
+                      borderColor: isSelected ? '#d4b56a' : 'rgba(255, 255, 255, 0.15)',
+                      boxShadow: isSelected ? '0 4px 12px rgba(212, 181, 106, 0.15)' : '0 2px 8px rgba(0,0,0,0.1)',
                     }}
                     data-testid={`facility-type-${type.id}`}
                   >
-                    <Icon 
-                      className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1.5 transition-colors"
-                      style={{ color: isSelected ? '#c9a962' : '#9a978f' }}
+                    <Icon
+                      className="w-7 h-7 md:w-8 md:h-8 mx-auto mb-2 transition-colors"
+                      style={{ color: isSelected ? '#e8c55a' : '#d4b56a' }}
                     />
-                    <p 
-                      className="text-xs md:text-sm mb-0.5 transition-colors"
-                      style={{ 
-                        fontFamily: "'Jost', sans-serif", 
-                        fontWeight: isSelected ? 500 : 400, 
-                        color: isSelected ? '#e8e4dc' : '#9a978f' 
+                    <p
+                      className="text-sm md:text-base mb-1 transition-colors"
+                      style={{
+                        fontFamily: "'Jost', sans-serif",
+                        fontWeight: isSelected ? 600 : 500,
+                        color: isSelected ? '#ffffff' : '#e8e4dc'
                       }}
                     >
                       {type.short}
                     </p>
-                    <p 
+                    <p
                       className="text-xs hidden md:block"
-                      style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, color: '#6b6860', fontSize: '0.65rem' }}
+                      style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, color: '#a8a49c', fontSize: '0.75rem' }}
                     >
                       {type.description}
                     </p>
                     {isSelected && (
-                      <div 
-                        className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: '#c9a962' }}
+                      <div
+                        className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: '#e8c55a' }}
                       >
-                        <svg className="w-2.5 h-2.5 text-[#0d1a14]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 text-[#0d1a14]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
@@ -296,9 +303,9 @@ export default function Home() {
               })}
             </div>
             {selectedFacilityTypes.length === 0 && (
-              <p 
-                className="mt-2 text-center"
-                style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.65rem', color: '#6b6860' }}
+              <p
+                className="mt-3 text-center"
+                style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.75rem', color: '#a8a49c' }}
               >
                 No selection = All types shown
               </p>
@@ -387,15 +394,15 @@ export default function Home() {
           </div>
 
           {/* Quick Stats - Inline on mobile */}
-          <div className="flex justify-center gap-6 md:gap-10">
+          <div className="flex justify-center gap-8 md:gap-12 mt-2">
             {[
               { number: '500+', label: 'Homes' },
               { number: '98%', label: 'Satisfaction' },
               { number: '24/7', label: 'Support' }
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p style={{ fontFamily: "'Cormorant', serif", fontSize: '1.4rem', fontWeight: 400, color: '#c9a962' }}>{stat.number}</p>
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.6rem', fontWeight: 300, color: '#9a978f', letterSpacing: '0.08em' }}>{stat.label}</p>
+                <p style={{ fontFamily: "'Cormorant', serif", fontSize: '1.75rem', fontWeight: 600, color: '#e8c55a' }}>{stat.number}</p>
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', fontWeight: 500, color: '#c8c4bc', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{stat.label}</p>
               </div>
             ))}
           </div>
@@ -403,41 +410,42 @@ export default function Home() {
       </section>
 
       {/* Featured Homes Section */}
-      <section className="relative z-10 py-10 md:py-16" style={{ backgroundColor: '#f8f6f1' }}>
+      <section className="relative z-10 py-12 md:py-20" style={{ backgroundColor: '#f8f6f1' }}>
         <div className="px-5 md:px-12">
           {/* Section Header */}
-          <div className="max-w-6xl mx-auto mb-6 md:mb-10">
+          <div className="max-w-6xl mx-auto mb-8 md:mb-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <div>
-                <p 
-                  className="mb-1 tracking-[0.15em] uppercase"
-                  style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.65rem', color: '#c9a962' }}
+                <p
+                  className="mb-2 tracking-[0.2em] uppercase"
+                  style={{ fontFamily: "'Jost', sans-serif", fontWeight: 600, fontSize: '0.75rem', color: '#2d7a5f' }}
                 >
                   Handpicked for Excellence
                 </p>
-                <h2 
-                  style={{ fontFamily: "'Cormorant', serif", fontSize: '1.75rem', fontWeight: 400, color: '#1a2f25' }}
+                <h2
+                  style={{ fontFamily: "'Cormorant', serif", fontSize: '2rem', fontWeight: 600, color: '#1a2f25' }}
                 >
                   Featured Homes
                 </h2>
               </div>
-              
+
               {/* Filters - Scrollable on mobile */}
               <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 md:mx-0 md:px-0">
                 {filters.map((filter) => (
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
-                    className="px-3 py-1.5 transition-all duration-300 whitespace-nowrap flex-shrink-0"
-                    style={{ 
-                      fontFamily: "'Jost', sans-serif", 
-                      fontWeight: 400, 
-                      fontSize: '0.7rem', 
+                    className="px-4 py-2 rounded transition-all duration-300 whitespace-nowrap flex-shrink-0"
+                    style={{
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 500,
+                      fontSize: '0.75rem',
                       letterSpacing: '0.05em',
-                      backgroundColor: activeFilter === filter.id ? '#1a2f25' : 'transparent',
-                      color: activeFilter === filter.id ? '#e8e4dc' : '#5a6860',
+                      backgroundColor: activeFilter === filter.id ? '#1a2f25' : '#ffffff',
+                      color: activeFilter === filter.id ? '#ffffff' : '#3a4a42',
                       border: '1px solid',
-                      borderColor: activeFilter === filter.id ? '#1a2f25' : '#c9c5bc'
+                      borderColor: activeFilter === filter.id ? '#1a2f25' : '#d0ccc4',
+                      boxShadow: activeFilter === filter.id ? '0 2px 8px rgba(26,47,37,0.15)' : 'none'
                     }}
                     data-testid={`filter-${filter.id}`}
                   >
@@ -592,34 +600,34 @@ export default function Home() {
       </section>
 
       {/* How It Works - Compact */}
-      <section id="how-it-works" className="relative z-10 py-12 md:py-20" style={{ backgroundColor: '#0d1a14' }}>
+      <section id="how-it-works" className="relative z-10 py-14 md:py-24" style={{ backgroundColor: '#0d1a14' }}>
         <div className="px-5 md:px-12 max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p 
-              className="mb-2 tracking-[0.15em] uppercase"
-              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: '0.65rem', color: '#c9a962' }}
+          <div className="text-center mb-12">
+            <p
+              className="mb-3 tracking-[0.2em] uppercase"
+              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, fontSize: '0.75rem', color: '#d4b56a' }}
             >
               Simple & Supportive
             </p>
-            <h2 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.75rem', fontWeight: 400, color: '#e8e4dc' }}>
+            <h2 style={{ fontFamily: "'Cormorant', serif", fontSize: '2rem', fontWeight: 500, color: '#ffffff' }}>
               How It Works
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
               { step: '01', title: 'Search', desc: 'Enter your location to discover verified Adult Family Homes in your area.' },
               { step: '02', title: 'Compare', desc: 'Review detailed profiles, photos, certifications, and authentic family reviews.' },
               { step: '03', title: 'Connect', desc: 'Schedule tours directly with homes and find the perfect fit for your loved one.' }
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <p style={{ fontFamily: "'Cormorant', serif", fontSize: '2.5rem', fontWeight: 300, color: '#c9a962', marginBottom: '0.5rem' }}>
+                <p style={{ fontFamily: "'Cormorant', serif", fontSize: '3rem', fontWeight: 400, color: '#e8c55a', marginBottom: '0.75rem' }}>
                   {item.step}
                 </p>
-                <h3 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.3rem', fontWeight: 400, color: '#e8e4dc', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.5rem', fontWeight: 500, color: '#ffffff', marginBottom: '0.75rem' }}>
                   {item.title}
                 </h3>
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', fontWeight: 300, color: '#9a978f', lineHeight: 1.6 }}>
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.95rem', fontWeight: 400, color: '#c8c4bc', lineHeight: 1.7 }}>
                   {item.desc}
                 </p>
               </div>
@@ -629,41 +637,41 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-8 border-t border-amber-900/20" style={{ backgroundColor: '#0a1410' }}>
+      <footer className="relative z-10 py-10 border-t border-amber-900/30" style={{ backgroundColor: '#0a1410' }}>
         <div className="px-5 md:px-12 max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-5">
             <div className="flex items-center gap-1.5">
-              <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#c9a962', letterSpacing: '0.1em', fontSize: '1rem' }}>
+              <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#d4b56a', letterSpacing: '0.1em', fontSize: '1.1rem' }}>
                 OKAPI
               </span>
-              <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#e8e4dc', fontSize: '1rem' }}>
+              <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, fontStyle: 'italic', color: '#f5f3ef', fontSize: '1.1rem' }}>
                 Care Network
               </span>
             </div>
-            
-            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', color: '#6b7c72', letterSpacing: '0.05em' }}>
+
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#a8a49c', letterSpacing: '0.05em' }}>
               © 2024 Okapi Care Network. All rights reserved.
             </p>
 
-            <div className="flex gap-5">
-              <a 
-                href="/privacy" 
-                className="text-stone-500 hover:text-amber-200 transition-colors"
-                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
+            <div className="flex gap-6">
+              <a
+                href="/privacy"
+                className="text-stone-400 hover:text-amber-300 transition-colors"
+                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', fontWeight: 400, letterSpacing: '0.05em' }}
               >
                 Privacy
               </a>
-              <a 
-                href="/terms" 
-                className="text-stone-500 hover:text-amber-200 transition-colors"
-                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
+              <a
+                href="/terms"
+                className="text-stone-400 hover:text-amber-300 transition-colors"
+                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', fontWeight: 400, letterSpacing: '0.05em' }}
               >
                 Terms
               </a>
-              <a 
-                href="mailto:contact@okapicarenetwork.com" 
-                className="text-stone-500 hover:text-amber-200 transition-colors"
-                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', letterSpacing: '0.05em' }}
+              <a
+                href="mailto:contact@okapicarenetwork.com"
+                className="text-stone-400 hover:text-amber-300 transition-colors"
+                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', fontWeight: 400, letterSpacing: '0.05em' }}
               >
                 Contact
               </a>
