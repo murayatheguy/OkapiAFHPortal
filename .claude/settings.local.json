@@ -49,7 +49,9 @@
       "Bash(node map-pdf-coordinates.cjs:*)",
       "Bash(git restore:*)",
       "Bash(node analyze-ncp-pdf.cjs:*)",
-      "Bash(node analyze-forms.cjs:*)"
+      "Bash(node analyze-forms.cjs:*)",
+      "Bash(node test-admission-agreement.cjs:*)",
+      "Bash(node test-disclosure-services.cjs:*)"
     ]
   }
 }
