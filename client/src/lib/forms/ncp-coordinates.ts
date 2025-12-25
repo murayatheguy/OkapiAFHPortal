@@ -1,0 +1,553 @@
+// Auto-generated NCP PDF coordinate mapping
+// Generated from DSHS NCP template analysis
+// Page dimensions (Letter size landscape)
+
+export const NCP_PAGE_WIDTH = 792;
+export const NCP_PAGE_HEIGHT = 612;
+export const NCP_IS_LANDSCAPE = true;
+
+// Field coordinates by page (x, y from bottom-left origin)
+export const NCP_FIELD_COORDS = {
+  "page0": {
+    "providerName": {
+      "x": 100,
+      "y": 527
+    },
+    "ncpStartDate": {
+      "x": 380,
+      "y": 527
+    },
+    "movedInDate": {
+      "x": 570,
+      "y": 527
+    },
+    "dateCompleted": {
+      "x": 680,
+      "y": 527
+    },
+    "residentFirstName": {
+      "x": 100,
+      "y": 502
+    },
+    "residentLastName": {
+      "x": 250,
+      "y": 502
+    },
+    "preferredName": {
+      "x": 420,
+      "y": 502
+    },
+    "pronouns": {
+      "x": 570,
+      "y": 502
+    },
+    "dateOfBirth": {
+      "x": 100,
+      "y": 477
+    },
+    "primaryLanguage": {
+      "x": 280,
+      "y": 477
+    },
+    "speaksEnglishYes": {
+      "x": 460,
+      "y": 477
+    },
+    "speaksEnglishNo": {
+      "x": 500,
+      "y": 477
+    },
+    "interpreterYes": {
+      "x": 600,
+      "y": 477
+    },
+    "interpreterNo": {
+      "x": 640,
+      "y": 477
+    },
+    "allergies": {
+      "x": 100,
+      "y": 447
+    },
+    "legalPOA": {
+      "x": 55,
+      "y": 412
+    },
+    "legalGuardian": {
+      "x": 150,
+      "y": 412
+    },
+    "legalHealthcare": {
+      "x": 245,
+      "y": 412
+    },
+    "legalPOLST": {
+      "x": 380,
+      "y": 412
+    },
+    "legalDNR": {
+      "x": 470,
+      "y": 412
+    },
+    "legalOther": {
+      "x": 540,
+      "y": 412
+    },
+    "legalOtherText": {
+      "x": 590,
+      "y": 412
+    },
+    "specialtyDialysis": {
+      "x": 55,
+      "y": 377
+    },
+    "specialtyHospice": {
+      "x": 150,
+      "y": 377
+    },
+    "specialtyBehavioral": {
+      "x": 245,
+      "y": 377
+    },
+    "specialtyMemory": {
+      "x": 380,
+      "y": 377
+    },
+    "specialtyOther": {
+      "x": 470,
+      "y": 377
+    },
+    "specialtyOtherText": {
+      "x": 540,
+      "y": 377
+    }
+  },
+  "page1": {
+    "contact1Name": {
+      "x": 140,
+      "y": 512
+    },
+    "contact1Relationship": {
+      "x": 400,
+      "y": 512
+    },
+    "contact1HomePhone": {
+      "x": 140,
+      "y": 487
+    },
+    "contact1CellPhone": {
+      "x": 400,
+      "y": 487
+    },
+    "contact1Email": {
+      "x": 140,
+      "y": 462
+    },
+    "contact1PreferredContact": {
+      "x": 400,
+      "y": 462
+    },
+    "contact1Address": {
+      "x": 140,
+      "y": 437
+    },
+    "contact2Name": {
+      "x": 140,
+      "y": 392
+    },
+    "contact2Relationship": {
+      "x": 400,
+      "y": 392
+    },
+    "contact2HomePhone": {
+      "x": 140,
+      "y": 367
+    },
+    "contact2CellPhone": {
+      "x": 400,
+      "y": 367
+    }
+  },
+  "page2": {
+    "evacuationIndependent": {
+      "x": 55,
+      "y": 492
+    },
+    "evacuationAssistance": {
+      "x": 200,
+      "y": 492
+    },
+    "evacuationDescription": {
+      "x": 100,
+      "y": 462
+    },
+    "mobilityWheelchair": {
+      "x": 55,
+      "y": 412
+    },
+    "mobilityWalker": {
+      "x": 150,
+      "y": 412
+    },
+    "mobilityCane": {
+      "x": 245,
+      "y": 412
+    },
+    "mobilityNone": {
+      "x": 340,
+      "y": 412
+    },
+    "evacuationInstructions": {
+      "x": 55,
+      "y": 332
+    }
+  },
+  "page3": {
+    "expressionProblemsYes": {
+      "x": 200,
+      "y": 492
+    },
+    "expressionProblemsNo": {
+      "x": 250,
+      "y": 492
+    },
+    "expressionDescription": {
+      "x": 300,
+      "y": 492
+    },
+    "hearingProblemsYes": {
+      "x": 200,
+      "y": 452
+    },
+    "hearingProblemsNo": {
+      "x": 250,
+      "y": 452
+    },
+    "hearingDescription": {
+      "x": 300,
+      "y": 452
+    },
+    "visionProblemsYes": {
+      "x": 200,
+      "y": 412
+    },
+    "visionProblemsNo": {
+      "x": 250,
+      "y": 412
+    },
+    "visionDescription": {
+      "x": 300,
+      "y": 412
+    }
+  },
+  "page4": {
+    "medicationAllergiesYes": {
+      "x": 200,
+      "y": 512
+    },
+    "medicationAllergiesNo": {
+      "x": 250,
+      "y": 512
+    },
+    "medicationAllergiesList": {
+      "x": 300,
+      "y": 512
+    },
+    "medsOrderedBy": {
+      "x": 200,
+      "y": 472
+    },
+    "medsDeliveredBy": {
+      "x": 450,
+      "y": 472
+    },
+    "pharmacyName": {
+      "x": 200,
+      "y": 442
+    },
+    "medLevelSelf": {
+      "x": 55,
+      "y": 402
+    },
+    "medLevelAssist": {
+      "x": 200,
+      "y": 402
+    },
+    "medLevelFull": {
+      "x": 350,
+      "y": 402
+    },
+    "medTypeOral": {
+      "x": 55,
+      "y": 362
+    },
+    "medTypeTopical": {
+      "x": 150,
+      "y": 362
+    },
+    "medTypeEyeDrops": {
+      "x": 245,
+      "y": 362
+    },
+    "medTypeInhalers": {
+      "x": 340,
+      "y": 362
+    },
+    "medTypeSprays": {
+      "x": 435,
+      "y": 362
+    },
+    "medTypeInjections": {
+      "x": 530,
+      "y": 362
+    }
+  },
+  "page6": {
+    "painIssuesYes": {
+      "x": 200,
+      "y": 512
+    },
+    "painIssuesNo": {
+      "x": 250,
+      "y": 512
+    },
+    "painDescription": {
+      "x": 300,
+      "y": 512
+    },
+    "currentWeight": {
+      "x": 200,
+      "y": 472
+    },
+    "currentHeight": {
+      "x": 400,
+      "y": 472
+    },
+    "vitalSignsYes": {
+      "x": 200,
+      "y": 432
+    },
+    "vitalSignsNo": {
+      "x": 250,
+      "y": 432
+    },
+    "vitalSignsFrequency": {
+      "x": 300,
+      "y": 432
+    }
+  },
+  "page7": {
+    "oxygenUse": {
+      "x": 55,
+      "y": 512
+    },
+    "dialysis": {
+      "x": 200,
+      "y": 512
+    },
+    "bloodThinners": {
+      "x": 345,
+      "y": 512
+    },
+    "bloodGlucose": {
+      "x": 490,
+      "y": 512
+    },
+    "cpapBipap": {
+      "x": 55,
+      "y": 482
+    },
+    "nebulizer": {
+      "x": 200,
+      "y": 482
+    },
+    "injections": {
+      "x": 345,
+      "y": 482
+    },
+    "ptOtSt": {
+      "x": 490,
+      "y": 482
+    },
+    "homeHealth": {
+      "x": 55,
+      "y": 412
+    },
+    "homeHealthAgency": {
+      "x": 200,
+      "y": 412
+    },
+    "hospice": {
+      "x": 55,
+      "y": 382
+    },
+    "hospiceAgency": {
+      "x": 200,
+      "y": 382
+    }
+  },
+  "page9": {
+    "sleepDisturbanceYes": {
+      "x": 200,
+      "y": 512
+    },
+    "sleepDisturbanceNo": {
+      "x": 250,
+      "y": 512
+    },
+    "sleepDescription": {
+      "x": 300,
+      "y": 512
+    },
+    "shortTermMemory": {
+      "x": 55,
+      "y": 462
+    },
+    "longTermMemory": {
+      "x": 200,
+      "y": 462
+    },
+    "orientedToPerson": {
+      "x": 345,
+      "y": 462
+    },
+    "behaviorImpairedDecision": {
+      "x": 55,
+      "y": 412
+    },
+    "behaviorDisruptive": {
+      "x": 200,
+      "y": 412
+    },
+    "behaviorAssaultive": {
+      "x": 345,
+      "y": 412
+    },
+    "behaviorResistive": {
+      "x": 490,
+      "y": 412
+    }
+  },
+  "page11": {
+    "ambulationInRoom": {
+      "x": 200,
+      "y": 512
+    },
+    "ambulationOutside": {
+      "x": 400,
+      "y": 512
+    },
+    "fallRiskYes": {
+      "x": 200,
+      "y": 482
+    },
+    "fallRiskNo": {
+      "x": 250,
+      "y": 482
+    }
+  },
+  "page16": {
+    "financesLevel": {
+      "x": 200,
+      "y": 512
+    },
+    "whoManagesFinances": {
+      "x": 400,
+      "y": 512
+    },
+    "shoppingLevel": {
+      "x": 200,
+      "y": 452
+    },
+    "transportNeeds": {
+      "x": 400,
+      "y": 452
+    },
+    "transportationLevel": {
+      "x": 200,
+      "y": 392
+    },
+    "escortRequired": {
+      "x": 400,
+      "y": 392
+    }
+  },
+  "page19": {
+    "activityReading": {
+      "x": 55,
+      "y": 512
+    },
+    "activityAudioBooks": {
+      "x": 200,
+      "y": 512
+    },
+    "activityStorytelling": {
+      "x": 345,
+      "y": 512
+    },
+    "activityPhone": {
+      "x": 490,
+      "y": 512
+    },
+    "activityReminiscing": {
+      "x": 55,
+      "y": 482
+    },
+    "activityCurrentEvents": {
+      "x": 200,
+      "y": 482
+    },
+    "activityChurch": {
+      "x": 345,
+      "y": 482
+    },
+    "activityVisitors": {
+      "x": 490,
+      "y": 482
+    }
+  },
+  "page20": {
+    "dateOfOriginalPlan": {
+      "x": 200,
+      "y": 512
+    },
+    "reviewDates": {
+      "x": 450,
+      "y": 512
+    },
+    "residentSignature": {
+      "x": 100,
+      "y": 412
+    },
+    "residentSignatureDate": {
+      "x": 400,
+      "y": 412
+    },
+    "providerSignature": {
+      "x": 100,
+      "y": 352
+    },
+    "providerSignatureDate": {
+      "x": 400,
+      "y": 352
+    },
+    "caseManagerSignature": {
+      "x": 100,
+      "y": 292
+    },
+    "caseManagerSignatureDate": {
+      "x": 400,
+      "y": 292
+    }
+  }
+};
+
+// Helper to get field coordinate
+export function getFieldCoord(page: number, field: string): { x: number; y: number } | null {
+  const pageKey = `page${page}`;
+  const pageFields = (NCP_FIELD_COORDS as any)[pageKey];
+  if (pageFields && pageFields[field]) {
+    return pageFields[field];
+  }
+  return null;
+}

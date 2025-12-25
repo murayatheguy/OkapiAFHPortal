@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { registerEhrRoutes } from "./routes/ehr";
 import { registerOwnerEhrRoutes } from "./routes/owner-ehr";
+import { registerPdfRoutes } from "./routes/pdf-generator";
 import { ActivityLogger } from "./lib/activity-logger";
 import {
   isAccountLocked,
@@ -2384,6 +2385,9 @@ export async function registerRoutes(
   // Register EHR routes
   registerEhrRoutes(app);
   registerOwnerEhrRoutes(app);
+
+  // Register PDF generation routes
+  registerPdfRoutes(app);
 
   return httpServer;
 }

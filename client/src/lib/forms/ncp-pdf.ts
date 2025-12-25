@@ -1,10 +1,15 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-
 /**
- * NCP (Negotiated Care Plan) PDF Filler
- * Uses coordinate-based text placement on the official DSHS template
- * PDF is 20 pages, LANDSCAPE orientation (792 x 612 points)
+ * NCP PDF Generator - Fills the official DSHS NCP template
+ * Coordinates extracted from AFH HCS NCP-Template using pdf extraction
+ *
+ * PDF Specifications:
+ * - Format: Letter Landscape (792 x 612 points)
+ * - Origin: Bottom-left (0, 0)
+ * - Y increases going UP the page
  */
+
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { NCP_FIELD_COORDS, NCP_PAGE_WIDTH, NCP_PAGE_HEIGHT } from './ncp-coordinates';
 
 // Re-export the type from ncp-wizard for convenience
 export type { NCPFormData } from '@/components/owner/forms/ncp-wizard';
@@ -12,66 +17,128 @@ export type { NCPFormData } from '@/components/owner/forms/ncp-wizard';
 // Import type for use in this file
 import type { NCPFormData } from '@/components/owner/forms/ncp-wizard';
 
+// Helper to format dates
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+// Get coordinate from page-organized structure
+function getCoord(pageKey: string, fieldName: string): { x: number; y: number } | null {
+  const pageData = (NCP_FIELD_COORDS as any)[pageKey];
+  if (pageData && pageData[fieldName]) {
+    return pageData[fieldName];
+  }
+  return null;
+}
+
 /**
- * Fill the official NCP PDF template with form data
+ * Fill the official DSHS NCP PDF template with form data
  */
 export async function fillNCPPdf(formData: NCPFormData): Promise<Uint8Array> {
-  // Load the blank template
+  // Load the official DSHS NCP template
   const templateUrl = '/forms/templates/AFH HCS NCP-Template 10.11.23 (1).pdf';
-  const templateBytes = await fetch(templateUrl).then(res => res.arrayBuffer());
-  const pdfDoc = await PDFDocument.load(templateBytes);
+  const templateResponse = await fetch(templateUrl);
+  if (!templateResponse.ok) {
+    throw new Error(`Failed to load NCP template: ${templateResponse.status}`);
+  }
+  const templateBytes = await templateResponse.arrayBuffer();
 
+  // Load the PDF
+  const pdfDoc = await PDFDocument.load(templateBytes);
+  const pages = pdfDoc.getPages();
+
+  // Embed fonts
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  const pages = pdfDoc.getPages();
-  const fontSize = 9;
-  const smallFont = 8;
+  // Default text options
+  const defaultFontSize = 9;
   const textColor = rgb(0, 0, 0);
 
-  // Helper: Draw text at coordinates
+  /**
+   * Draw text at specific coordinates
+   */
   const drawText = (
     pageIndex: number,
     text: string | undefined | null,
     x: number,
     y: number,
-    options?: { size?: number; bold?: boolean; maxWidth?: number }
+    options: { maxWidth?: number; fontSize?: number; bold?: boolean } = {}
   ) => {
-    if (!text) return;
+    if (!text || pageIndex >= pages.length) return;
+
     const page = pages[pageIndex];
-    if (!page) return;
+    const { maxWidth = 200, fontSize = defaultFontSize, bold = false } = options;
+    const font = bold ? helveticaBold : helvetica;
 
-    const size = options?.size || fontSize;
-    const font = options?.bold ? helveticaBold : helvetica;
-
-    // Truncate if needed
+    // Truncate text if too wide
     let displayText = String(text);
-    if (options?.maxWidth) {
-      const textWidth = font.widthOfTextAtSize(displayText, size);
-      if (textWidth > options.maxWidth) {
-        while (font.widthOfTextAtSize(displayText + '...', size) > options.maxWidth && displayText.length > 0) {
-          displayText = displayText.slice(0, -1);
-        }
-        displayText += '...';
+    const textWidth = font.widthOfTextAtSize(displayText, fontSize);
+    if (textWidth > maxWidth && displayText.length > 3) {
+      while (font.widthOfTextAtSize(displayText + '...', fontSize) > maxWidth && displayText.length > 3) {
+        displayText = displayText.slice(0, -1);
       }
+      displayText += '...';
     }
 
     page.drawText(displayText, {
       x,
       y,
-      size,
+      size: fontSize,
       font,
       color: textColor,
     });
   };
 
-  // Helper: Draw checkbox (X mark)
-  const drawCheck = (pageIndex: number, checked: boolean | undefined, x: number, y: number) => {
-    if (!checked) return;
-    const page = pages[pageIndex];
-    if (!page) return;
+  /**
+   * Draw multiline text with word wrapping
+   */
+  const drawMultiline = (
+    pageIndex: number,
+    text: string | undefined | null,
+    x: number,
+    y: number,
+    options: { maxWidth?: number; lineHeight?: number; fontSize?: number; maxLines?: number } = {}
+  ) => {
+    if (!text || pageIndex >= pages.length) return;
 
-    page.drawText('X', {
+    const { maxWidth = 200, lineHeight = 11, fontSize = defaultFontSize, maxLines = 10 } = options;
+    const words = String(text).split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = helvetica.widthOfTextAtSize(testLine, fontSize);
+
+      if (testWidth > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    // Draw each line (Y decreases as we go down)
+    const linesToDraw = lines.slice(0, maxLines);
+    linesToDraw.forEach((line, index) => {
+      drawText(pageIndex, line, x, y - (index * lineHeight), { maxWidth, fontSize });
+    });
+  };
+
+  /**
+   * Draw checkbox (X if checked)
+   */
+  const drawCheck = (pageIndex: number, checked: boolean | undefined, x: number, y: number) => {
+    if (!checked || pageIndex >= pages.length) return;
+    pages[pageIndex].drawText('X', {
       x: x + 2,
       y: y - 2,
       size: 10,
@@ -80,680 +147,474 @@ export async function fillNCPPdf(formData: NCPFormData): Promise<Uint8Array> {
     });
   };
 
-  // Helper: Draw multiline text
-  const drawMultiline = (
-    pageIndex: number,
-    text: string | undefined,
-    x: number,
-    y: number,
-    maxWidth: number,
-    lineHeight: number = 11
-  ) => {
-    if (!text) return;
-    const page = pages[pageIndex];
-    if (!page) return;
-
-    const words = text.split(' ');
-    let currentLine = '';
-    let currentY = y;
-
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const textWidth = helvetica.widthOfTextAtSize(testLine, smallFont);
-
-      if (textWidth > maxWidth && currentLine) {
-        page.drawText(currentLine, {
-          x,
-          y: currentY,
-          size: smallFont,
-          font: helvetica,
-          color: textColor,
-        });
-        currentLine = word;
-        currentY -= lineHeight;
-      } else {
-        currentLine = testLine;
-      }
-    }
-
-    if (currentLine) {
-      page.drawText(currentLine, {
-        x,
-        y: currentY,
-        size: smallFont,
-        font: helvetica,
-        color: textColor,
-      });
-    }
-  };
-
-  // Format date for display
-  const formatDate = (dateStr: string | undefined): string => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric'
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   // ============================================
-  // PAGE 1 (index 0) - Header & Provider Info
-  // Note: Landscape orientation (792 x 612)
+  // PAGE 0: RESIDENT INFORMATION
   // ============================================
+  const ri = formData.residentInfo || {};
+  const legalDocs = ri.legalDocuments || {};
+  const specialNeeds = ri.specialtyNeeds || {};
+  const residentFullName = `${ri.firstName || ''} ${ri.lastName || ''}`.trim();
 
-  // Provider Name (top left area)
-  drawText(0, formData.residentInfo.providerName, 120, 560, { maxWidth: 200 });
+  // Provider name and dates row
+  let coord = getCoord('page0', 'providerName');
+  if (coord) drawText(0, ri.providerName, coord.x, coord.y, { maxWidth: 150 });
 
-  // NCP Start Date
-  drawText(0, formatDate(formData.residentInfo.ncpStartDate), 400, 560, { maxWidth: 100 });
+  coord = getCoord('page0', 'ncpStartDate');
+  if (coord) drawText(0, formatDate(ri.ncpStartDate), coord.x, coord.y, { maxWidth: 80 });
 
-  // Moved In Date
-  drawText(0, formatDate(formData.residentInfo.movedInDate), 550, 560, { maxWidth: 100 });
+  coord = getCoord('page0', 'movedInDate');
+  if (coord) drawText(0, formatDate(ri.movedInDate), coord.x, coord.y, { maxWidth: 80 });
 
-  // Date Completed
-  drawText(0, formatDate(formData.residentInfo.dateCompleted), 700, 560, { maxWidth: 80 });
+  coord = getCoord('page0', 'dateCompleted');
+  if (coord) drawText(0, formatDate(ri.dateCompleted), coord.x, coord.y, { maxWidth: 80 });
 
-  // Resident First Name
-  drawText(0, formData.residentInfo.firstName, 120, 520, { maxWidth: 150 });
+  // Resident name row
+  coord = getCoord('page0', 'residentFirstName');
+  if (coord) drawText(0, ri.firstName, coord.x, coord.y, { maxWidth: 120 });
 
-  // Resident Last Name
-  drawText(0, formData.residentInfo.lastName, 300, 520, { maxWidth: 150 });
+  coord = getCoord('page0', 'residentLastName');
+  if (coord) drawText(0, ri.lastName, coord.x, coord.y, { maxWidth: 140 });
 
-  // Preferred Name
-  drawText(0, formData.residentInfo.preferredName, 480, 520, { maxWidth: 100 });
+  coord = getCoord('page0', 'preferredName');
+  if (coord) drawText(0, ri.preferredName, coord.x, coord.y, { maxWidth: 120 });
 
-  // Pronouns
-  drawText(0, formData.residentInfo.pronouns, 620, 520, { maxWidth: 80 });
+  coord = getCoord('page0', 'pronouns');
+  if (coord) drawText(0, ri.pronouns, coord.x, coord.y, { maxWidth: 80 });
 
-  // Date of Birth
-  drawText(0, formatDate(formData.residentInfo.dateOfBirth), 720, 520, { maxWidth: 60 });
+  // DOB and language row
+  coord = getCoord('page0', 'dateOfBirth');
+  if (coord) drawText(0, formatDate(ri.dateOfBirth), coord.x, coord.y, { maxWidth: 100 });
 
-  // Primary Language
-  drawText(0, formData.residentInfo.primaryLanguage, 120, 480, { maxWidth: 150 });
+  coord = getCoord('page0', 'primaryLanguage');
+  if (coord) drawText(0, ri.primaryLanguage, coord.x, coord.y, { maxWidth: 120 });
 
-  // Speaks English checkbox
-  drawCheck(0, formData.residentInfo.speaksEnglish, 300, 480);
+  coord = getCoord('page0', 'speaksEnglishYes');
+  if (coord) drawCheck(0, ri.speaksEnglish === true, coord.x, coord.y);
 
-  // Interpreter Needed checkbox
-  drawCheck(0, formData.residentInfo.interpreterNeeded, 400, 480);
+  coord = getCoord('page0', 'speaksEnglishNo');
+  if (coord) drawCheck(0, ri.speaksEnglish === false, coord.x, coord.y);
+
+  coord = getCoord('page0', 'interpreterYes');
+  if (coord) drawCheck(0, ri.interpreterNeeded === true, coord.x, coord.y);
+
+  coord = getCoord('page0', 'interpreterNo');
+  if (coord) drawCheck(0, ri.interpreterNeeded === false, coord.x, coord.y);
 
   // Allergies
-  drawMultiline(0, formData.residentInfo.allergies, 120, 440, 650);
+  coord = getCoord('page0', 'allergies');
+  if (coord) drawMultiline(0, ri.allergies, coord.x, coord.y, { maxWidth: 600, maxLines: 2 });
 
   // Legal Documents checkboxes
-  const legalDocs = formData.residentInfo.legalDocuments;
-  drawCheck(0, legalDocs.powerOfAttorney, 120, 380);
-  drawCheck(0, legalDocs.guardian, 220, 380);
-  drawCheck(0, legalDocs.healthcareDirective, 320, 380);
-  drawCheck(0, legalDocs.polst, 440, 380);
-  drawCheck(0, legalDocs.dnr, 520, 380);
-  drawCheck(0, legalDocs.other, 580, 380);
-  if (legalDocs.other && legalDocs.otherText) {
-    drawText(0, legalDocs.otherText, 620, 380, { maxWidth: 150 });
-  }
+  coord = getCoord('page0', 'legalPOA');
+  if (coord) drawCheck(0, legalDocs.powerOfAttorney, coord.x, coord.y);
+
+  coord = getCoord('page0', 'legalGuardian');
+  if (coord) drawCheck(0, legalDocs.guardian, coord.x, coord.y);
+
+  coord = getCoord('page0', 'legalHealthcare');
+  if (coord) drawCheck(0, legalDocs.healthcareDirective, coord.x, coord.y);
+
+  coord = getCoord('page0', 'legalPOLST');
+  if (coord) drawCheck(0, legalDocs.polst, coord.x, coord.y);
+
+  coord = getCoord('page0', 'legalDNR');
+  if (coord) drawCheck(0, legalDocs.dnr, coord.x, coord.y);
+
+  coord = getCoord('page0', 'legalOther');
+  if (coord) drawCheck(0, legalDocs.other, coord.x, coord.y);
+
+  coord = getCoord('page0', 'legalOtherText');
+  if (coord && legalDocs.otherText) drawText(0, legalDocs.otherText, coord.x, coord.y, { maxWidth: 150 });
 
   // Specialty Needs checkboxes
-  const specialtyNeeds = formData.residentInfo.specialtyNeeds;
-  drawCheck(0, specialtyNeeds.dialysis, 120, 340);
-  drawCheck(0, specialtyNeeds.hospice, 220, 340);
-  drawCheck(0, specialtyNeeds.behavioralHealth, 320, 340);
-  drawCheck(0, specialtyNeeds.memoryCare, 450, 340);
-  drawCheck(0, specialtyNeeds.other, 560, 340);
-  if (specialtyNeeds.other && specialtyNeeds.otherText) {
-    drawText(0, specialtyNeeds.otherText, 600, 340, { maxWidth: 170 });
+  coord = getCoord('page0', 'specialtyDialysis');
+  if (coord) drawCheck(0, specialNeeds.dialysis, coord.x, coord.y);
+
+  coord = getCoord('page0', 'specialtyHospice');
+  if (coord) drawCheck(0, specialNeeds.hospice, coord.x, coord.y);
+
+  coord = getCoord('page0', 'specialtyBehavioral');
+  if (coord) drawCheck(0, specialNeeds.behavioralHealth, coord.x, coord.y);
+
+  coord = getCoord('page0', 'specialtyMemory');
+  if (coord) drawCheck(0, specialNeeds.memoryCare, coord.x, coord.y);
+
+  coord = getCoord('page0', 'specialtyOther');
+  if (coord) drawCheck(0, specialNeeds.other, coord.x, coord.y);
+
+  coord = getCoord('page0', 'specialtyOtherText');
+  if (coord && specialNeeds.otherText) drawText(0, specialNeeds.otherText, coord.x, coord.y, { maxWidth: 150 });
+
+  // ============================================
+  // PAGE 1: EMERGENCY CONTACTS
+  // ============================================
+  const contacts = formData.emergencyContacts?.contacts || [];
+
+  if (contacts.length > 0) {
+    const c1 = contacts[0];
+    coord = getCoord('page1', 'contact1Name');
+    if (coord) drawText(1, c1.name, coord.x, coord.y, { maxWidth: 200 });
+
+    coord = getCoord('page1', 'contact1Relationship');
+    if (coord) drawText(1, c1.relationship, coord.x, coord.y, { maxWidth: 150 });
+
+    coord = getCoord('page1', 'contact1HomePhone');
+    if (coord) drawText(1, c1.homePhone, coord.x, coord.y, { maxWidth: 120 });
+
+    coord = getCoord('page1', 'contact1CellPhone');
+    if (coord) drawText(1, c1.cellPhone, coord.x, coord.y, { maxWidth: 120 });
+
+    coord = getCoord('page1', 'contact1Email');
+    if (coord) drawText(1, c1.email, coord.x, coord.y, { maxWidth: 200 });
+
+    coord = getCoord('page1', 'contact1PreferredContact');
+    if (coord) drawText(1, c1.preferredContact, coord.x, coord.y, { maxWidth: 100 });
+
+    coord = getCoord('page1', 'contact1Address');
+    if (coord) drawText(1, c1.address, coord.x, coord.y, { maxWidth: 300 });
+  }
+
+  if (contacts.length > 1) {
+    const c2 = contacts[1];
+    coord = getCoord('page1', 'contact2Name');
+    if (coord) drawText(1, c2.name, coord.x, coord.y, { maxWidth: 200 });
+
+    coord = getCoord('page1', 'contact2Relationship');
+    if (coord) drawText(1, c2.relationship, coord.x, coord.y, { maxWidth: 150 });
+
+    coord = getCoord('page1', 'contact2HomePhone');
+    if (coord) drawText(1, c2.homePhone, coord.x, coord.y, { maxWidth: 120 });
+
+    coord = getCoord('page1', 'contact2CellPhone');
+    if (coord) drawText(1, c2.cellPhone, coord.x, coord.y, { maxWidth: 120 });
   }
 
   // ============================================
-  // PAGE 2 (index 1) - Emergency Contacts
+  // PAGE 2: EMERGENCY EVACUATION
   // ============================================
+  const evac = formData.evacuation || {};
+  const mobilityAids = evac.mobilityAids || {};
 
-  const contacts = formData.emergencyContacts.contacts;
-  let contactY = 520;
+  coord = getCoord('page2', 'evacuationIndependent');
+  if (coord) drawCheck(2, evac.evacuationAssistance === 'independent', coord.x, coord.y);
 
-  contacts.slice(0, 3).forEach((contact, idx) => {
-    const baseY = contactY - (idx * 120);
+  coord = getCoord('page2', 'evacuationAssistance');
+  if (coord) drawCheck(2, evac.evacuationAssistance === 'assistance_required', coord.x, coord.y);
 
-    drawText(1, contact.name, 120, baseY, { maxWidth: 200 });
-    drawText(1, contact.relationship, 350, baseY, { maxWidth: 100 });
-    drawText(1, contact.homePhone, 480, baseY, { maxWidth: 100 });
-    drawText(1, contact.cellPhone, 600, baseY, { maxWidth: 100 });
-    drawText(1, contact.email, 120, baseY - 20, { maxWidth: 250 });
-    drawText(1, contact.address, 400, baseY - 20, { maxWidth: 370 });
-
-    // Preferred contact checkboxes
-    drawCheck(1, contact.preferredContact === 'home', 120, baseY - 40);
-    drawCheck(1, contact.preferredContact === 'cell', 200, baseY - 40);
-    drawCheck(1, contact.preferredContact === 'email', 280, baseY - 40);
-  });
-
-  // ============================================
-  // PAGE 3 (index 2) - Emergency Evacuation
-  // ============================================
-
-  const evac = formData.evacuation;
-
-  // Evacuation assistance level
-  drawCheck(2, evac.evacuationAssistance === 'independent', 120, 520);
-  drawCheck(2, evac.evacuationAssistance === 'assistance_required', 120, 480);
-
-  // Descriptions
-  if (evac.evacuationAssistance === 'independent') {
-    drawMultiline(2, evac.independentDescription, 200, 520, 550);
-  } else {
-    drawMultiline(2, evac.assistanceDescription, 200, 480, 550);
+  coord = getCoord('page2', 'evacuationDescription');
+  if (coord) {
+    const desc = evac.evacuationAssistance === 'independent' ? evac.independentDescription : evac.assistanceDescription;
+    drawMultiline(2, desc, coord.x, coord.y, { maxWidth: 500, maxLines: 3 });
   }
 
-  // Evacuation instructions
-  drawMultiline(2, evac.evacuationInstructions, 120, 400, 650);
+  coord = getCoord('page2', 'mobilityWheelchair');
+  if (coord) drawCheck(2, mobilityAids.wheelchair, coord.x, coord.y);
 
-  // Mobility aids checkboxes
-  const mobility = evac.mobilityAids;
-  drawCheck(2, mobility.wheelchair, 120, 320);
-  drawCheck(2, mobility.walker, 220, 320);
-  drawCheck(2, mobility.cane, 320, 320);
-  drawCheck(2, mobility.none, 420, 320);
+  coord = getCoord('page2', 'mobilityWalker');
+  if (coord) drawCheck(2, mobilityAids.walker, coord.x, coord.y);
 
-  // Evacuation notes
-  drawMultiline(2, evac.evacuationNotes, 120, 280, 650);
+  coord = getCoord('page2', 'mobilityCane');
+  if (coord) drawCheck(2, mobilityAids.cane, coord.x, coord.y);
 
-  // ============================================
-  // PAGE 4 (index 3) - Communication
-  // ============================================
+  coord = getCoord('page2', 'mobilityNone');
+  if (coord) drawCheck(2, mobilityAids.none, coord.x, coord.y);
 
-  const comm = formData.communication;
-
-  // Expression problems
-  drawCheck(3, comm.expressionProblems === 'yes', 120, 520);
-  drawCheck(3, comm.expressionProblems === 'no', 180, 520);
-  drawMultiline(3, comm.expressionDescription, 250, 520, 500);
-  drawText(3, comm.expressionEquipment, 120, 480, { maxWidth: 300 });
-
-  // Hearing problems
-  drawCheck(3, comm.hearingProblems === 'yes', 120, 440);
-  drawCheck(3, comm.hearingProblems === 'no', 180, 440);
-  drawMultiline(3, comm.hearingDescription, 250, 440, 500);
-  drawText(3, comm.hearingEquipment, 120, 400, { maxWidth: 300 });
-
-  // Vision problems
-  drawCheck(3, comm.visionProblems === 'yes', 120, 360);
-  drawCheck(3, comm.visionProblems === 'no', 180, 360);
-  drawMultiline(3, comm.visionDescription, 250, 360, 500);
-  drawText(3, comm.visionEquipment, 120, 320, { maxWidth: 300 });
-
-  // Phone ability
-  drawCheck(3, comm.phoneAbility === 'independent', 120, 280);
-  drawCheck(3, comm.phoneAbility === 'assistance', 220, 280);
-  drawCheck(3, comm.phoneAbility === 'dependent', 320, 280);
-  drawCheck(3, comm.hasOwnPhone, 450, 280);
-  drawText(3, comm.phoneNumber, 550, 280, { maxWidth: 150 });
-
-  // Communication strengths/assistance
-  drawMultiline(3, comm.communicationStrengths, 120, 220, 300);
-  drawMultiline(3, comm.communicationAssistance, 450, 220, 300);
+  coord = getCoord('page2', 'evacuationInstructions');
+  if (coord) drawMultiline(2, evac.evacuationInstructions, coord.x, coord.y, { maxWidth: 600, maxLines: 4 });
 
   // ============================================
-  // PAGE 5-6 (index 4-5) - Medication Management
+  // PAGE 3: COMMUNICATION
   // ============================================
+  const comm = formData.communication || {};
 
-  const meds = formData.medication;
+  coord = getCoord('page3', 'expressionProblemsYes');
+  if (coord) drawCheck(3, comm.expressionProblems === 'yes', coord.x, coord.y);
 
-  // Page 5 - Medication overview
-  drawCheck(4, meds.hasMedicationAllergies, 120, 520);
-  drawMultiline(4, meds.medicationAllergies, 200, 520, 550);
+  coord = getCoord('page3', 'expressionProblemsNo');
+  if (coord) drawCheck(3, comm.expressionProblems === 'no', coord.x, coord.y);
 
-  drawCheck(4, meds.needsMultipleMedAssistance, 120, 460);
-  drawCheck(4, meds.hasPsychMedications, 350, 460);
+  coord = getCoord('page3', 'expressionDescription');
+  if (coord) drawText(3, comm.expressionDescription, coord.x, coord.y, { maxWidth: 350 });
 
-  drawText(4, meds.medsOrderedBy, 120, 420, { maxWidth: 200 });
-  drawText(4, meds.medsDeliveredBy, 350, 420, { maxWidth: 200 });
-  drawCheck(4, meds.medsPharmacyPacked, 580, 420);
-  drawText(4, meds.pharmacyName, 650, 420, { maxWidth: 120 });
+  coord = getCoord('page3', 'hearingProblemsYes');
+  if (coord) drawCheck(3, comm.hearingProblems === 'yes', coord.x, coord.y);
 
-  // Medication level
-  drawCheck(4, meds.medicationLevel === 'self_administration', 120, 380);
-  drawCheck(4, meds.medicationLevel === 'self_with_assistance', 280, 380);
-  drawCheck(4, meds.medicationLevel === 'full_administration', 480, 380);
-  drawMultiline(4, meds.medicationLevelReason, 120, 340, 650);
+  coord = getCoord('page3', 'hearingProblemsNo');
+  if (coord) drawCheck(3, comm.hearingProblems === 'no', coord.x, coord.y);
 
-  // Med types
-  const medTypes = meds.medTypes;
-  drawCheck(4, medTypes.oral, 120, 280);
-  drawCheck(4, medTypes.topical, 200, 280);
-  drawCheck(4, medTypes.eyeDrops, 280, 280);
-  drawCheck(4, medTypes.inhalers, 360, 280);
-  drawCheck(4, medTypes.sprays, 440, 280);
-  drawCheck(4, medTypes.injections, 520, 280);
-  drawCheck(4, medTypes.allergyKits, 600, 280);
-  drawCheck(4, medTypes.suppositories, 680, 280);
-  drawCheck(4, medTypes.other, 120, 250);
-  drawText(4, meds.medTypeOtherText, 180, 250, { maxWidth: 200 });
+  coord = getCoord('page3', 'hearingDescription');
+  if (coord) drawText(3, comm.hearingDescription, coord.x, coord.y, { maxWidth: 350 });
 
-  // Page 6 - Nurse delegation
-  drawCheck(5, meds.requiresNurseDelegation, 120, 520);
-  drawText(5, meds.rnDelegatorName, 120, 480, { maxWidth: 200 });
-  drawText(5, meds.rnDelegatorPhone, 350, 480, { maxWidth: 150 });
-  drawText(5, meds.rnDelegatorEmail, 530, 480, { maxWidth: 200 });
+  coord = getCoord('page3', 'visionProblemsYes');
+  if (coord) drawCheck(3, comm.visionProblems === 'yes', coord.x, coord.y);
 
-  // Plans
-  drawMultiline(5, meds.medicationPlanWhenAway, 120, 400, 650);
-  drawMultiline(5, meds.medicationRefusalPlan, 120, 300, 650);
+  coord = getCoord('page3', 'visionProblemsNo');
+  if (coord) drawCheck(3, comm.visionProblems === 'no', coord.x, coord.y);
+
+  coord = getCoord('page3', 'visionDescription');
+  if (coord) drawText(3, comm.visionDescription, coord.x, coord.y, { maxWidth: 350 });
 
   // ============================================
-  // PAGE 7-8 (index 6-7) - Health Indicators
+  // PAGE 4: MEDICATION MANAGEMENT
   // ============================================
+  const med = formData.medication || {};
+  const medTypes = med.medTypes || {};
 
-  const health = formData.healthIndicators;
+  coord = getCoord('page4', 'medicationAllergiesYes');
+  if (coord) drawCheck(4, med.hasMedicationAllergies === true, coord.x, coord.y);
 
-  // Pain
-  drawCheck(6, health.painIssues, 120, 520);
-  drawMultiline(6, health.painDescription, 200, 520, 550);
-  drawMultiline(6, health.painImpact, 120, 460, 650);
+  coord = getCoord('page4', 'medicationAllergiesNo');
+  if (coord) drawCheck(4, med.hasMedicationAllergies === false, coord.x, coord.y);
 
-  // Weight
-  drawCheck(6, health.weightIssues, 120, 400);
-  drawText(6, health.currentWeight, 200, 400, { maxWidth: 80 });
-  drawText(6, health.currentHeight, 320, 400, { maxWidth: 80 });
+  coord = getCoord('page4', 'medicationAllergiesList');
+  if (coord) drawText(4, med.medicationAllergies, coord.x, coord.y, { maxWidth: 400 });
 
-  // Vitals
-  drawCheck(6, health.vitalSignsMonitoring, 120, 360);
-  drawText(6, health.vitalSignsFrequency, 200, 360, { maxWidth: 200 });
+  coord = getCoord('page4', 'medsOrderedBy');
+  if (coord) drawText(4, med.medsOrderedBy, coord.x, coord.y, { maxWidth: 180 });
 
-  // Hospitalization
-  drawCheck(6, health.recentHospitalization, 120, 320);
-  drawMultiline(6, health.hospitalizationDetails, 200, 320, 550);
+  coord = getCoord('page4', 'medsDeliveredBy');
+  if (coord) drawText(4, med.medsDeliveredBy, coord.x, coord.y, { maxWidth: 180 });
 
-  // Other health indicators
-  drawMultiline(6, health.otherHealthIndicators, 120, 260, 650);
+  coord = getCoord('page4', 'pharmacyName');
+  if (coord) drawText(4, med.pharmacyName, coord.x, coord.y, { maxWidth: 200 });
 
-  // Allergies table (page 7)
-  let allergyY = 520;
-  health.allergies.slice(0, 5).forEach((allergy, idx) => {
-    drawText(7, allergy.substance, 120, allergyY - (idx * 30), { maxWidth: 300 });
-    drawText(7, allergy.reaction, 450, allergyY - (idx * 30), { maxWidth: 300 });
-  });
+  coord = getCoord('page4', 'medLevelSelf');
+  if (coord) drawCheck(4, med.medicationLevel === 'self_administration', coord.x, coord.y);
 
-  // Health monitoring strengths/assistance
-  drawMultiline(7, health.healthMonitoringStrengths, 120, 320, 300);
-  drawMultiline(7, health.healthMonitoringAssistance, 450, 320, 300);
+  coord = getCoord('page4', 'medLevelAssist');
+  if (coord) drawCheck(4, med.medicationLevel === 'self_with_assistance', coord.x, coord.y);
 
-  // ============================================
-  // PAGE 9-10 (index 8-9) - Treatments & Therapies
-  // ============================================
+  coord = getCoord('page4', 'medLevelFull');
+  if (coord) drawCheck(4, med.medicationLevel === 'full_administration', coord.x, coord.y);
 
-  const treat = formData.treatments;
+  // Medication types
+  coord = getCoord('page4', 'medTypeOral');
+  if (coord) drawCheck(4, medTypes.oral, coord.x, coord.y);
 
-  // Treatments checkboxes
-  drawCheck(8, treat.oxygenUse, 120, 520);
-  drawText(8, treat.oxygenVendor, 200, 520, { maxWidth: 150 });
-  drawCheck(8, treat.dialysis, 380, 520);
-  drawText(8, treat.dialysisProvider, 460, 520, { maxWidth: 150 });
+  coord = getCoord('page4', 'medTypeTopical');
+  if (coord) drawCheck(4, medTypes.topical, coord.x, coord.y);
 
-  drawCheck(8, treat.bloodThinners, 120, 480);
-  drawText(8, treat.inrLabProvider, 200, 480, { maxWidth: 150 });
-  drawCheck(8, treat.easilyBruised, 380, 480);
+  coord = getCoord('page4', 'medTypeEyeDrops');
+  if (coord) drawCheck(4, medTypes.eyeDrops, coord.x, coord.y);
 
-  drawCheck(8, treat.bloodGlucoseMonitoring, 120, 440);
-  drawCheck(8, treat.injections, 280, 440);
-  drawCheck(8, treat.cpapBipap, 400, 440);
-  drawCheck(8, treat.nebulizer, 520, 440);
-  drawCheck(8, treat.rangeOfMotion, 640, 440);
+  coord = getCoord('page4', 'medTypeInhalers');
+  if (coord) drawCheck(4, medTypes.inhalers, coord.x, coord.y);
 
-  drawCheck(8, treat.ptOtSt, 120, 400);
-  drawCheck(8, treat.nurseDelegationTreatments, 280, 400);
-  drawMultiline(8, treat.nurseDelegationTasks, 450, 400, 300);
+  coord = getCoord('page4', 'medTypeSprays');
+  if (coord) drawCheck(4, medTypes.sprays, coord.x, coord.y);
 
-  drawMultiline(8, treat.otherTreatments, 120, 340, 650);
-
-  // Programs (page 9)
-  drawCheck(9, treat.homeHealth, 120, 520);
-  drawText(9, treat.homeHealthAgency, 200, 520, { maxWidth: 200 });
-  drawCheck(9, treat.adultDayHealth, 430, 520);
-
-  drawCheck(9, treat.hospice, 120, 480);
-  drawText(9, treat.hospiceAgency, 200, 480, { maxWidth: 200 });
-  drawCheck(9, treat.hospicePlan, 430, 480);
-
-  drawMultiline(9, treat.otherPrograms, 120, 420, 650);
-
-  // Enablers
-  drawMultiline(9, treat.physicalEnablers, 120, 360, 300);
-  drawMultiline(9, treat.enablersAssistance, 450, 360, 300);
-
-  // Refusal plan
-  drawMultiline(9, treat.treatmentRefusalPlan, 120, 260, 650);
+  coord = getCoord('page4', 'medTypeInjections');
+  if (coord) drawCheck(4, medTypes.injections, coord.x, coord.y);
 
   // ============================================
-  // PAGE 11-12 (index 10-11) - Psych/Social/Cognitive
+  // PAGE 6: HEALTH INDICATORS
   // ============================================
+  const hi = formData.healthIndicators || {};
 
-  const psych = formData.psychSocial;
+  coord = getCoord('page6', 'painIssuesYes');
+  if (coord) drawCheck(6, hi.painIssues === true, coord.x, coord.y);
 
-  // Sleep
-  drawCheck(10, psych.sleepDisturbance, 120, 520);
-  drawMultiline(10, psych.sleepDescription, 200, 520, 550);
-  drawCheck(10, psych.nighttimeAssistance, 120, 460);
-  drawMultiline(10, psych.nighttimeAssistanceDescription, 200, 460, 550);
+  coord = getCoord('page6', 'painIssuesNo');
+  if (coord) drawCheck(6, hi.painIssues === false, coord.x, coord.y);
 
-  // Memory
-  drawCheck(10, psych.shortTermMemoryIssues, 120, 400);
-  drawCheck(10, psych.longTermMemoryIssues, 280, 400);
-  drawCheck(10, psych.orientedToPerson, 450, 400);
+  coord = getCoord('page6', 'painDescription');
+  if (coord) drawText(6, hi.painDescription, coord.x, coord.y, { maxWidth: 350 });
 
-  // Behaviors checkboxes (first row)
-  const behaviors = psych.behaviors;
-  drawCheck(10, behaviors.impairedDecisionMaking, 120, 360);
-  drawCheck(10, behaviors.disruptiveBehavior, 280, 360);
-  drawCheck(10, behaviors.assaultive, 440, 360);
-  drawCheck(10, behaviors.resistiveToCare, 560, 360);
+  coord = getCoord('page6', 'currentWeight');
+  if (coord) drawText(6, hi.currentWeight, coord.x, coord.y, { maxWidth: 80 });
 
-  // Behaviors (second row)
-  drawCheck(10, behaviors.depression, 120, 330);
-  drawCheck(10, behaviors.anxiety, 220, 330);
-  drawCheck(10, behaviors.irritability, 320, 330);
-  drawCheck(10, behaviors.disorientation, 440, 330);
-  drawCheck(10, behaviors.wanderingPacing, 580, 330);
+  coord = getCoord('page6', 'currentHeight');
+  if (coord) drawText(6, hi.currentHeight, coord.x, coord.y, { maxWidth: 80 });
 
-  // Behaviors (third row)
-  drawCheck(10, behaviors.exitSeeking, 120, 300);
-  drawCheck(10, behaviors.hallucinations, 240, 300);
-  drawCheck(10, behaviors.delusions, 380, 300);
-  drawCheck(10, behaviors.verballyAgitated, 500, 300);
-  drawCheck(10, behaviors.physicallyAgitated, 660, 300);
+  coord = getCoord('page6', 'vitalSignsYes');
+  if (coord) drawCheck(6, hi.vitalSignsMonitoring === true, coord.x, coord.y);
 
-  // More behaviors (page 11)
-  drawCheck(11, behaviors.inappropriateBehavior, 120, 520);
-  drawCheck(11, behaviors.suicidalIdeation, 280, 520);
-  drawCheck(11, behaviors.difficultyNewSituations, 440, 520);
-  drawCheck(11, behaviors.disrobing, 640, 520);
+  coord = getCoord('page6', 'vitalSignsNo');
+  if (coord) drawCheck(6, hi.vitalSignsMonitoring === false, coord.x, coord.y);
 
-  drawCheck(11, behaviors.weepingCrying, 120, 490);
-  drawCheck(11, behaviors.unawareOfConsequences, 280, 490);
-  drawCheck(11, behaviors.unrealisticFears, 480, 490);
-  drawCheck(11, behaviors.inappropriateSpitting, 640, 490);
-  drawCheck(11, behaviors.breaksThrowsThings, 120, 460);
-
-  drawMultiline(11, psych.otherBehaviors, 120, 420, 650);
-
-  // Psych medications
-  drawCheck(11, psych.requiresPsychMedications, 120, 360);
-  drawMultiline(11, psych.psychMedicationSymptoms, 280, 360, 470);
-
-  drawCheck(11, psych.behavioralHealthCrisisPlan, 120, 300);
-  drawCheck(11, psych.counseling, 350, 300);
-  drawText(11, psych.mentalHealthProvider, 500, 300, { maxWidth: 250 });
-
-  drawMultiline(11, psych.pastBehaviors, 120, 240, 650);
+  coord = getCoord('page6', 'vitalSignsFrequency');
+  if (coord) drawText(6, hi.vitalSignsFrequency, coord.x, coord.y, { maxWidth: 200 });
 
   // ============================================
-  // PAGE 13-16 (index 12-15) - ADLs
+  // PAGE 7: TREATMENTS
   // ============================================
+  const treat = formData.treatments || {};
 
-  const adls = formData.adls;
+  coord = getCoord('page7', 'oxygenUse');
+  if (coord) drawCheck(7, treat.oxygenUse, coord.x, coord.y);
 
-  // Functional limitations (page 13)
-  drawMultiline(12, adls.functionalLimitations, 120, 520, 650);
+  coord = getCoord('page7', 'dialysis');
+  if (coord) drawCheck(7, treat.dialysis, coord.x, coord.y);
 
-  // Ambulation/Mobility
-  const amb = adls.ambulation;
-  drawCheck(12, amb.inRoomLevel === 'independent', 120, 460);
-  drawCheck(12, amb.inRoomLevel === 'supervision', 200, 460);
-  drawCheck(12, amb.inRoomLevel === 'assistance', 280, 460);
-  drawCheck(12, amb.inRoomLevel === 'dependent', 360, 460);
+  coord = getCoord('page7', 'bloodThinners');
+  if (coord) drawCheck(7, treat.bloodThinners, coord.x, coord.y);
 
-  drawCheck(12, amb.outsideLevel === 'independent', 480, 460);
-  drawCheck(12, amb.outsideLevel === 'supervision', 560, 460);
-  drawCheck(12, amb.outsideLevel === 'assistance', 640, 460);
-  drawCheck(12, amb.outsideLevel === 'dependent', 720, 460);
+  coord = getCoord('page7', 'bloodGlucose');
+  if (coord) drawCheck(7, treat.bloodGlucoseMonitoring, coord.x, coord.y);
 
-  drawCheck(12, amb.fallRisk, 120, 420);
-  drawMultiline(12, amb.fallPreventionPlan, 200, 420, 550);
-  drawCheck(12, amb.bedroomDoorLock, 120, 360);
+  coord = getCoord('page7', 'cpapBipap');
+  if (coord) drawCheck(7, treat.cpapBipap, coord.x, coord.y);
 
-  drawText(12, amb.equipment, 120, 320, { maxWidth: 300 });
-  drawText(12, amb.vendor, 450, 320, { maxWidth: 300 });
-  drawMultiline(12, amb.strengths, 120, 280, 300);
-  drawMultiline(12, amb.assistance, 450, 280, 300);
+  coord = getCoord('page7', 'nebulizer');
+  if (coord) drawCheck(7, treat.nebulizer, coord.x, coord.y);
 
-  // Bed Mobility (page 14)
-  const bed = adls.bedMobility;
-  drawCheck(13, bed.level === 'independent', 120, 520);
-  drawCheck(13, bed.level === 'supervision', 200, 520);
-  drawCheck(13, bed.level === 'assistance', 280, 520);
-  drawCheck(13, bed.level === 'dependent', 360, 520);
+  coord = getCoord('page7', 'injections');
+  if (coord) drawCheck(7, treat.injections, coord.x, coord.y);
 
-  drawCheck(13, bed.skinCareNeeded, 120, 480);
-  drawCheck(13, bed.turningRepositioning, 280, 480);
-  drawText(13, bed.turningFrequency, 450, 480, { maxWidth: 150 });
-  drawCheck(13, bed.bedFallRisk, 630, 480);
+  coord = getCoord('page7', 'ptOtSt');
+  if (coord) drawCheck(7, treat.ptOtSt, coord.x, coord.y);
 
-  drawMultiline(13, bed.safetyPlan, 120, 440, 650);
+  coord = getCoord('page7', 'homeHealth');
+  if (coord) drawCheck(7, treat.homeHealth, coord.x, coord.y);
 
-  drawCheck(13, bed.devices.hoyerLift, 120, 380);
-  drawCheck(13, bed.devices.transferPole, 240, 380);
-  drawCheck(13, bed.devices.other, 380, 380);
-  drawText(13, bed.devicesOther, 440, 380, { maxWidth: 200 });
+  coord = getCoord('page7', 'homeHealthAgency');
+  if (coord) drawText(7, treat.homeHealthAgency, coord.x, coord.y, { maxWidth: 200 });
 
-  drawCheck(13, bed.nighttimeCareNeeds, 120, 340);
-  drawMultiline(13, bed.strengths, 120, 300, 300);
-  drawMultiline(13, bed.assistance, 450, 300, 300);
+  coord = getCoord('page7', 'hospice');
+  if (coord) drawCheck(7, treat.hospice, coord.x, coord.y);
 
-  // Eating (page 14 continued)
-  const eating = adls.eating;
-  drawCheck(13, eating.level === 'independent', 120, 220);
-  drawCheck(13, eating.level === 'supervision', 200, 220);
-  drawCheck(13, eating.level === 'assistance', 280, 220);
-  drawCheck(13, eating.level === 'dependent', 360, 220);
-
-  drawText(13, eating.specialDiet, 450, 220, { maxWidth: 300 });
-  drawMultiline(13, eating.eatingHabits, 120, 180, 320);
-  drawText(13, eating.foodAllergies, 460, 180, { maxWidth: 300 });
-  drawText(13, eating.equipment, 120, 140, { maxWidth: 300 });
-
-  // Toileting (page 15)
-  const toilet = adls.toileting;
-  drawCheck(14, toilet.level === 'independent', 120, 520);
-  drawCheck(14, toilet.level === 'supervision', 200, 520);
-  drawCheck(14, toilet.level === 'assistance', 280, 520);
-  drawCheck(14, toilet.level === 'dependent', 360, 520);
-
-  drawText(14, toilet.frequency, 450, 520, { maxWidth: 150 });
-  drawCheck(14, toilet.bladderIncontinence, 120, 480);
-  drawCheck(14, toilet.bowelIncontinence, 280, 480);
-  drawCheck(14, toilet.incontinenceSkinCare, 440, 480);
-  drawText(14, toilet.equipment, 120, 440, { maxWidth: 300 });
-  drawMultiline(14, toilet.strengths, 120, 400, 300);
-  drawMultiline(14, toilet.assistance, 450, 400, 300);
-
-  // Dressing
-  const dressing = adls.dressing;
-  drawCheck(14, dressing.level === 'independent', 120, 320);
-  drawCheck(14, dressing.level === 'supervision', 200, 320);
-  drawCheck(14, dressing.level === 'assistance', 280, 320);
-  drawCheck(14, dressing.level === 'dependent', 360, 320);
-  drawText(14, dressing.equipment, 450, 320, { maxWidth: 300 });
-  drawMultiline(14, dressing.strengths, 120, 280, 300);
-  drawMultiline(14, dressing.assistance, 450, 280, 300);
-
-  // Hygiene (page 15)
-  const hygiene = adls.hygiene;
-  drawCheck(14, hygiene.level === 'independent', 120, 200);
-  drawCheck(14, hygiene.level === 'supervision', 200, 200);
-  drawCheck(14, hygiene.level === 'assistance', 280, 200);
-  drawCheck(14, hygiene.level === 'dependent', 360, 200);
-
-  // Bathing (page 16)
-  const bathing = adls.bathing;
-  drawCheck(15, bathing.level === 'independent', 120, 520);
-  drawCheck(15, bathing.level === 'supervision', 200, 520);
-  drawCheck(15, bathing.level === 'assistance', 280, 520);
-  drawCheck(15, bathing.level === 'dependent', 360, 520);
-  drawText(15, bathing.frequency, 450, 520, { maxWidth: 150 });
-  drawText(15, bathing.equipment, 620, 520, { maxWidth: 150 });
-  drawMultiline(15, bathing.strengths, 120, 480, 300);
-  drawMultiline(15, bathing.assistance, 450, 480, 300);
+  coord = getCoord('page7', 'hospiceAgency');
+  if (coord) drawText(7, treat.hospiceAgency, coord.x, coord.y, { maxWidth: 200 });
 
   // ============================================
-  // PAGE 17-18 (index 16-17) - IADLs
+  // PAGE 9: PSYCH/SOCIAL/COGNITIVE
   // ============================================
+  const psc = formData.psychSocial || {};
+  const behaviors = psc.behaviors || {};
 
-  const iadls = formData.iadls;
+  coord = getCoord('page9', 'sleepDisturbanceYes');
+  if (coord) drawCheck(9, psc.sleepDisturbance === true, coord.x, coord.y);
 
-  // Finances
-  const fin = iadls.finances;
-  drawCheck(16, fin.level === 'independent', 120, 520);
-  drawCheck(16, fin.level === 'assistance', 200, 520);
-  drawCheck(16, fin.level === 'dependent', 280, 520);
-  drawText(16, fin.whoManagesFinances, 380, 520, { maxWidth: 200 });
-  drawText(16, fin.whoManagesRecords, 600, 520, { maxWidth: 170 });
-  drawText(16, fin.payeeName, 120, 480, { maxWidth: 200 });
-  drawText(16, fin.payeeContact, 350, 480, { maxWidth: 200 });
-  drawMultiline(16, fin.strengths, 120, 440, 300);
-  drawMultiline(16, fin.assistance, 450, 440, 300);
+  coord = getCoord('page9', 'sleepDisturbanceNo');
+  if (coord) drawCheck(9, psc.sleepDisturbance === false, coord.x, coord.y);
 
-  // Shopping
-  const shop = iadls.shopping;
-  drawCheck(16, shop.level === 'independent', 120, 360);
-  drawCheck(16, shop.level === 'assistance', 200, 360);
-  drawCheck(16, shop.level === 'dependent', 280, 360);
-  drawText(16, shop.transportNeeds, 380, 360, { maxWidth: 200 });
-  drawText(16, shop.frequency, 600, 360, { maxWidth: 170 });
+  coord = getCoord('page9', 'sleepDescription');
+  if (coord) drawText(9, psc.sleepDescription, coord.x, coord.y, { maxWidth: 350 });
 
-  // Transportation
-  const trans = iadls.transportation;
-  drawCheck(16, trans.level === 'independent', 120, 300);
-  drawCheck(16, trans.level === 'assistance', 200, 300);
-  drawCheck(16, trans.level === 'dependent', 280, 300);
-  drawText(16, trans.medicalTransportNeeds, 380, 300, { maxWidth: 200 });
-  drawCheck(16, trans.escortRequired, 600, 300);
+  coord = getCoord('page9', 'shortTermMemory');
+  if (coord) drawCheck(9, psc.shortTermMemoryIssues, coord.x, coord.y);
 
-  // Activities/Social (page 17)
-  const activities = iadls.activities;
-  drawCheck(17, activities.level === 'independent', 120, 520);
-  drawCheck(17, activities.level === 'assistance', 200, 520);
-  drawCheck(17, activities.level === 'dependent', 280, 520);
-  drawMultiline(17, activities.interests, 380, 520, 380);
-  drawMultiline(17, activities.socialCulturalPreferences, 120, 460, 650);
-  drawMultiline(17, activities.familyFriendsRelationships, 120, 400, 650);
+  coord = getCoord('page9', 'longTermMemory');
+  if (coord) drawCheck(9, psc.longTermMemoryIssues, coord.x, coord.y);
 
-  // Activity preferences checkboxes
-  const prefs = iadls.activityPreferences;
-  drawCheck(17, prefs.reading, 120, 340);
-  drawCheck(17, prefs.audioBooks, 200, 340);
-  drawCheck(17, prefs.storytelling, 300, 340);
-  drawCheck(17, prefs.phoneConversations, 420, 340);
-  drawCheck(17, prefs.reminiscing, 560, 340);
-  drawCheck(17, prefs.currentEvents, 680, 340);
+  coord = getCoord('page9', 'orientedToPerson');
+  if (coord) drawCheck(9, psc.orientedToPerson, coord.x, coord.y);
 
-  drawCheck(17, prefs.discussionGroup, 120, 310);
-  drawCheck(17, prefs.bibleStudyChurch, 240, 310);
-  drawCheck(17, prefs.visitors, 380, 310);
-  drawCheck(17, prefs.gardening, 480, 310);
-  drawCheck(17, prefs.outingsWithFamily, 580, 310);
-  drawCheck(17, prefs.visitingZoosParks, 720, 310);
+  coord = getCoord('page9', 'behaviorImpairedDecision');
+  if (coord) drawCheck(9, behaviors.impairedDecisionMaking, coord.x, coord.y);
 
-  drawCheck(17, prefs.petsAnimals, 120, 280);
-  drawCheck(17, prefs.exercisesROM, 240, 280);
-  drawCheck(17, prefs.therapeuticWalking, 380, 280);
-  drawCheck(17, prefs.cookingBaking, 540, 280);
-  drawCheck(17, prefs.houseChores, 660, 280);
+  coord = getCoord('page9', 'behaviorDisruptive');
+  if (coord) drawCheck(9, behaviors.disruptiveBehavior, coord.x, coord.y);
 
-  drawCheck(17, prefs.watchingTVMovies, 120, 250);
-  drawCheck(17, prefs.partiesGatherings, 280, 250);
-  drawCheck(17, prefs.artsCrafts, 440, 250);
-  drawCheck(17, prefs.tableGamesBingoCardsPuzzles, 560, 250);
+  coord = getCoord('page9', 'behaviorAssaultive');
+  if (coord) drawCheck(9, behaviors.assaultive, coord.x, coord.y);
 
-  drawCheck(17, prefs.beautyTime, 120, 220);
-  drawCheck(17, prefs.musicSinging, 240, 220);
-  drawCheck(17, prefs.employmentSupportActivity, 380, 220);
-  drawCheck(17, prefs.communityIntegration, 560, 220);
-  drawCheck(17, prefs.other, 720, 220);
+  coord = getCoord('page9', 'behaviorResistive');
+  if (coord) drawCheck(9, behaviors.resistiveToCare, coord.x, coord.y);
 
-  if (prefs.other) {
-    drawText(17, iadls.activityPreferencesOther, 120, 190, { maxWidth: 650 });
+  // ============================================
+  // PAGE 11: ADLs - AMBULATION
+  // ============================================
+  const adls = formData.adls || {};
+  const amb = adls.ambulation || {};
+
+  coord = getCoord('page11', 'ambulationInRoom');
+  if (coord) drawText(11, amb.inRoomLevel, coord.x, coord.y, { maxWidth: 150 });
+
+  coord = getCoord('page11', 'ambulationOutside');
+  if (coord) drawText(11, amb.outsideLevel, coord.x, coord.y, { maxWidth: 150 });
+
+  coord = getCoord('page11', 'fallRiskYes');
+  if (coord) drawCheck(11, amb.fallRisk === true, coord.x, coord.y);
+
+  coord = getCoord('page11', 'fallRiskNo');
+  if (coord) drawCheck(11, amb.fallRisk === false, coord.x, coord.y);
+
+  // ============================================
+  // PAGE 16: IADLs
+  // ============================================
+  const iadls = formData.iadls || {};
+  const finances = iadls.finances || {};
+  const shopping = iadls.shopping || {};
+  const transportation = iadls.transportation || {};
+
+  coord = getCoord('page16', 'financesLevel');
+  if (coord) drawText(16, finances.level, coord.x, coord.y, { maxWidth: 150 });
+
+  coord = getCoord('page16', 'whoManagesFinances');
+  if (coord) drawText(16, finances.whoManagesFinances, coord.x, coord.y, { maxWidth: 200 });
+
+  coord = getCoord('page16', 'shoppingLevel');
+  if (coord) drawText(16, shopping.level, coord.x, coord.y, { maxWidth: 150 });
+
+  coord = getCoord('page16', 'transportNeeds');
+  if (coord) drawText(16, shopping.transportNeeds, coord.x, coord.y, { maxWidth: 200 });
+
+  coord = getCoord('page16', 'transportationLevel');
+  if (coord) drawText(16, transportation.level, coord.x, coord.y, { maxWidth: 150 });
+
+  coord = getCoord('page16', 'escortRequired');
+  if (coord) drawCheck(16, transportation.escortRequired, coord.x, coord.y);
+
+  // ============================================
+  // PAGE 19: ACTIVITY PREFERENCES
+  // ============================================
+  const activityPrefs = iadls.activityPreferences || {};
+
+  coord = getCoord('page19', 'activityReading');
+  if (coord) drawCheck(19, activityPrefs.reading, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityAudioBooks');
+  if (coord) drawCheck(19, activityPrefs.audioBooks, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityStorytelling');
+  if (coord) drawCheck(19, activityPrefs.storytelling, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityPhone');
+  if (coord) drawCheck(19, activityPrefs.phoneConversations, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityReminiscing');
+  if (coord) drawCheck(19, activityPrefs.reminiscing, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityCurrentEvents');
+  if (coord) drawCheck(19, activityPrefs.currentEvents, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityChurch');
+  if (coord) drawCheck(19, activityPrefs.bibleStudyChurch, coord.x, coord.y);
+
+  coord = getCoord('page19', 'activityVisitors');
+  if (coord) drawCheck(19, activityPrefs.visitors, coord.x, coord.y);
+
+  // ============================================
+  // PAGE 19/20: SIGNATURES
+  // ============================================
+  const sig = formData.signatures || {};
+
+  coord = getCoord('page20', 'dateOfOriginalPlan');
+  if (coord) drawText(19, formatDate(sig.dateOfOriginalPlan), coord.x, coord.y, { maxWidth: 100 });
+
+  coord = getCoord('page20', 'reviewDates');
+  if (coord) drawText(19, sig.reviewDates, coord.x, coord.y, { maxWidth: 250 });
+
+  // Add resident name to header of each page (after page 0)
+  for (let i = 1; i < pages.length; i++) {
+    // Draw resident name at top of each page
+    drawText(i, `Resident: ${residentFullName}`, 50, NCP_PAGE_HEIGHT - 30, { maxWidth: 300, fontSize: 8 });
   }
 
-  drawMultiline(17, iadls.activityNarrative, 120, 150, 650);
-
-  // ============================================
-  // PAGE 19 (index 18) - Case Management & Smoking
-  // ============================================
-
-  // Smoking
-  const smoking = iadls.smoking;
-  drawCheck(18, smoking.residentSmokes, 120, 520);
-  drawMultiline(18, smoking.safetyConcerns, 200, 520, 550);
-  drawCheck(18, smoking.policyReviewed, 120, 460);
-  drawText(18, smoking.cigaretteLighterStorage, 280, 460, { maxWidth: 300 });
-
-  // Case Management
-  const cm = iadls.caseManagement;
-  drawCheck(18, cm.receivesCaseManagement, 120, 400);
-  drawText(18, cm.caseManagerName, 280, 400, { maxWidth: 200 });
-  drawText(18, cm.caseManagerAgency, 500, 400, { maxWidth: 200 });
-  drawText(18, cm.caseManagerPhone, 120, 360, { maxWidth: 150 });
-  drawText(18, cm.caseManagerEmail, 300, 360, { maxWidth: 200 });
-  drawText(18, cm.caseManagerFax, 530, 360, { maxWidth: 150 });
-
-  // Other issues
-  drawMultiline(18, iadls.otherIssuesConcerns, 120, 300, 650);
-
-  // ============================================
-  // PAGE 20 (index 19) - Signatures
-  // ============================================
-
-  const sigs = formData.signatures;
-
-  // NCP Development participants
-  const involved = sigs.involved;
-  drawCheck(19, involved.resident, 120, 520);
-  drawCheck(19, involved.residentRep, 220, 520);
-  drawCheck(19, involved.parent, 340, 520);
-  drawCheck(19, involved.healthProfessional, 440, 520);
-
-  drawCheck(19, involved.other1, 120, 490);
-  drawText(19, involved.other1Name, 170, 490, { maxWidth: 150 });
-  drawCheck(19, involved.other2, 350, 490);
-  drawText(19, involved.other2Name, 400, 490, { maxWidth: 150 });
-  drawCheck(19, involved.other3, 580, 490);
-  drawText(19, involved.other3Name, 630, 490, { maxWidth: 140 });
-
-  // Dates
-  drawText(19, formatDate(sigs.dateOfOriginalPlan), 120, 440, { maxWidth: 100 });
-  drawText(19, sigs.reviewDates, 280, 440, { maxWidth: 300 });
-
-  // NCP sent to CM
-  drawCheck(19, sigs.ncpSentToCM, 120, 400);
-  drawText(19, formatDate(sigs.ncpSentToCMDate), 200, 400, { maxWidth: 100 });
-
-  // Resident verbally agreed
-  drawCheck(19, sigs.residentVerballyAgreed, 350, 400);
-  drawText(19, formatDate(sigs.residentVerballyAgreedDate), 450, 400, { maxWidth: 100 });
-
-  // Resident recommendations
-  drawMultiline(19, sigs.residentRecommendations, 120, 340, 650);
-
-  // Resident participation
-  drawMultiline(19, sigs.residentParticipation, 120, 260, 650);
-
+  // Save the filled PDF
   return await pdfDoc.save();
 }
 
 /**
  * Download the filled NCP PDF
  */
-export function downloadNCPPdf(pdfBytes: Uint8Array, residentName: string) {
+export function downloadNCPPdf(pdfBytes: Uint8Array, residentName: string): void {
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  const safeName = residentName?.replace(/[^a-zA-Z0-9]/g, '-') || 'Resident';
-  link.download = `NCP-${safeName}-${new Date().toISOString().split('T')[0]}.pdf`;
+  link.download = `NCP-${residentName || 'Resident'}-${new Date().toISOString().split('T')[0]}.pdf`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -761,9 +622,9 @@ export function downloadNCPPdf(pdfBytes: Uint8Array, residentName: string) {
 }
 
 /**
- * Open NCP PDF in new tab for printing
+ * Open filled NCP PDF in new tab for printing
  */
-export function openNCPPdfForPrint(pdfBytes: Uint8Array) {
+export function openNCPPdfForPrint(pdfBytes: Uint8Array): void {
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank');

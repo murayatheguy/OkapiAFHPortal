@@ -54,7 +54,9 @@
       "Bash(node test-disclosure-services.cjs:*)",
       "Bash(node:*)",
       "Bash(grep:*)",
-      "Bash(start http://localhost:5000)"
+      "Bash(start http://localhost:5000)",
+      "Bash(pip install:*)",
+      "Bash(python -m pip install:*)"
     ]
   }
 }
