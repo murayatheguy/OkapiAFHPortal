@@ -32,7 +32,14 @@ import {
   Plus,
   Trash2,
   Printer,
+  Download,
 } from "lucide-react";
+import {
+  fillDisclosurePDF,
+  downloadDisclosurePDF,
+  openDisclosurePDFForPrint,
+  type DisclosureFormData as PDFDisclosureFormData,
+} from "@/lib/forms/disclosure-pdf";
 
 // Disclosure Form Sections
 const DISCLOSURE_SECTIONS = [
@@ -281,6 +288,60 @@ export function DisclosureWizard({
     setIsSaving(true);
     await saveDraftMutation.mutateAsync();
     setIsSaving(false);
+  };
+
+  // Generate PDF from form data
+  const generatePDF = async (): Promise<Uint8Array> => {
+    // Convert form data to PDF format
+    const pdfFormData: PDFDisclosureFormData = {
+      homeInfo: formData.homeInfo,
+      medicaid: formData.medicaid,
+      admissionFee: formData.admissionFee,
+      deposits: formData.deposits,
+      prepaidCharges: formData.prepaidCharges,
+      otherFees: formData.otherFees,
+      refundPolicy: formData.refundPolicy,
+      rates: formData.rates,
+      personalCare: formData.personalCare,
+      medicationServices: formData.medicationServices,
+      otherServices: formData.otherServices,
+      signatures: formData.signatures,
+    };
+    return await fillDisclosurePDF(pdfFormData);
+  };
+
+  // Handle Print PDF
+  const handlePrintPDF = async () => {
+    try {
+      toast({ title: "Generating PDF..." });
+      const pdfBytes = await generatePDF();
+      openDisclosurePDFForPrint(pdfBytes);
+      toast({ title: "PDF opened for printing" });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Failed to generate PDF",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle Download PDF
+  const handleDownloadPDF = async () => {
+    try {
+      toast({ title: "Generating PDF..." });
+      const pdfBytes = await generatePDF();
+      downloadDisclosurePDF(pdfBytes, formData.homeInfo.homeName);
+      toast({ title: "PDF downloaded successfully" });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Failed to generate PDF",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
   // Update form data for a section
@@ -1345,11 +1406,20 @@ export function DisclosureWizard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.print()}
+              onClick={handlePrintPDF}
               className="gap-2 border-gray-300"
             >
               <Printer className="h-4 w-4" />
-              Print
+              Print PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPDF}
+              className="gap-2 border-gray-300"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
             </Button>
           </div>
         </div>
