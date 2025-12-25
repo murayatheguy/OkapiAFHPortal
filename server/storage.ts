@@ -84,7 +84,7 @@ import {
   type InsertFacilityActivity,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
+import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -194,6 +194,20 @@ export interface IStorage {
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   getActivityLogByEntity(entityType: string, entityId: string): Promise<ActivityLog[]>;
   getRecentActivityLog(limit?: number): Promise<ActivityLog[]>;
+  getActivityLogByFacility(facilityId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    action?: string;
+    limit?: number;
+  }): Promise<ActivityLog[]>;
+  getActivityLogSummary(facilityId: string): Promise<{
+    todayCount: number;
+    weekCount: number;
+    monthCount: number;
+    byCategory: Record<string, number>;
+    recentActivity: ActivityLog[];
+  }>;
 
   // Facilities by Owner
   getFacilitiesByOwner(ownerId: string): Promise<Facility[]>;
@@ -836,6 +850,82 @@ export class DatabaseStorage implements IStorage {
       .from(activityLog)
       .orderBy(desc(activityLog.createdAt))
       .limit(limit);
+  }
+
+  async getActivityLogByFacility(facilityId: string, filters?: {
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    action?: string;
+    limit?: number;
+  }): Promise<ActivityLog[]> {
+    const conditions = [eq(activityLog.facilityId, facilityId)];
+
+    if (filters?.startDate) {
+      conditions.push(gte(activityLog.createdAt, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(activityLog.createdAt, new Date(filters.endDate + 'T23:59:59')));
+    }
+    if (filters?.category) {
+      conditions.push(eq(activityLog.category, filters.category));
+    }
+    if (filters?.action) {
+      conditions.push(eq(activityLog.action, filters.action));
+    }
+
+    return await db
+      .select()
+      .from(activityLog)
+      .where(and(...conditions))
+      .orderBy(desc(activityLog.createdAt))
+      .limit(filters?.limit || 100);
+  }
+
+  async getActivityLogSummary(facilityId: string): Promise<{
+    todayCount: number;
+    weekCount: number;
+    monthCount: number;
+    byCategory: Record<string, number>;
+    recentActivity: ActivityLog[];
+  }> {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(todayStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Get all logs for the last 30 days
+    const logs = await db
+      .select()
+      .from(activityLog)
+      .where(and(
+        eq(activityLog.facilityId, facilityId),
+        gte(activityLog.createdAt, monthStart)
+      ))
+      .orderBy(desc(activityLog.createdAt));
+
+    // Calculate counts
+    const todayCount = logs.filter(l => l.createdAt && new Date(l.createdAt) >= todayStart).length;
+    const weekCount = logs.filter(l => l.createdAt && new Date(l.createdAt) >= weekStart).length;
+    const monthCount = logs.length;
+
+    // Group by category
+    const byCategory: Record<string, number> = {};
+    logs.forEach(log => {
+      const cat = log.category || 'other';
+      byCategory[cat] = (byCategory[cat] || 0) + 1;
+    });
+
+    // Get recent 10
+    const recentActivity = logs.slice(0, 10);
+
+    return {
+      todayCount,
+      weekCount,
+      monthCount,
+      byCategory,
+      recentActivity
+    };
   }
 
   // Facilities by Owner

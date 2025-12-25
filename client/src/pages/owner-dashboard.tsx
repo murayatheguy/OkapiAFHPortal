@@ -21,7 +21,7 @@ import {
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
   Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil, UserPlus,
-  FileText, Stethoscope
+  FileText, Stethoscope, Activity
 } from "lucide-react";
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
@@ -36,6 +36,7 @@ import { HIPAAWizard } from "@/components/owner/forms/hipaa-wizard";
 import { AbuseNeglect10403Wizard } from "@/components/owner/forms/abuse-neglect-10403-wizard";
 import { NurseDelegationPRNWizard } from "@/components/owner/forms/nurse-delegation-prn-wizard";
 import { AbuseNeglect27076Wizard } from "@/components/owner/forms/abuse-neglect-27076-wizard";
+import { ActivityLog, ActivityLogWidget } from "@/components/owner/activity-log";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -287,6 +288,7 @@ export default function OwnerDashboardPage() {
               { id: "team", label: "Team", icon: Users },
               { id: "inquiries", label: "Inquiries", icon: MessageSquare, badge: newInquiries },
               { id: "reviews", label: "Reviews", icon: Star },
+              { id: "activity", label: "Activity Log", icon: Activity },
               { id: "resources", label: "Resources", icon: FileText },
               { id: "settings", label: "Settings", icon: Settings },
             ].map(item => (
@@ -462,6 +464,13 @@ export default function OwnerDashboardPage() {
                         setActiveCareTab(tab);
                       }}
                     />
+                  )}
+
+                  {/* Recent Activity Widget */}
+                  {selectedFacilityId && (
+                    <div className="mt-6">
+                      <ActivityLogWidget facilityId={selectedFacilityId} />
+                    </div>
                   )}
                 </div>
               )}
@@ -663,6 +672,18 @@ export default function OwnerDashboardPage() {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {activeSection === "activity" && selectedFacilityId && (
+                <div className="space-y-6">
+                  <h1 className="text-2xl text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
+                    Activity Log
+                  </h1>
+                  <p className="text-gray-600">
+                    Track all actions and changes made in your facility for compliance and audit purposes.
+                  </p>
+                  <ActivityLog facilityId={selectedFacilityId} />
                 </div>
               )}
 

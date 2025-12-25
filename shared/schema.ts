@@ -133,20 +133,51 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
-// Activity Log table for audit trail
+// Activity Log table for comprehensive audit trail
 export const activityLog = pgTable("activity_log", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  entityType: text("entity_type"), // home, owner, claim, admin
+
+  // Who performed the action
+  userId: varchar("user_id"),
+  userType: text("user_type"), // 'owner', 'staff', 'admin', 'system'
+  userName: text("user_name"),
+  performedByType: text("performed_by_type"), // Legacy: admin, owner, system
+  performedById: varchar("performed_by_id"), // Legacy
+
+  // What action was performed
+  action: text("action").notNull(), // 'create', 'update', 'delete', 'login', 'logout', 'print', 'submit', 'give', 'miss', 'refuse', 'expire', 'renew', 'resolve', 'discharge'
+  category: text("category"), // 'auth', 'resident', 'staff', 'medication', 'incident', 'form', 'credential', 'settings', 'transport', 'inquiry', 'facility'
+  description: text("description"),
+
+  // Where (which facility)
+  facilityId: varchar("facility_id"),
+
+  // What entity was affected
+  entityType: text("entity_type"), // 'resident', 'staff', 'medication', 'incident', 'form', 'home', 'owner', 'claim', etc.
   entityId: varchar("entity_id"),
-  action: text("action").notNull(), // ownership_claimed, ownership_revoked, claim_approved, etc.
-  performedByType: text("performed_by_type"), // admin, owner, system
-  performedById: varchar("performed_by_id"),
-  details: json("details"), // Additional context as JSON
+  entityName: text("entity_name"),
+
+  // Additional context
+  details: json("details").$type<Record<string, any>>(), // Additional context as JSON (legacy name)
+  metadata: json("metadata").$type<Record<string, any>>(), // Additional context (new name)
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   entityIdx: index("activity_log_entity_idx").on(table.entityType, table.entityId),
   actionIdx: index("activity_log_action_idx").on(table.action),
   createdIdx: index("activity_log_created_idx").on(table.createdAt),
+  facilityIdx: index("activity_log_facility_idx").on(table.facilityId),
+  categoryIdx: index("activity_log_category_idx").on(table.category),
+  userIdx: index("activity_log_user_idx").on(table.userId),
+}));
+
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [activityLog.facilityId],
+    references: [facilities.id],
+  }),
 }));
 
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, createdAt: true });

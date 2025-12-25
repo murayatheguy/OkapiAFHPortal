@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { registerEhrRoutes } from "./routes/ehr";
 import { registerOwnerEhrRoutes } from "./routes/owner-ehr";
+import { ActivityLogger } from "./lib/activity-logger";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -520,26 +521,30 @@ export async function registerRoutes(
   app.post("/api/owners/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
       }
 
       const owner = await storage.getOwnerByEmail(email);
       if (!owner) {
+        await ActivityLogger.loginFailed(req, email);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       if (!owner.passwordHash) {
+        await ActivityLogger.loginFailed(req, email);
         return res.status(401).json({ error: "Password not set. Please complete account setup first." });
       }
 
       if (owner.status !== "active") {
+        await ActivityLogger.loginFailed(req, email);
         return res.status(401).json({ error: "Account is not active. Please verify your email or contact support." });
       }
 
       const isValid = await bcrypt.compare(password, owner.passwordHash);
       if (!isValid) {
+        await ActivityLogger.loginFailed(req, email);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
@@ -548,6 +553,13 @@ export async function registerRoutes(
       const { passwordHash: _, ...ownerData } = owner;
 
       (req.session as any).ownerId = owner.id;
+
+      // Get owner's first facility ID for logging
+      const facilities = await storage.getFacilitiesByOwner(owner.id);
+      const facilityId = facilities.length > 0 ? facilities[0].id : undefined;
+
+      // Log successful login
+      await ActivityLogger.login(req, owner.id, owner.name, 'owner', facilityId);
 
       // Explicitly save session before responding
       req.session.save((err) => {
@@ -659,6 +671,13 @@ export async function registerRoutes(
       }
 
       const updatedFacility = await storage.updateFacility(facilityId, updateData);
+
+      // Log activity
+      const owner = await storage.getOwner(ownerId);
+      if (owner && updatedFacility) {
+        await ActivityLogger.facilityUpdated(req, ownerId, owner.name, facilityId, updatedFacility.name, updateData);
+      }
+
       res.json(updatedFacility);
     } catch (error) {
       console.error("Error updating facility:", error);
@@ -771,6 +790,14 @@ export async function registerRoutes(
         facilityId,
         ...req.body,
       });
+
+      // Log activity
+      const owner = await storage.getOwner(ownerId);
+      if (owner) {
+        const residentName = `${req.body.firstName} ${req.body.lastName}`;
+        await ActivityLogger.residentCreated(req, ownerId, owner.name, facilityId, resident.id, residentName);
+      }
+
       res.status(201).json(resident);
     } catch (error) {
       console.error("Error creating resident:", error);
@@ -798,6 +825,14 @@ export async function registerRoutes(
       }
 
       const updated = await storage.updateResident(residentId, req.body);
+
+      // Log activity
+      const owner = await storage.getOwner(ownerId);
+      if (owner && updated) {
+        const residentName = `${updated.firstName} ${updated.lastName}`;
+        await ActivityLogger.residentUpdated(req, ownerId, owner.name, facilityId, residentId, residentName, req.body);
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating resident:", error);
@@ -836,6 +871,13 @@ export async function registerRoutes(
       await storage.updateFacility(facilityId, {
         availableBeds: (facility.availableBeds || 0) + 1,
       });
+
+      // Log activity
+      const owner = await storage.getOwner(ownerId);
+      if (owner) {
+        const residentName = `${resident.firstName} ${resident.lastName}`;
+        await ActivityLogger.residentDischarged(req, ownerId, owner.name, facilityId, residentId, residentName);
+      }
 
       res.json(updated);
     } catch (error) {
@@ -1029,6 +1071,65 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================
+  // OWNER ACTIVITY LOG API
+  // ============================================
+
+  // Get activity log for a facility with filters
+  app.get("/api/owners/facilities/:facilityId/activity-log", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const { startDate, endDate, category, action, limit } = req.query;
+
+      const logs = await storage.getActivityLogByFacility(facilityId, {
+        startDate: startDate as string,
+        endDate: endDate as string,
+        category: category as string,
+        action: action as string,
+        limit: limit ? parseInt(String(limit)) : 100,
+      });
+
+      res.json(logs);
+    } catch (error) {
+      console.error("Error getting activity log:", error);
+      res.status(500).json({ error: "Failed to get activity log" });
+    }
+  });
+
+  // Get activity log summary for dashboard widget
+  app.get("/api/owners/facilities/:facilityId/activity-log/summary", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (!ownerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { facilityId } = req.params;
+      const facility = await storage.getFacility(facilityId);
+
+      if (!facility || facility.ownerId !== ownerId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const summary = await storage.getActivityLogSummary(facilityId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error getting activity log summary:", error);
+      res.status(500).json({ error: "Failed to get activity log summary" });
+    }
+  });
+
   // Get current owner's claims
   app.get("/api/owners/me/claims", async (req, res) => {
     try {
@@ -1051,9 +1152,24 @@ export async function registerRoutes(
   });
 
   // Owner logout
-  app.post("/api/owners/logout", (req, res) => {
-    (req.session as any).ownerId = null;
-    res.json({ success: true });
+  app.post("/api/owners/logout", async (req, res) => {
+    try {
+      const ownerId = (req.session as any).ownerId;
+      if (ownerId) {
+        const owner = await storage.getOwner(ownerId);
+        if (owner) {
+          const facilities = await storage.getFacilitiesByOwner(owner.id);
+          const facilityId = facilities.length > 0 ? facilities[0].id : undefined;
+          await ActivityLogger.logout(req, owner.id, owner.name, 'owner', facilityId);
+        }
+      }
+      (req.session as any).ownerId = null;
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      (req.session as any).ownerId = null;
+      res.json({ success: true });
+    }
   });
 
   // Get single owner by ID (must be after /me routes)

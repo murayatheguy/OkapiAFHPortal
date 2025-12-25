@@ -1,6 +1,7 @@
 import { Express, Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { storage } from "../storage";
+import { ActivityLogger } from "../lib/activity-logger";
 
 /**
  * Middleware to require owner authentication
@@ -168,6 +169,11 @@ export function registerOwnerEhrRoutes(app: Express) {
           inviteExpiresAt,
         });
 
+        // Log activity
+        const owner = (req as any).owner;
+        const staffName = `${firstName} ${lastName}`;
+        await ActivityLogger.staffCreated(req, owner.id, owner.name, facilityId, newStaff.id, staffName);
+
         // In production, send invite email here
         // await sendInviteEmail(email, inviteToken);
 
@@ -208,6 +214,11 @@ export function registerOwnerEhrRoutes(app: Express) {
         if (staff.facilityId !== facilityId) {
           return res.status(403).json({ error: "Staff member not in this facility" });
         }
+
+        // Log activity before deletion
+        const owner = (req as any).owner;
+        const staffName = `${staff.firstName} ${staff.lastName}`;
+        await ActivityLogger.staffRemoved(req, owner.id, owner.name, facilityId, staffId, staffName);
 
         await storage.deleteStaffAuth(staffId);
         res.json({ success: true });
