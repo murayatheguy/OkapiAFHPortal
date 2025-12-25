@@ -52,7 +52,8 @@
       "Bash(node analyze-forms.cjs:*)",
       "Bash(node test-admission-agreement.cjs:*)",
       "Bash(node test-disclosure-services.cjs:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(grep:*)"
     ]
   }
 }
