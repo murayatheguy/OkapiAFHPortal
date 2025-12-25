@@ -267,6 +267,145 @@ export function registerOwnerEhrRoutes(app: Express) {
   );
 
   // ============================================================================
+  // TEAM MEMBER → STAFF PORTAL FLOW
+  // ============================================================================
+
+  /**
+   * Get team members who don't have staff portal access yet
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/team-members/without-portal-access",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+
+        // Get all team members for this facility
+        const allTeamMembers = await storage.getTeamMembers(facilityId);
+
+        // Get all staff auth records for this facility
+        const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+
+        // Get team member IDs that already have portal access
+        const staffTeamMemberIds = new Set(
+          existingStaff
+            .filter((s) => s.teamMemberId)
+            .map((s) => s.teamMemberId)
+        );
+
+        // Filter to team members without portal access and are active
+        const availableMembers = allTeamMembers.filter(
+          (tm) => !staffTeamMemberIds.has(tm.id) && tm.status === "active"
+        );
+
+        res.json(availableMembers);
+      } catch (error) {
+        console.error("Error fetching team members:", error);
+        res.status(500).json({ error: "Failed to fetch team members" });
+      }
+    }
+  );
+
+  /**
+   * Invite a team member to the staff portal
+   * Creates staffAuth record linked to the team member
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/staff/invite-team-member",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { teamMemberId, role } = req.body;
+
+        if (!teamMemberId) {
+          return res.status(400).json({ error: "Team member ID is required" });
+        }
+
+        // Get the team member
+        const teamMember = await storage.getTeamMember(teamMemberId);
+        if (!teamMember) {
+          return res.status(404).json({ error: "Team member not found" });
+        }
+
+        if (teamMember.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Team member not in this facility" });
+        }
+
+        // Check if already has access
+        const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+        const alreadyHasAccess = existingStaff.some(
+          (s) => s.teamMemberId === teamMemberId
+        );
+
+        if (alreadyHasAccess) {
+          return res.status(400).json({ error: "Team member already has portal access" });
+        }
+
+        // Parse name into first and last
+        const nameParts = teamMember.name.split(" ");
+        const firstName = nameParts[0] || teamMember.name;
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        // Determine role - map team member role to staff role
+        let staffRole = role || "caregiver";
+        if (teamMember.role === "Manager" || teamMember.role === "Administrator") {
+          staffRole = "admin";
+        } else if (teamMember.role === "Nurse") {
+          staffRole = "nurse";
+        } else if (teamMember.role === "Med Tech" || teamMember.role === "Medication Technician") {
+          staffRole = "med_tech";
+        }
+
+        // Create staff auth record linked to team member
+        const newStaff = await storage.createStaffAuth({
+          facilityId,
+          teamMemberId,
+          email: teamMember.email || `staff_${teamMember.id.substring(0, 8)}@portal.local`,
+          firstName,
+          lastName,
+          role: staffRole,
+          permissions: {
+            canAdministerMeds: staffRole !== "caregiver",
+            canAdministerControlled: staffRole === "nurse" || staffRole === "admin",
+            canFileIncidents: true,
+            canEditResidents: staffRole === "admin" || staffRole === "nurse",
+          },
+          status: "active", // Direct activation since linked to team member
+        });
+
+        // Log activity
+        const owner = (req as any).owner;
+        await ActivityLogger.staffCreated(
+          req,
+          owner.id,
+          owner.name,
+          facilityId,
+          newStaff.id,
+          teamMember.name
+        );
+
+        res.json({
+          success: true,
+          staff: {
+            id: newStaff.id,
+            teamMemberId: newStaff.teamMemberId,
+            firstName: newStaff.firstName,
+            lastName: newStaff.lastName,
+            role: newStaff.role,
+            status: newStaff.status,
+          },
+        });
+      } catch (error) {
+        console.error("Error inviting team member to staff portal:", error);
+        res.status(500).json({ error: "Failed to grant portal access" });
+      }
+    }
+  );
+
+  // ============================================================================
   // OWNER REPORTS ACCESS
   // ============================================================================
 

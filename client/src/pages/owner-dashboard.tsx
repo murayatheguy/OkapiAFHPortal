@@ -75,6 +75,7 @@ export default function OwnerDashboardPage() {
     lastName: "",
     email: "",
     phone: "",
+    dateOfBirth: "",
     role: "caregiver",
     hireDate: "",
   });
@@ -100,7 +101,10 @@ export default function OwnerDashboardPage() {
         facilityId: selectedFacilityId!,
         name: `${data.firstName} ${data.lastName}`.trim(),
         email: data.email || undefined,
+        phone: data.phone || undefined,
+        dateOfBirth: data.dateOfBirth || undefined,
         role: data.role,
+        hireDate: data.hireDate || undefined,
         status: "active",
         isManualEntry: true,
       });
@@ -115,6 +119,7 @@ export default function OwnerDashboardPage() {
         lastName: "",
         email: "",
         phone: "",
+        dateOfBirth: "",
         role: "caregiver",
         hireDate: "",
       });
@@ -1427,6 +1432,17 @@ export default function OwnerDashboardPage() {
             </div>
 
             <div className="space-y-2">
+              <Label className="text-gray-700">Date of Birth *</Label>
+              <Input
+                type="date"
+                value={teamMemberForm.dateOfBirth}
+                onChange={(e) => setTeamMemberForm({ ...teamMemberForm, dateOfBirth: e.target.value })}
+                className="bg-gray-100 border-gray-300 text-gray-900"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-gray-700">Role *</Label>
               <Select
                 value={teamMemberForm.role}
@@ -1470,7 +1486,7 @@ export default function OwnerDashboardPage() {
             </Button>
             <Button
               onClick={() => createTeamMemberMutation.mutate(teamMemberForm)}
-              disabled={!teamMemberForm.firstName || !teamMemberForm.lastName || createTeamMemberMutation.isPending}
+              disabled={!teamMemberForm.firstName || !teamMemberForm.lastName || !teamMemberForm.dateOfBirth || createTeamMemberMutation.isPending}
               className="bg-teal-600 hover:bg-teal-500"
             >
               {createTeamMemberMutation.isPending && (

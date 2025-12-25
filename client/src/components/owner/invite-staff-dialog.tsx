@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -11,16 +12,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, CheckCircle2, UserPlus } from "lucide-react";
+import { Loader2, Users, UserPlus, CheckCircle2, ArrowRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import type { TeamMember } from "@shared/schema";
 
 interface InviteStaffDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   facilityId: string;
   onSuccess?: () => void;
+  onNavigateToTeam?: () => void;
 }
 
 const ROLE_OPTIONS = [
@@ -28,75 +30,80 @@ const ROLE_OPTIONS = [
   { value: "med_tech", label: "Medication Technician", description: "Can administer medications" },
   { value: "shift_lead", label: "Shift Lead", description: "Supervises shift operations" },
   { value: "nurse", label: "Nurse", description: "Full clinical access and oversight" },
+  { value: "admin", label: "Administrator", description: "Full access to all features" },
 ];
 
-export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }: InviteStaffDialogProps) {
+export function InviteStaffDialog({
+  open,
+  onOpenChange,
+  facilityId,
+  onSuccess,
+  onNavigateToTeam
+}: InviteStaffDialogProps) {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    firstName: "",
-    lastName: "",
-    role: "caregiver",
+  const queryClient = useQueryClient();
+  const [selectedTeamMemberId, setSelectedTeamMemberId] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [invitedName, setInvitedName] = useState("");
+
+  // Get team members who don't have portal access yet
+  const { data: availableMembers = [], isLoading } = useQuery<TeamMember[]>({
+    queryKey: ["team-members-without-portal", facilityId],
+    queryFn: async () => {
+      const res = await fetch(`/api/owners/facilities/${facilityId}/team-members/without-portal-access`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch team members");
+      return res.json();
+    },
+    enabled: open && !!facilityId,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.email || !formData.firstName || !formData.lastName) {
+  const inviteMutation = useMutation({
+    mutationFn: async (data: { teamMemberId: string; role?: string }) => {
+      const res = await apiRequest("POST", `/api/owners/facilities/${facilityId}/staff/invite-team-member`, data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const member = availableMembers.find(m => m.id === selectedTeamMemberId);
+      setInvitedName(member?.name || "Team member");
+      setShowSuccess(true);
+      queryClient.invalidateQueries({ queryKey: ["team-members-without-portal", facilityId] });
+      queryClient.invalidateQueries({ queryKey: ["facility-staff", facilityId] });
+      onSuccess?.();
+    },
+    onError: (error) => {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Failed to Grant Access",
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
-      return;
-    }
+    },
+  });
 
-    setIsSubmitting(true);
-    try {
-      const response = await apiRequest("POST", `/api/owners/facilities/${facilityId}/staff/invite-admin`, formData);
-      const data = await response.json();
-
-      if (data.inviteLink) {
-        const fullLink = `${window.location.origin}${data.inviteLink}`;
-        setInviteLink(fullLink);
-        toast({
-          title: "Invitation Sent",
-          description: `Staff invitation created for ${formData.firstName} ${formData.lastName}`,
-        });
-        onSuccess?.();
-      }
-    } catch (error) {
-      toast({
-        title: "Invitation Failed",
-        description: error instanceof Error ? error.message : "Failed to create invitation",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const copyLink = async () => {
-    if (inviteLink) {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Link Copied",
-        description: "Invite link copied to clipboard",
-      });
-    }
+  const handleInvite = () => {
+    if (!selectedTeamMemberId) return;
+    inviteMutation.mutate({
+      teamMemberId: selectedTeamMemberId,
+      role: selectedRole || undefined,
+    });
   };
 
   const handleClose = () => {
-    setFormData({ email: "", firstName: "", lastName: "", role: "caregiver" });
-    setInviteLink(null);
-    setCopied(false);
+    setSelectedTeamMemberId("");
+    setSelectedRole("");
+    setShowSuccess(false);
+    setInvitedName("");
     onOpenChange(false);
   };
+
+  const handleGoToTeam = () => {
+    handleClose();
+    onNavigateToTeam?.();
+  };
+
+  const selectedMember = availableMembers.find(m => m.id === selectedTeamMemberId);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -104,105 +111,74 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
         <DialogHeader>
           <DialogTitle className="text-amber-100 flex items-center gap-2" style={{ fontFamily: "'Cormorant', serif" }}>
             <UserPlus className="h-5 w-5" />
-            Invite Staff Member
+            Grant Care Portal Access
           </DialogTitle>
           <DialogDescription className="text-stone-400">
-            Send an invitation to join your facility's care portal
+            Select a team member to give them access to the Care Portal
           </DialogDescription>
         </DialogHeader>
 
-        {inviteLink ? (
-          <div className="space-y-4">
-            <Alert className="bg-green-900/20 border-green-900/30">
-              <CheckCircle2 className="h-4 w-4 text-green-400" />
-              <AlertDescription className="text-green-300 ml-2">
-                Invitation created successfully!
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-2">
-              <Label className="text-stone-400">Invite Link</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={inviteLink}
-                  readOnly
-                  className="bg-stone-800 border-amber-900/30 text-stone-200 text-sm"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={copyLink}
-                  className="border-amber-900/30 text-stone-300 hover:text-amber-200 shrink-0"
-                >
-                  {copied ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                </Button>
+        {showSuccess ? (
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-green-900/30 flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-green-400" />
               </div>
-              <p className="text-stone-500 text-xs">
-                Share this link with {formData.firstName}. The link expires in 7 days.
-              </p>
+              <div>
+                <p className="text-amber-100 font-medium">Portal Access Granted!</p>
+                <p className="text-stone-400 text-sm mt-1">
+                  {invitedName} can now log in to the Care Portal using the facility PIN.
+                </p>
+              </div>
             </div>
-
             <DialogFooter>
-              <Button
-                onClick={handleClose}
-                className="bg-amber-600 hover:bg-amber-500"
-              >
+              <Button onClick={handleClose} className="w-full bg-amber-600 hover:bg-amber-500">
                 Done
               </Button>
             </DialogFooter>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-stone-400">First Name *</Label>
-                <Input
-                  required
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  placeholder="Jane"
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-stone-400">Last Name *</Label>
-                <Input
-                  required
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  placeholder="Smith"
-                  className="bg-stone-800 border-amber-900/30 text-stone-200"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-stone-400">Email Address *</Label>
-              <Input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="jane.smith@example.com"
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-stone-400">Role</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => setFormData({ ...formData, role: value })}
+        ) : isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+          </div>
+        ) : availableMembers.length === 0 ? (
+          <div className="text-center py-6">
+            <Users className="h-12 w-12 mx-auto text-stone-600 mb-3" />
+            <p className="text-stone-300 font-medium">No Team Members Available</p>
+            <p className="text-stone-500 text-sm mt-1">
+              All team members already have portal access, or you haven't added any team members yet.
+            </p>
+            {onNavigateToTeam && (
+              <Button
+                variant="outline"
+                className="mt-4 border-amber-900/30 text-stone-300 hover:text-amber-200"
+                onClick={handleGoToTeam}
               >
+                Go to Team Members
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-stone-400">Select Team Member *</Label>
+              <Select value={selectedTeamMemberId} onValueChange={setSelectedTeamMemberId}>
                 <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
-                  <SelectValue />
+                  <SelectValue placeholder="Choose a team member..." />
                 </SelectTrigger>
-                <SelectContent>
-                  {ROLE_OPTIONS.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      <div className="flex flex-col">
-                        <span>{role.label}</span>
-                        <span className="text-xs text-stone-500">{role.description}</span>
+                <SelectContent className="bg-stone-800 border-amber-900/30">
+                  {availableMembers.map((member) => (
+                    <SelectItem
+                      key={member.id}
+                      value={member.id}
+                      className="text-stone-200 focus:bg-stone-700 focus:text-amber-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{member.name}</span>
+                        <Badge variant="outline" className="text-xs border-stone-600 text-stone-400">
+                          {member.role}
+                        </Badge>
                       </div>
                     </SelectItem>
                   ))}
@@ -210,7 +186,46 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
               </Select>
             </div>
 
-            <DialogFooter className="gap-2">
+            {selectedMember && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-stone-400">Portal Role (optional)</Label>
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger className="bg-stone-800 border-amber-900/30 text-stone-200">
+                      <SelectValue placeholder="Auto-detect from team role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-stone-800 border-amber-900/30">
+                      {ROLE_OPTIONS.map((role) => (
+                        <SelectItem
+                          key={role.value}
+                          value={role.value}
+                          className="text-stone-200 focus:bg-stone-700 focus:text-amber-200"
+                        >
+                          <div className="flex flex-col">
+                            <span>{role.label}</span>
+                            <span className="text-xs text-stone-500">{role.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-stone-800/50 p-3 rounded-lg border border-amber-900/20">
+                  <p className="text-sm text-stone-300">
+                    <strong className="text-amber-200">{selectedMember.name}</strong> will be able to log in
+                    to the Care Portal using the facility PIN and their name.
+                  </p>
+                  {selectedMember.email && (
+                    <p className="text-xs text-stone-500 mt-1">
+                      Email: {selectedMember.email}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            <DialogFooter className="gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
@@ -220,24 +235,24 @@ export function InviteStaffDialog({ open, onOpenChange, facilityId, onSuccess }:
                 Cancel
               </Button>
               <Button
-                type="submit"
-                disabled={isSubmitting}
+                onClick={handleInvite}
+                disabled={!selectedTeamMemberId || inviteMutation.isPending}
                 className="bg-amber-600 hover:bg-amber-500"
               >
-                {isSubmitting ? (
+                {inviteMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
+                    Granting...
                   </>
                 ) : (
                   <>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Send Invitation
+                    Grant Portal Access
                   </>
                 )}
               </Button>
             </DialogFooter>
-          </form>
+          </div>
         )}
       </DialogContent>
     </Dialog>

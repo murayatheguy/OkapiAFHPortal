@@ -1232,7 +1232,14 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                       {staff.map((member) => (
                         <TableRow key={member.id} className="border-gray-200">
                           <TableCell className="text-gray-900 font-medium">
-                            {member.firstName} {member.lastName}
+                            <div className="flex items-center gap-2">
+                              {member.firstName} {member.lastName}
+                              {!member.teamMemberId && (
+                                <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                                  Not linked
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-gray-600">{member.email}</TableCell>
                           <TableCell className="text-gray-600 capitalize">{member.role}</TableCell>
@@ -1295,7 +1302,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
                                 className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 px-2"
                                 onClick={() => deleteStaffMutation.mutate(member.id)}
                               >
-                                Remove
+                                {member.teamMemberId ? "Revoke Access" : "Delete"}
                               </Button>
                             </div>
                           </TableCell>
@@ -1964,6 +1971,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         onOpenChange={setInviteDialogOpen}
         facilityId={facilityId}
         onSuccess={() => refetchStaff()}
+        onNavigateToTeam={() => setLocation("/owner/dashboard")}
       />
 
       {/* Add/Edit Client Dialog */}

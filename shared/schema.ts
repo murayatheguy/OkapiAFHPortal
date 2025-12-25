@@ -370,7 +370,10 @@ export const teamMembers = pgTable("team_members", {
   // Basic Info
   name: text("name").notNull(),
   email: text("email"),
+  phone: text("phone"),
+  dateOfBirth: date("date_of_birth"),
   role: text("role").notNull(), // Owner, Administrator, Caregiver, Manager
+  hireDate: date("hire_date"),
 
   // Account Status
   status: text("status").notNull(), // Active, Invited, Inactive
