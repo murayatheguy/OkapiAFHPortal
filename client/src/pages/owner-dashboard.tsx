@@ -31,6 +31,11 @@ import { NurseDelegationWizard } from "@/components/owner/forms/nurse-delegation
 import { AdmissionAgreementWizard } from "@/components/owner/forms/admission-agreement-wizard";
 import { DisclosureServicesWizard } from "@/components/owner/forms/disclosure-services-wizard";
 import { DashboardWidgets } from "@/components/owner/dashboard-widgets";
+import { Form02516Wizard } from "@/components/owner/forms/form-02-516-wizard";
+import { HIPAAWizard } from "@/components/owner/forms/hipaa-wizard";
+import { AbuseNeglect10403Wizard } from "@/components/owner/forms/abuse-neglect-10403-wizard";
+import { NurseDelegationPRNWizard } from "@/components/owner/forms/nurse-delegation-prn-wizard";
+import { AbuseNeglect27076Wizard } from "@/components/owner/forms/abuse-neglect-27076-wizard";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -58,6 +63,11 @@ export default function OwnerDashboardPage() {
   const [showNurseDelegationWizard, setShowNurseDelegationWizard] = useState(false);
   const [showAdmissionAgreementWizard, setShowAdmissionAgreementWizard] = useState(false);
   const [showDisclosureServicesWizard, setShowDisclosureServicesWizard] = useState(false);
+  const [showForm02516Wizard, setShowForm02516Wizard] = useState(false);
+  const [showHIPAAWizard, setShowHIPAAWizard] = useState(false);
+  const [showAbuseNeglect10403Wizard, setShowAbuseNeglect10403Wizard] = useState(false);
+  const [showNurseDelegationPRNWizard, setShowNurseDelegationPRNWizard] = useState(false);
+  const [showAbuseNeglect27076Wizard, setShowAbuseNeglect27076Wizard] = useState(false);
   const [teamMemberForm, setTeamMemberForm] = useState({
     firstName: "",
     lastName: "",
@@ -1089,22 +1099,158 @@ export default function OwnerDashboardPage() {
                       </CardContent>
                     </Card>
 
-                    <Card className="border-gray-200 bg-gray-50 shadow-sm opacity-60">
+                    {/* 02-516 Service Authorization Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gray-100 rounded-lg">
-                            <FileText className="h-5 w-5 text-gray-400" />
+                          <div className="p-2 bg-teal-50 rounded-lg">
+                            <FileText className="h-5 w-5 text-teal-600" />
                           </div>
                           <div>
-                            <CardTitle className="text-gray-500 text-base">Incident Report</CardTitle>
-                            <CardDescription className="text-gray-400 text-xs">Coming Soon</CardDescription>
+                            <CardTitle className="text-gray-900 text-base">Service Authorization</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 02-516</CardDescription>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <p className="text-sm text-gray-400">
-                          Detailed incident documentation for DSHS reporting requirements.
+                        <p className="text-sm text-gray-600 mb-4">
+                          Service authorization form for client services.
                         </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Fillable PDF</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowForm02516Wizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* HIPAA Authorization Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-50 rounded-lg">
+                            <Shield className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">HIPAA Authorization</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 03-387a</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Authorization for release of protected health information.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Required</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowHIPAAWizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Abuse & Neglect 10-403 Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-red-50 rounded-lg">
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Abuse & Neglect Report</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 10-403</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Report suspected abuse, neglect, or exploitation incidents.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Critical</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowAbuseNeglect10403Wizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Nurse Delegation PRN Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-purple-50 rounded-lg">
+                            <Stethoscope className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Nurse Delegation PRN</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 13-678a</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          PRN medication delegation authorization form.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Medical</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowNurseDelegationPRNWizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Abuse & Neglect 27-076 Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-red-50 rounded-lg">
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Abuse & Neglect Report</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 27-076</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Alternative abuse and neglect incident report form.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Critical</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowAbuseNeglect27076Wizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -1331,6 +1477,46 @@ export default function OwnerDashboardPage() {
         <DisclosureServicesWizard
           facilityId={selectedFacilityId}
           onClose={() => setShowDisclosureServicesWizard(false)}
+        />
+      )}
+
+      {/* Form 02-516 Wizard */}
+      {showForm02516Wizard && selectedFacilityId && (
+        <Form02516Wizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowForm02516Wizard(false)}
+        />
+      )}
+
+      {/* HIPAA Authorization Wizard */}
+      {showHIPAAWizard && selectedFacilityId && (
+        <HIPAAWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowHIPAAWizard(false)}
+        />
+      )}
+
+      {/* Abuse & Neglect 10-403 Wizard */}
+      {showAbuseNeglect10403Wizard && selectedFacilityId && (
+        <AbuseNeglect10403Wizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowAbuseNeglect10403Wizard(false)}
+        />
+      )}
+
+      {/* Nurse Delegation PRN Wizard */}
+      {showNurseDelegationPRNWizard && selectedFacilityId && (
+        <NurseDelegationPRNWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowNurseDelegationPRNWizard(false)}
+        />
+      )}
+
+      {/* Abuse & Neglect 27-076 Wizard */}
+      {showAbuseNeglect27076Wizard && selectedFacilityId && (
+        <AbuseNeglect27076Wizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowAbuseNeglect27076Wizard(false)}
         />
       )}
     </div>
