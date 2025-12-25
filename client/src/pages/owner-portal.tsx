@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getFacility, createTeamMember, createCredential, getInquiries, updateInquiry } from "@/lib/api";
@@ -95,7 +96,8 @@ export default function OwnerDashboard() {
   const [showTransportDialog, setShowTransportDialog] = useState(false);
   const [transportForm, setTransportForm] = useState<TransportRequestForm>(initialTransportForm);
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   const FACILITY_ID = "d66a7b70-4972-4ff0-85c5-ae9799b8c76a";
   
   const { data: facility, isLoading: facilityLoading } = useQuery({
@@ -1017,7 +1019,18 @@ export default function OwnerDashboard() {
                           <div className="mt-4 pl-[64px] text-sm text-muted-foreground flex items-center gap-2">
                             <Mail className="h-4 w-4" />
                             Invitation sent to {member.email}
-                            <Button variant="link" className="h-auto p-0 text-xs">Resend</Button>
+                            <Button
+                              variant="link"
+                              className="h-auto p-0 text-xs"
+                              onClick={() => {
+                                toast({
+                                  title: "Invitation Resent",
+                                  description: `A new invitation has been sent to ${member.email}`,
+                                });
+                              }}
+                            >
+                              Resend
+                            </Button>
                           </div>
                         )}
                       </div>

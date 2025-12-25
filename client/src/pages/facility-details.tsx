@@ -833,7 +833,14 @@ export default function FacilityDetails() {
                   <p className="font-medium">{facility.address}</p>
                   <p className="text-sm text-muted-foreground">{facility.city}, WA {facility.zipCode}</p>
                   <p className="text-sm text-muted-foreground">{facility.county} County</p>
-                  <Button variant="link" className="px-0 h-auto mt-2 text-primary">
+                  <Button
+                    variant="link"
+                    className="px-0 h-auto mt-2 text-primary"
+                    onClick={() => {
+                      const address = encodeURIComponent(`${facility.address}, ${facility.city}, WA ${facility.zipCode}`);
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                    }}
+                  >
                     Get Directions <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
                 </div>
@@ -844,11 +851,16 @@ export default function FacilityDetails() {
             <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
               <h3 className="text-xl font-serif font-bold text-center mb-6">Ready to Learn More?</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="text-center p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => {}}>
+                <Card
+                  className="text-center p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => facility.phone && (window.location.href = `tel:${facility.phone}`)}
+                >
                   <Phone className="h-8 w-8 mx-auto mb-2 text-primary" />
                   <h4 className="font-semibold">Call</h4>
                   <p className="text-xs text-muted-foreground mb-3">Talk to staff directly</p>
-                  <Button size="sm" className="w-full">Call Now</Button>
+                  <Button size="sm" className="w-full" disabled={!facility.phone}>
+                    {facility.phone ? 'Call Now' : 'No Phone Listed'}
+                  </Button>
                 </Card>
                 <Card className="text-center p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setShowMessageModal(true)}>
                   <MessageSquare className="h-8 w-8 mx-auto mb-2 text-primary" />
