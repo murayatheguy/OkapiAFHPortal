@@ -102,6 +102,83 @@ export function registerEhrRoutes(app: Express) {
   });
 
   /**
+   * Staff login with name + individual PIN
+   * For staff who were granted portal access with a PIN
+   */
+  app.post("/api/ehr/auth/name-pin-login", async (req, res) => {
+    try {
+      const { staffName, pin } = req.body;
+
+      if (!staffName || !pin) {
+        return res.status(400).json({ error: "Name and PIN are required" });
+      }
+
+      if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        return res.status(400).json({ error: "Invalid PIN format. Please enter a 4-digit PIN." });
+      }
+
+      // Parse name to first/last for matching
+      const nameParts = staffName.trim().split(/\s+/);
+      const searchFirstName = nameParts[0]?.toLowerCase() || "";
+      const searchLastName = nameParts.slice(1).join(" ").toLowerCase() || "";
+
+      // Get all facilities and search for staff by name
+      const allFacilities = await storage.getFacilities();
+      let matchedStaff = null;
+
+      for (const facility of allFacilities) {
+        const facilityStaff = await storage.getStaffAuthByFacility(facility.id);
+
+        // Find staff whose name matches
+        const match = facilityStaff.find((s) => {
+          const staffFirstLower = s.firstName.toLowerCase();
+          const staffLastLower = s.lastName.toLowerCase();
+          const fullNameLower = `${staffFirstLower} ${staffLastLower}`;
+          const inputNameLower = staffName.trim().toLowerCase();
+
+          // Match either exact name or first+last combo
+          return (
+            fullNameLower === inputNameLower ||
+            (staffFirstLower === searchFirstName && staffLastLower === searchLastName) ||
+            (staffFirstLower === searchFirstName && !searchLastName && !s.lastName)
+          );
+        });
+
+        if (match && match.status === "active" && match.pin) {
+          matchedStaff = match;
+          break;
+        }
+      }
+
+      if (!matchedStaff || !matchedStaff.pin) {
+        return res.status(401).json({ error: "No staff member found with that name or no PIN set" });
+      }
+
+      // Verify hashed PIN
+      const isValidPin = await bcrypt.compare(pin, matchedStaff.pin);
+      if (!isValidPin) {
+        return res.status(401).json({ error: "Invalid PIN" });
+      }
+
+      // Update last login
+      await storage.updateStaffAuth(matchedStaff.id, { lastLoginAt: new Date() });
+
+      // Set session
+      req.session.staffId = matchedStaff.id;
+      req.session.staffFacilityId = matchedStaff.facilityId;
+      req.session.staffRole = matchedStaff.role;
+
+      // Return staff data without sensitive fields
+      const { passwordHash: _, pin: __, inviteToken: ___, ...staffData } = matchedStaff;
+
+      res.json({ staff: staffData });
+    } catch (error) {
+      console.error("Error during name+PIN login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  /**
    * Staff quick login with facility PIN + name (no account needed)
    * This creates a temporary session for the staff member
    */

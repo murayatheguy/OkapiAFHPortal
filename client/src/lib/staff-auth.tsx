@@ -14,6 +14,7 @@ interface StaffAuthContextType {
   login: (email: string, password: string) => Promise<void>;
   loginWithPin: (email: string, pin: string) => Promise<void>;
   loginWithFacilityPin: (facilityPin: string, staffName: string) => Promise<void>;
+  loginWithNamePin: (staffName: string, pin: string) => Promise<void>;
   logout: () => Promise<void>;
   refetchStaff: () => void;
 }
@@ -85,6 +86,16 @@ export function StaffAuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const loginNamePinMutation = useMutation({
+    mutationFn: async ({ staffName, pin }: { staffName: string; pin: string }) => {
+      const response = await apiRequest("POST", "/api/ehr/auth/name-pin-login", { staffName, pin });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-me"] });
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/ehr/auth/logout", undefined);
@@ -106,6 +117,10 @@ export function StaffAuthProvider({ children }: { children: ReactNode }) {
     await loginFacilityPinMutation.mutateAsync({ facilityPin, staffName });
   };
 
+  const loginWithNamePin = async (staffName: string, pin: string) => {
+    await loginNamePinMutation.mutateAsync({ staffName, pin });
+  };
+
   const logout = async () => {
     await logoutMutation.mutateAsync();
   };
@@ -121,6 +136,7 @@ export function StaffAuthProvider({ children }: { children: ReactNode }) {
         login,
         loginWithPin,
         loginWithFacilityPin,
+        loginWithNamePin,
         logout,
         refetchStaff: () => refetchStaff(),
       }}

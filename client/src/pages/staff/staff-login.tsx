@@ -14,13 +14,11 @@ const TEAL = "#0d9488";
 
 export default function StaffLogin() {
   const [, setLocation] = useLocation();
-  const { login, loginWithPin, loginWithFacilityPin, logout, isLoading, isAuthenticated, staff } = useStaffAuth();
+  const { login, loginWithFacilityPin, loginWithNamePin, logout, isLoading, isAuthenticated, staff } = useStaffAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [pin, setPin] = useState("");
-  const [pinEmail, setPinEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -28,6 +26,10 @@ export default function StaffLogin() {
   // Facility PIN login state
   const [facilityPin, setFacilityPin] = useState("");
   const [staffName, setStaffName] = useState("");
+
+  // Individual staff PIN login state
+  const [staffNameForPin, setStaffNameForPin] = useState("");
+  const [individualPin, setIndividualPin] = useState("");
 
   // Handle logout to switch users
   const handleLogoutAndSwitch = async () => {
@@ -76,34 +78,6 @@ export default function StaffLogin() {
     }
   };
 
-  const handlePinLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!pinEmail || pin.length < 4) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter your email and complete the PIN.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await loginWithPin(pinEmail, pin);
-      setLocation("/staff/dashboard");
-    } catch (error) {
-      toast({
-        title: "Login Failed",
-        description: error instanceof Error ? error.message : "Invalid PIN. Please try again.",
-        variant: "destructive",
-      });
-      setPin("");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleFacilityPinLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -136,6 +110,43 @@ export default function StaffLogin() {
         variant: "destructive",
       });
       setFacilityPin("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStaffPinLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (individualPin.length !== 4) {
+      toast({
+        title: "Invalid PIN",
+        description: "Please enter your 4-digit PIN.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!staffNameForPin.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await loginWithNamePin(staffNameForPin.trim(), individualPin);
+      setLocation("/staff/dashboard");
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Invalid name or PIN. Please try again.",
+        variant: "destructive",
+      });
+      setIndividualPin("");
     } finally {
       setIsSubmitting(false);
     }
@@ -270,28 +281,87 @@ export default function StaffLogin() {
           </CardHeader>
 
           <CardContent>
-            <Tabs defaultValue="facility" className="w-full">
+            <Tabs defaultValue="staff-pin" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="facility" className="gap-1 text-xs sm:text-sm">
-                  <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Facility</span> PIN
+                <TabsTrigger value="staff-pin" className="gap-1 text-xs sm:text-sm">
+                  <KeyRound className="h-4 w-4" />
+                  <span className="hidden sm:inline">Staff</span> PIN
                 </TabsTrigger>
                 <TabsTrigger value="password" className="gap-1 text-xs sm:text-sm">
                   <Lock className="h-4 w-4" />
                   Password
                 </TabsTrigger>
-                <TabsTrigger value="pin" className="gap-1 text-xs sm:text-sm">
-                  <KeyRound className="h-4 w-4" />
-                  <span className="hidden sm:inline">Quick</span> PIN
+                <TabsTrigger value="facility" className="gap-1 text-xs sm:text-sm">
+                  <Building2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Facility</span> PIN
                 </TabsTrigger>
               </TabsList>
 
-              {/* Facility PIN Login Tab - Quick staff access */}
-              <TabsContent value="facility">
-                <form onSubmit={handleFacilityPinLogin} className="space-y-4">
+              {/* Staff PIN Login Tab - Primary method for registered staff */}
+              <TabsContent value="staff-pin">
+                <form onSubmit={handleStaffPinLogin} className="space-y-4">
                   <div className="p-3 bg-teal-50 rounded-lg border border-teal-200">
                     <p className="text-sm text-teal-800">
-                      Quick access for staff. Get your facility's 4-digit PIN from your administrator.
+                      Sign in with your name and personal PIN provided by your administrator.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="staff-name-pin">Your Name</Label>
+                    <Input
+                      id="staff-name-pin"
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={staffNameForPin}
+                      onChange={(e) => setStaffNameForPin(e.target.value)}
+                      disabled={isSubmitting}
+                      autoComplete="name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Your PIN</Label>
+                    <div className="flex justify-center py-2">
+                      <InputOTP
+                        maxLength={4}
+                        value={individualPin}
+                        onChange={setIndividualPin}
+                        disabled={isSubmitting}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} className="h-14 w-14 text-xl" />
+                          <InputOTPSlot index={1} className="h-14 w-14 text-xl" />
+                          <InputOTPSlot index={2} className="h-14 w-14 text-xl" />
+                          <InputOTPSlot index={3} className="h-14 w-14 text-xl" />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full text-white"
+                    style={{ backgroundColor: TEAL }}
+                    disabled={isSubmitting || individualPin.length !== 4 || !staffNameForPin.trim()}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              {/* Facility PIN Login Tab - Fallback for temporary staff */}
+              <TabsContent value="facility">
+                <form onSubmit={handleFacilityPinLogin} className="space-y-4">
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      Temporary access with facility PIN. For staff without a personal PIN.
                     </p>
                   </div>
 
@@ -406,63 +476,6 @@ export default function StaffLogin() {
                 </form>
               </TabsContent>
 
-              {/* PIN Login Tab */}
-              <TabsContent value="pin">
-                <form onSubmit={handlePinLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pin-email">Email Address</Label>
-                    <Input
-                      id="pin-email"
-                      type="email"
-                      placeholder="staff@facility.com"
-                      value={pinEmail}
-                      onChange={(e) => setPinEmail(e.target.value)}
-                      disabled={isSubmitting}
-                      autoComplete="email"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Enter Your PIN</Label>
-                    <div className="flex justify-center py-2">
-                      <InputOTP
-                        maxLength={6}
-                        value={pin}
-                        onChange={setPin}
-                        disabled={isSubmitting}
-                      >
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} className="h-12 w-12 text-lg" />
-                          <InputOTPSlot index={1} className="h-12 w-12 text-lg" />
-                          <InputOTPSlot index={2} className="h-12 w-12 text-lg" />
-                          <InputOTPSlot index={3} className="h-12 w-12 text-lg" />
-                          <InputOTPSlot index={4} className="h-12 w-12 text-lg" />
-                          <InputOTPSlot index={5} className="h-12 w-12 text-lg" />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
-                    <p className="text-xs text-gray-500 text-center">
-                      Enter your 4-6 digit PIN for quick access
-                    </p>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full text-white"
-                    style={{ backgroundColor: TEAL }}
-                    disabled={isSubmitting || pin.length < 4}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In with PIN"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
             </Tabs>
 
             <div className="mt-6 text-center text-sm text-gray-500">

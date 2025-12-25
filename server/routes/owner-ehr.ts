@@ -1,5 +1,6 @@
 import { Express, Request, Response, NextFunction } from "express";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { storage } from "../storage";
 import { ActivityLogger } from "../lib/activity-logger";
 
@@ -282,10 +283,12 @@ export function registerOwnerEhrRoutes(app: Express) {
         const { facilityId } = req.params;
 
         // Get all team members for this facility
-        const allTeamMembers = await storage.getTeamMembers(facilityId);
+        const allTeamMembers = await storage.getTeamMembersByFacility(facilityId);
+        console.log(`[Portal Access] Found ${allTeamMembers.length} total team members for facility ${facilityId}`);
 
         // Get all staff auth records for this facility
         const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+        console.log(`[Portal Access] Found ${existingStaff.length} existing staff auth records`);
 
         // Get team member IDs that already have portal access
         const staffTeamMemberIds = new Set(
@@ -293,12 +296,18 @@ export function registerOwnerEhrRoutes(app: Express) {
             .filter((s) => s.teamMemberId)
             .map((s) => s.teamMemberId)
         );
+        console.log(`[Portal Access] ${staffTeamMemberIds.size} team members already have portal access`);
 
-        // Filter to team members without portal access and are active
-        const availableMembers = allTeamMembers.filter(
-          (tm) => !staffTeamMemberIds.has(tm.id) && tm.status === "active"
-        );
+        // Filter to team members without portal access
+        // Include all statuses except explicitly inactive ones
+        const availableMembers = allTeamMembers.filter((tm) => {
+          const hasAccess = staffTeamMemberIds.has(tm.id);
+          const isActive = tm.status?.toLowerCase() !== "inactive";
+          console.log(`[Portal Access] ${tm.name}: status=${tm.status}, hasAccess=${hasAccess}, isActive=${isActive}`);
+          return !hasAccess && isActive;
+        });
 
+        console.log(`[Portal Access] ${availableMembers.length} team members available for portal access`);
         res.json(availableMembers);
       } catch (error) {
         console.error("Error fetching team members:", error);
@@ -400,6 +409,114 @@ export function registerOwnerEhrRoutes(app: Express) {
         });
       } catch (error) {
         console.error("Error inviting team member to staff portal:", error);
+        res.status(500).json({ error: "Failed to grant portal access" });
+      }
+    }
+  );
+
+  /**
+   * Grant portal access to team member with a PIN
+   * Creates staffAuth record linked to team member with hashed PIN
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/staff/grant-access",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { teamMemberId, role, temporaryPin } = req.body;
+
+        if (!teamMemberId) {
+          return res.status(400).json({ error: "Team member ID is required" });
+        }
+
+        if (!temporaryPin || temporaryPin.length !== 4) {
+          return res.status(400).json({ error: "A 4-digit PIN is required" });
+        }
+
+        // Get the team member
+        const teamMember = await storage.getTeamMember(teamMemberId);
+        if (!teamMember) {
+          return res.status(404).json({ error: "Team member not found" });
+        }
+
+        if (teamMember.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Team member not in this facility" });
+        }
+
+        // Check if already has access
+        const existingStaff = await storage.getStaffAuthByFacility(facilityId);
+        const alreadyHasAccess = existingStaff.some(
+          (s) => s.teamMemberId === teamMemberId
+        );
+
+        if (alreadyHasAccess) {
+          return res.status(400).json({ error: "Team member already has portal access" });
+        }
+
+        // Parse name into first and last
+        const nameParts = teamMember.name.split(" ");
+        const firstName = nameParts[0] || teamMember.name;
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        // Determine role - map team member role to staff role
+        let staffRole = role || "caregiver";
+        if (!role) {
+          if (teamMember.role === "Manager" || teamMember.role === "Administrator") {
+            staffRole = "admin";
+          } else if (teamMember.role === "Nurse") {
+            staffRole = "nurse";
+          } else if (teamMember.role === "Med Tech" || teamMember.role === "Medication Technician") {
+            staffRole = "med_tech";
+          }
+        }
+
+        // Hash the PIN
+        const hashedPin = await bcrypt.hash(temporaryPin, 10);
+
+        // Create staff auth record linked to team member with PIN
+        const newStaff = await storage.createStaffAuth({
+          facilityId,
+          teamMemberId,
+          email: teamMember.email || `staff_${teamMember.id.substring(0, 8)}@portal.local`,
+          firstName,
+          lastName,
+          role: staffRole,
+          pin: hashedPin,
+          permissions: {
+            canAdministerMeds: staffRole !== "caregiver",
+            canAdministerControlled: staffRole === "nurse" || staffRole === "admin",
+            canFileIncidents: true,
+            canEditResidents: staffRole === "admin" || staffRole === "nurse",
+          },
+          status: "active", // Direct activation since owner created with PIN
+        });
+
+        // Log activity
+        const owner = (req as any).owner;
+        await ActivityLogger.staffCreated(
+          req,
+          owner.id,
+          owner.name,
+          facilityId,
+          newStaff.id,
+          teamMember.name
+        );
+
+        res.json({
+          success: true,
+          staff: {
+            id: newStaff.id,
+            teamMemberId: newStaff.teamMemberId,
+            firstName: newStaff.firstName,
+            lastName: newStaff.lastName,
+            role: newStaff.role,
+            status: newStaff.status,
+          },
+        });
+      } catch (error) {
+        console.error("Error granting portal access:", error);
         res.status(500).json({ error: "Failed to grant portal access" });
       }
     }
