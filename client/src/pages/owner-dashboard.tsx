@@ -21,12 +21,13 @@ import {
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
   Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil, UserPlus,
-  FileText
+  FileText, Stethoscope
 } from "lucide-react";
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
 import { NCPWizard } from "@/components/owner/forms/ncp-wizard";
 import { DisclosureWizard } from "@/components/owner/forms/disclosure-wizard";
+import { NurseDelegationWizard } from "@/components/owner/forms/nurse-delegation-wizard";
 import { DashboardWidgets } from "@/components/owner/dashboard-widgets";
 
 const TEAM_ROLES = [
@@ -52,6 +53,7 @@ export default function OwnerDashboardPage() {
   const [showAddTeamMemberDialog, setShowAddTeamMemberDialog] = useState(false);
   const [showNCPWizard, setShowNCPWizard] = useState(false);
   const [showDisclosureWizard, setShowDisclosureWizard] = useState(false);
+  const [showNurseDelegationWizard, setShowNurseDelegationWizard] = useState(false);
   const [teamMemberForm, setTeamMemberForm] = useState({
     firstName: "",
     lastName: "",
@@ -990,6 +992,37 @@ export default function OwnerDashboardPage() {
                       </CardContent>
                     </Card>
 
+                    {/* Nurse Delegation Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-teal-50 rounded-lg">
+                            <Stethoscope className="h-5 w-5 text-teal-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Nurse Delegation</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 01-212</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Authorization for registered nurse delegation of nursing tasks.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Fillable PDF</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowNurseDelegationWizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <Card className="border-gray-200 bg-gray-50 shadow-sm opacity-60">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
@@ -1208,6 +1241,14 @@ export default function OwnerDashboardPage() {
         <DisclosureWizard
           facilityId={selectedFacilityId}
           onClose={() => setShowDisclosureWizard(false)}
+        />
+      )}
+
+      {/* Nurse Delegation Wizard */}
+      {showNurseDelegationWizard && selectedFacilityId && (
+        <NurseDelegationWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowNurseDelegationWizard(false)}
         />
       )}
     </div>
