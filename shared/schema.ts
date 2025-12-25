@@ -1310,3 +1310,48 @@ export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => 
     references: [residents.id],
   }),
 }));
+
+// Facility Events table - for calendar/upcoming events
+export const facilityEvents = pgTable("facility_events", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").notNull(),
+  residentId: varchar("resident_id"), // optional - if event is resident-specific
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  // Types: 'appointment', 'care_conference', 'fire_drill', 'inspection', 'training', 'custom'
+  eventDate: timestamp("event_date").notNull(),
+  eventTime: varchar("event_time", { length: 10 }), // "14:00" format
+  isCompleted: boolean("is_completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("facility_events_facility_idx").on(table.facilityId),
+  dateIdx: index("facility_events_date_idx").on(table.eventDate),
+}));
+
+export const insertFacilityEventSchema = createInsertSchema(facilityEvents).omit({ id: true, createdAt: true, updatedAt: true });
+export type FacilityEvent = typeof facilityEvents.$inferSelect;
+export type InsertFacilityEvent = z.infer<typeof insertFacilityEventSchema>;
+
+// Facility Activity Log - for dashboard activity feed
+export const facilityActivity = pgTable("facility_activity", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").notNull(),
+  activityType: varchar("activity_type", { length: 50 }).notNull(),
+  // Types: 'medication_given', 'incident_filed', 'incident_resolved', 'note_added',
+  //        'inquiry_received', 'resident_added', 'credential_updated', 'form_completed', 'event_created'
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  performedBy: varchar("performed_by", { length: 255 }), // staff name or system
+  relatedId: varchar("related_id"), // ID of related record
+  relatedType: varchar("related_type", { length: 50 }), // 'incident', 'resident', 'medication', etc.
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("facility_activity_facility_idx").on(table.facilityId),
+  createdIdx: index("facility_activity_created_idx").on(table.createdAt),
+}));
+
+export const insertFacilityActivitySchema = createInsertSchema(facilityActivity).omit({ id: true, createdAt: true });
+export type FacilityActivity = typeof facilityActivity.$inferSelect;
+export type InsertFacilityActivity = z.infer<typeof insertFacilityActivitySchema>;

@@ -1270,4 +1270,271 @@ export function registerOwnerEhrRoutes(app: Express) {
       }
     }
   );
+
+  // ============================================================================
+  // DASHBOARD WIDGETS
+  // ============================================================================
+
+  /**
+   * Get upcoming events/deadlines for dashboard widget
+   * Combines: expiring credentials, upcoming events, compliance deadlines
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/dashboard/upcoming",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const daysAhead = parseInt(req.query.days as string) || 30;
+
+        // Get expiring credentials
+        const expiringCredentials = await storage.getExpiringCredentials(facilityId, daysAhead);
+
+        // Get upcoming custom events
+        const upcomingEvents = await storage.getUpcomingFacilityEvents(facilityId, daysAhead);
+
+        // Transform credentials to event format
+        const credentialEvents = expiringCredentials.map((cred) => {
+          const expirationDate = cred.expirationDate || cred.expiryDate;
+          return {
+            id: `cred-${cred.id}`,
+            type: "credential_expiring" as const,
+            title: `${cred.credentialType || cred.name} expiring`,
+            description: `Credential expires on ${expirationDate}`,
+            date: expirationDate,
+            priority: getDaysUntil(expirationDate) <= 7 ? "high" : getDaysUntil(expirationDate) <= 14 ? "medium" : "low",
+            relatedId: cred.id,
+            relatedType: "credential",
+          };
+        });
+
+        // Transform custom events
+        const customEvents = upcomingEvents.map((event) => ({
+          id: `event-${event.id}`,
+          type: event.eventType as string,
+          title: event.title,
+          description: event.description || "",
+          date: event.eventDate.toISOString().split("T")[0],
+          time: event.eventTime || null,
+          priority: "medium" as const,
+          relatedId: event.residentId || null,
+          relatedType: event.residentId ? "resident" : null,
+          eventId: event.id,
+        }));
+
+        // Combine and sort by date
+        const allEvents = [...credentialEvents, ...customEvents].sort((a, b) => {
+          const dateA = new Date(a.date || "");
+          const dateB = new Date(b.date || "");
+          return dateA.getTime() - dateB.getTime();
+        });
+
+        res.json({
+          events: allEvents,
+          summary: {
+            total: allEvents.length,
+            credentials: credentialEvents.length,
+            appointments: customEvents.filter((e) => e.type === "appointment").length,
+            other: customEvents.filter((e) => e.type !== "appointment").length,
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching upcoming events:", error);
+        res.status(500).json({ error: "Failed to fetch upcoming events" });
+      }
+    }
+  );
+
+  /**
+   * Get recent activity feed for dashboard widget
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/dashboard/activity",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        const activities = await storage.getRecentFacilityActivity(facilityId, limit);
+
+        // Format activities for display
+        const formattedActivities = activities.map((activity) => ({
+          id: activity.id,
+          type: activity.activityType,
+          title: activity.title,
+          description: activity.description || "",
+          performedBy: activity.performedBy || "System",
+          timestamp: activity.createdAt,
+          relatedId: activity.relatedId,
+          relatedType: activity.relatedType,
+        }));
+
+        res.json(formattedActivities);
+      } catch (error) {
+        console.error("Error fetching activity feed:", error);
+        res.status(500).json({ error: "Failed to fetch activity feed" });
+      }
+    }
+  );
+
+  /**
+   * Create a new calendar event
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/events",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { title, description, eventType, eventDate, eventTime, residentId } = req.body;
+
+        if (!title || !eventType || !eventDate) {
+          return res.status(400).json({ error: "Title, event type, and date are required" });
+        }
+
+        const event = await storage.createFacilityEvent({
+          facilityId,
+          title,
+          description: description || null,
+          eventType,
+          eventDate: new Date(eventDate),
+          eventTime: eventTime || null,
+          residentId: residentId || null,
+        });
+
+        // Log activity
+        await storage.createFacilityActivity({
+          facilityId,
+          activityType: "event_created",
+          title: `Event scheduled: ${title}`,
+          description: `${eventType} scheduled for ${new Date(eventDate).toLocaleDateString()}`,
+          performedBy: (req as any).owner?.name || "Owner",
+          relatedId: event.id.toString(),
+          relatedType: "event",
+        });
+
+        res.status(201).json(event);
+      } catch (error) {
+        console.error("Error creating event:", error);
+        res.status(500).json({ error: "Failed to create event" });
+      }
+    }
+  );
+
+  /**
+   * Mark an event as complete
+   */
+  app.patch(
+    "/api/owners/facilities/:facilityId/events/:eventId/complete",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, eventId } = req.params;
+
+        const event = await storage.getFacilityEvent(parseInt(eventId));
+        if (!event) {
+          return res.status(404).json({ error: "Event not found" });
+        }
+
+        if (event.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Event not in this facility" });
+        }
+
+        const updated = await storage.markFacilityEventComplete(parseInt(eventId));
+
+        // Log activity
+        await storage.createFacilityActivity({
+          facilityId,
+          activityType: "event_completed",
+          title: `Event completed: ${event.title}`,
+          description: `${event.eventType} marked as complete`,
+          performedBy: (req as any).owner?.name || "Owner",
+          relatedId: eventId,
+          relatedType: "event",
+        });
+
+        res.json(updated);
+      } catch (error) {
+        console.error("Error completing event:", error);
+        res.status(500).json({ error: "Failed to complete event" });
+      }
+    }
+  );
+
+  /**
+   * Delete an event
+   */
+  app.delete(
+    "/api/owners/facilities/:facilityId/events/:eventId",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId, eventId } = req.params;
+
+        const event = await storage.getFacilityEvent(parseInt(eventId));
+        if (!event) {
+          return res.status(404).json({ error: "Event not found" });
+        }
+
+        if (event.facilityId !== facilityId) {
+          return res.status(403).json({ error: "Event not in this facility" });
+        }
+
+        await storage.deleteFacilityEvent(parseInt(eventId));
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        res.status(500).json({ error: "Failed to delete event" });
+      }
+    }
+  );
+
+  /**
+   * Log a manual activity (for tracking actions)
+   */
+  app.post(
+    "/api/owners/facilities/:facilityId/activity",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const { activityType, title, description, relatedId, relatedType } = req.body;
+
+        if (!activityType || !title) {
+          return res.status(400).json({ error: "Activity type and title are required" });
+        }
+
+        const activity = await storage.createFacilityActivity({
+          facilityId,
+          activityType,
+          title,
+          description: description || null,
+          performedBy: (req as any).owner?.name || "Owner",
+          relatedId: relatedId || null,
+          relatedType: relatedType || null,
+        });
+
+        res.status(201).json(activity);
+      } catch (error) {
+        console.error("Error logging activity:", error);
+        res.status(500).json({ error: "Failed to log activity" });
+      }
+    }
+  );
+}
+
+// Helper function to calculate days until a date
+function getDaysUntil(dateStr: string | null): number {
+  if (!dateStr) return 999;
+  const target = new Date(dateStr);
+  const today = new Date();
+  const diffTime = target.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }

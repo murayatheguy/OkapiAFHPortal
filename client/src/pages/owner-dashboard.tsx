@@ -27,6 +27,7 @@ import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
 import { NCPWizard } from "@/components/owner/forms/ncp-wizard";
 import { DisclosureWizard } from "@/components/owner/forms/disclosure-wizard";
+import { DashboardWidgets } from "@/components/owner/dashboard-widgets";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -432,6 +433,14 @@ export default function OwnerDashboardPage() {
                         </div>
                       </CardContent>
                     </Card>
+                  )}
+
+                  {/* Dashboard Widgets */}
+                  {selectedFacilityId && (
+                    <DashboardWidgets
+                      facilityId={selectedFacilityId}
+                      onNavigate={setActiveSection}
+                    />
                   )}
                 </div>
               )}

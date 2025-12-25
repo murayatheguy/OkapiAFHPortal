@@ -26,6 +26,8 @@ import {
   incidentReports,
   vitals,
   formSubmissions,
+  facilityEvents,
+  facilityActivity,
   type User,
   type InsertUser,
   type Facility,
@@ -75,7 +77,11 @@ import {
   type Vitals,
   type InsertVitals,
   type FormSubmission,
-  type InsertFormSubmission
+  type InsertFormSubmission,
+  type FacilityEvent,
+  type InsertFacilityEvent,
+  type FacilityActivity,
+  type InsertFacilityActivity,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt } from "drizzle-orm";
@@ -1804,6 +1810,96 @@ export class DatabaseStorage implements IStorage {
       .where(eq(formSubmissions.id, id))
       .returning();
     return result.length > 0;
+  }
+
+  // ============================================================================
+  // FACILITY EVENTS (Calendar/Upcoming)
+  // ============================================================================
+
+  async createFacilityEvent(data: InsertFacilityEvent): Promise<FacilityEvent> {
+    const [result] = await db.insert(facilityEvents).values(data).returning();
+    return result;
+  }
+
+  async updateFacilityEvent(id: number, data: Partial<InsertFacilityEvent>): Promise<FacilityEvent | undefined> {
+    const [result] = await db
+      .update(facilityEvents)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(facilityEvents.id, id))
+      .returning();
+    return result;
+  }
+
+  async getFacilityEvent(id: number): Promise<FacilityEvent | undefined> {
+    const [result] = await db
+      .select()
+      .from(facilityEvents)
+      .where(eq(facilityEvents.id, id));
+    return result;
+  }
+
+  async getUpcomingFacilityEvents(facilityId: string, daysAhead: number = 30): Promise<FacilityEvent[]> {
+    const now = new Date();
+    const future = new Date();
+    future.setDate(future.getDate() + daysAhead);
+
+    return db
+      .select()
+      .from(facilityEvents)
+      .where(and(
+        eq(facilityEvents.facilityId, facilityId),
+        gte(facilityEvents.eventDate, now),
+        lt(facilityEvents.eventDate, future),
+        eq(facilityEvents.isCompleted, false)
+      ))
+      .orderBy(facilityEvents.eventDate);
+  }
+
+  async markFacilityEventComplete(id: number): Promise<FacilityEvent | undefined> {
+    const [result] = await db
+      .update(facilityEvents)
+      .set({ isCompleted: true, updatedAt: new Date() })
+      .where(eq(facilityEvents.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteFacilityEvent(id: number): Promise<boolean> {
+    const result = await db
+      .delete(facilityEvents)
+      .where(eq(facilityEvents.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // ============================================================================
+  // FACILITY ACTIVITY FEED
+  // ============================================================================
+
+  async createFacilityActivity(data: InsertFacilityActivity): Promise<FacilityActivity> {
+    const [result] = await db.insert(facilityActivity).values(data).returning();
+    return result;
+  }
+
+  async getRecentFacilityActivity(facilityId: string, limit: number = 20): Promise<FacilityActivity[]> {
+    return db
+      .select()
+      .from(facilityActivity)
+      .where(eq(facilityActivity.facilityId, facilityId))
+      .orderBy(desc(facilityActivity.createdAt))
+      .limit(limit);
+  }
+
+  async getFacilityActivityByType(facilityId: string, activityType: string, limit: number = 10): Promise<FacilityActivity[]> {
+    return db
+      .select()
+      .from(facilityActivity)
+      .where(and(
+        eq(facilityActivity.facilityId, facilityId),
+        eq(facilityActivity.activityType, activityType)
+      ))
+      .orderBy(desc(facilityActivity.createdAt))
+      .limit(limit);
   }
 }
 
