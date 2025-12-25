@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +77,7 @@ interface CareManagementProps {
   facilityName?: string;
   facilityCapacity?: number;
   facility?: FacilityData;
+  initialTab?: string;
 }
 
 interface EhrDashboardStats {
@@ -182,7 +183,7 @@ function getCredentialStatus(expirationDate?: string): { status: string; color: 
   }
 }
 
-export function CareManagement({ facilityId, facilityName, facilityCapacity = 6, facility }: CareManagementProps) {
+export function CareManagement({ facilityId, facilityName, facilityCapacity = 6, facility, initialTab }: CareManagementProps) {
   // Create facilityData from props for reports
   const facilityData = facility || {
     id: facilityId,
@@ -192,7 +193,15 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("residents");
+  const [activeTab, setActiveTab] = useState(initialTab || "residents");
+
+  // Update tab when initialTab prop changes (for quick action navigation)
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isEnablingPortal, setIsEnablingPortal] = useState(false);
   const [clientDialogOpen, setClientDialogOpen] = useState(false);

@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 interface DashboardWidgetsProps {
   facilityId: string;
   onNavigate?: (section: string) => void;
+  onNavigateWithTab?: (section: string, tab: string) => void;
 }
 
 interface UpcomingEvent {
@@ -81,36 +82,40 @@ const EVENT_TYPES = [
 
 const QUICK_ACTIONS = [
   {
-    id: "ncp",
-    title: "Negotiated Care Plan",
-    icon: FileText,
-    color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
-    section: "resources",
-  },
-  {
-    id: "disclosure",
-    title: "Disclosure of Charges",
-    icon: ClipboardList,
-    color: "bg-purple-50 text-purple-600 hover:bg-purple-100",
-    section: "resources",
-  },
-  {
-    id: "care",
-    title: "Care Portal",
-    icon: Shield,
-    color: "bg-teal-50 text-teal-600 hover:bg-teal-100",
-    section: "care",
-  },
-  {
-    id: "team",
-    title: "Team Members",
+    id: "residents",
+    title: "Residents",
     icon: Users,
-    color: "bg-amber-50 text-amber-600 hover:bg-amber-100",
-    section: "team",
+    color: "bg-teal-50 text-teal-600 hover:bg-teal-100 border-teal-200",
+    section: "care",
+    tab: "residents",
+  },
+  {
+    id: "staff",
+    title: "Staff",
+    icon: Shield,
+    color: "bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200",
+    section: "care",
+    tab: "staff",
+  },
+  {
+    id: "credentials",
+    title: "Credentials",
+    icon: GraduationCap,
+    color: "bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-200",
+    section: "care",
+    tab: "credentials",
+  },
+  {
+    id: "care-portal",
+    title: "Care Portal",
+    icon: Activity,
+    color: "bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-200",
+    section: "portal",
+    tab: null,
   },
 ];
 
-export function DashboardWidgets({ facilityId, onNavigate }: DashboardWidgetsProps) {
+export function DashboardWidgets({ facilityId, onNavigate, onNavigateWithTab }: DashboardWidgetsProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
@@ -421,8 +426,16 @@ export function DashboardWidgets({ facilityId, onNavigate }: DashboardWidgetsPro
             {QUICK_ACTIONS.map((action) => (
               <button
                 key={action.id}
-                onClick={() => onNavigate?.(action.section)}
-                className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-colors ${action.color}`}
+                onClick={() => {
+                  if (action.section === "portal") {
+                    window.open('/staff/portal', '_blank');
+                  } else if (action.tab && onNavigateWithTab) {
+                    onNavigateWithTab(action.section, action.tab);
+                  } else {
+                    onNavigate?.(action.section);
+                  }
+                }}
+                className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all hover:shadow-md ${action.color}`}
               >
                 <action.icon className="h-6 w-6 mb-2" />
                 <span className="text-xs font-medium text-center">{action.title}</span>

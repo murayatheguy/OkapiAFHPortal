@@ -54,6 +54,7 @@ export default function OwnerDashboardPage() {
 
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("overview");
+  const [activeCareTab, setActiveCareTab] = useState("residents");
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Add Team Member dialog state
@@ -456,6 +457,10 @@ export default function OwnerDashboardPage() {
                     <DashboardWidgets
                       facilityId={selectedFacilityId}
                       onNavigate={setActiveSection}
+                      onNavigateWithTab={(section, tab) => {
+                        setActiveSection(section);
+                        setActiveCareTab(tab);
+                      }}
                     />
                   )}
                 </div>
@@ -946,6 +951,7 @@ export default function OwnerDashboardPage() {
                   facilityId={selectedFacilityId}
                   facilityName={selectedFacility?.name}
                   facility={selectedFacility}
+                  initialTab={activeCareTab}
                 />
               )}
 
