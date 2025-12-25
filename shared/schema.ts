@@ -365,27 +365,30 @@ export type Review = typeof reviews.$inferSelect;
 // Team Members table (caregivers and staff)
 export const teamMembers = pgTable("team_members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  facilityId: varchar("facility_id").notNull(),
-  
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+
   // Basic Info
   name: text("name").notNull(),
   email: text("email"),
   role: text("role").notNull(), // Owner, Administrator, Caregiver, Manager
-  
+
   // Account Status
   status: text("status").notNull(), // Active, Invited, Inactive
   invitedAt: timestamp("invited_at"),
   joinedAt: timestamp("joined_at"),
-  
+
   // Manual vs Self-Managed
   isManualEntry: boolean("is_manual_entry").default(false),
   userId: varchar("user_id"), // If they have an account
-  
+
   // Avatar
   avatarUrl: text("avatar_url"),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  facilityIdx: index("team_members_facility_idx").on(table.facilityId),
+  statusIdx: index("team_members_status_idx").on(table.status),
+}));
 
 export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({ id: true, createdAt: true });
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
@@ -394,8 +397,8 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 // Credentials table (certifications and training)
 export const credentials = pgTable("credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teamMemberId: varchar("team_member_id").notNull(),
-  facilityId: varchar("facility_id").notNull(),
+  teamMemberId: varchar("team_member_id").references(() => teamMembers.id, { onDelete: "cascade" }).notNull(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
 
   // Credential Info - credentialType is the type of certification
   credentialType: text("credential_type").notNull(), // NAR, NAC, HCA, BBP, CPR, FirstAid, FoodHandler, Dementia, MentalHealth, MedAdmin, TBTest, BackgroundCheck
@@ -425,7 +428,11 @@ export const credentials = pgTable("credentials", {
 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  teamMemberIdx: index("credentials_team_member_idx").on(table.teamMemberId),
+  facilityIdx: index("credentials_facility_idx").on(table.facilityId),
+  expirationIdx: index("credentials_expiration_idx").on(table.expirationDate),
+}));
 
 export const insertCredentialSchema = createInsertSchema(credentials).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCredential = z.infer<typeof insertCredentialSchema>;
