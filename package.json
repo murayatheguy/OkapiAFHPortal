@@ -68,6 +68,7 @@
     "node-cron": "^4.2.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
+    "pdf-lib": "^1.17.1",
     "prerender-node": "^3.8.3",
     "puppeteer": "^24.32.0",
     "react": "^19.2.0",

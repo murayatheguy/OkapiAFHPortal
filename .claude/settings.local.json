@@ -38,7 +38,11 @@
       "Bash(__NEW_LINE__ echo \"=== TEST 10: Get Staff Credentials ===\")",
       "Bash(timeout /t 3)",
       "Bash(git revert:*)",
-      "Bash(timeout /t 10)"
+      "Bash(timeout /t 10)",
+      "Bash(node check-fillable.js:*)",
+      "Bash(node check-fillable.cjs:*)",
+      "Bash(node inspect-nurse-delegation.cjs:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

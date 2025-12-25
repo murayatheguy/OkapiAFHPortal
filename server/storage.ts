@@ -1751,7 +1751,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async updateFormSubmission(id: string, data: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined> {
+  async updateFormSubmission(id: number, data: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined> {
     const [result] = await db
       .update(formSubmissions)
       .set({ ...data, updatedAt: new Date() })
@@ -1760,7 +1760,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getFormSubmission(id: string): Promise<FormSubmission | undefined> {
+  async getFormSubmission(id: number): Promise<FormSubmission | undefined> {
     const [result] = await db
       .select()
       .from(formSubmissions)
@@ -1804,7 +1804,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(formSubmissions.updatedAt));
   }
 
-  async deleteFormSubmission(id: string): Promise<boolean> {
+  async deleteFormSubmission(id: number): Promise<boolean> {
     const result = await db
       .delete(formSubmissions)
       .where(eq(formSubmissions.id, id))

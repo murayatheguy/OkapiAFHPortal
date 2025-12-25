@@ -1123,7 +1123,7 @@ export function registerOwnerEhrRoutes(app: Express) {
     async (req, res) => {
       try {
         const { formId } = req.params;
-        const submission = await storage.getFormSubmission(formId);
+        const submission = await storage.getFormSubmission(parseInt(formId, 10));
 
         if (!submission) {
           return res.status(404).json({ error: "Form submission not found" });
@@ -1188,6 +1188,7 @@ export function registerOwnerEhrRoutes(app: Express) {
     async (req, res) => {
       try {
         const { formId } = req.params;
+        const formIdNum = parseInt(formId, 10);
         const {
           residentId,
           formTitle,
@@ -1199,12 +1200,12 @@ export function registerOwnerEhrRoutes(app: Express) {
         } = req.body;
 
         // Check if submission exists
-        const existing = await storage.getFormSubmission(formId);
+        const existing = await storage.getFormSubmission(formIdNum);
         if (!existing) {
           return res.status(404).json({ error: "Form submission not found" });
         }
 
-        const updated = await storage.updateFormSubmission(formId, {
+        const updated = await storage.updateFormSubmission(formIdNum, {
           residentId: residentId !== undefined ? residentId : existing.residentId,
           formTitle: formTitle || existing.formTitle,
           status: status || existing.status,
@@ -1232,13 +1233,14 @@ export function registerOwnerEhrRoutes(app: Express) {
     async (req, res) => {
       try {
         const { formId } = req.params;
+        const formIdNum = parseInt(formId, 10);
 
-        const existing = await storage.getFormSubmission(formId);
+        const existing = await storage.getFormSubmission(formIdNum);
         if (!existing) {
           return res.status(404).json({ error: "Form submission not found" });
         }
 
-        await storage.deleteFormSubmission(formId);
+        await storage.deleteFormSubmission(formIdNum);
         res.json({ success: true });
       } catch (error) {
         console.error("Error deleting form submission:", error);
