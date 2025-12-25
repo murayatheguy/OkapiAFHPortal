@@ -760,15 +760,30 @@ export default function OwnerDashboardPage() {
                                     ))}
                                   </div>
 
-                                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    {provider.acceptsMedicaid && (
-                                      <span className="flex items-center gap-1 text-green-400">
-                                        <Shield className="h-3.5 w-3.5" />
-                                        Medicaid
+                                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                                    {provider.serviceCounties && (provider.serviceCounties as string[]).length > 0 && (
+                                      <span className="flex items-center gap-1">
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        {(provider.serviceCounties as string[]).slice(0, 2).join(", ")}
+                                        {(provider.serviceCounties as string[]).length > 2 && ` +${(provider.serviceCounties as string[]).length - 2}`}
                                       </span>
                                     )}
-                                    {provider.baseRateCents && (
+                                    {provider.operatingHours && (
                                       <span className="flex items-center gap-1">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        {provider.operatingHours}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-3 text-sm">
+                                    {provider.acceptsPrivatePay && (
+                                      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                                        Private Pay
+                                      </Badge>
+                                    )}
+                                    {provider.baseRateCents && (
+                                      <span className="flex items-center gap-1 text-gray-600">
                                         <DollarSign className="h-3.5 w-3.5" />
                                         From ${(provider.baseRateCents / 100).toFixed(2)}
                                       </span>
