@@ -10,3 +10,7 @@ backups/
 cookies.txt
 *-cookies.txt
 *.output
+# Test PDF outputs
+*-test.pdf
+*-test-output.pdf
+*-with-grid.pdf

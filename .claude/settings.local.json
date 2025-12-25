@@ -42,7 +42,13 @@
       "Bash(node check-fillable.js:*)",
       "Bash(node check-fillable.cjs:*)",
       "Bash(node inspect-nurse-delegation.cjs:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(gh run:*)",
+      "Bash(railway status:*)",
+      "Bash(echo:*)",
+      "Bash(node map-pdf-coordinates.cjs:*)",
+      "Bash(git restore:*)",
+      "Bash(node analyze-ncp-pdf.cjs:*)"
     ]
   }
 }
