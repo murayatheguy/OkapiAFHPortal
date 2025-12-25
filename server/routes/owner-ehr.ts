@@ -3,6 +3,10 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { storage } from "../storage";
 import { ActivityLogger } from "../lib/activity-logger";
+import { db } from "../db";
+import { securitySettings } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { DEFAULT_SECURITY_SETTINGS } from "../middleware/security";
 
 /**
  * Middleware to require owner authentication
@@ -1794,6 +1798,124 @@ export function registerOwnerEhrRoutes(app: Express) {
       } catch (error) {
         console.error("Error logging activity:", error);
         res.status(500).json({ error: "Failed to log activity" });
+      }
+    }
+  );
+
+  // ============================================================================
+  // HIPAA SECURITY SETTINGS
+  // ============================================================================
+
+  /**
+   * Get security settings for a facility
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/security-settings",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+
+        const [settings] = await db
+          .select()
+          .from(securitySettings)
+          .where(eq(securitySettings.facilityId, facilityId))
+          .limit(1);
+
+        // Return settings or defaults
+        if (settings) {
+          res.json(settings);
+        } else {
+          res.json({
+            facilityId,
+            ...DEFAULT_SECURITY_SETTINGS,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching security settings:", error);
+        res.status(500).json({ error: "Failed to fetch security settings" });
+      }
+    }
+  );
+
+  /**
+   * Update security settings for a facility
+   */
+  app.put(
+    "/api/owners/facilities/:facilityId/security-settings",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const updates = req.body;
+
+        // Validate settings
+        if (updates.sessionTimeoutMinutes !== undefined) {
+          if (updates.sessionTimeoutMinutes < 5 || updates.sessionTimeoutMinutes > 60) {
+            return res.status(400).json({
+              error: "Session timeout must be between 5 and 60 minutes",
+            });
+          }
+        }
+
+        if (updates.minPasswordLength !== undefined) {
+          if (updates.minPasswordLength < 8 || updates.minPasswordLength > 32) {
+            return res.status(400).json({
+              error: "Minimum password length must be between 8 and 32",
+            });
+          }
+        }
+
+        if (updates.maxFailedLoginAttempts !== undefined) {
+          if (updates.maxFailedLoginAttempts < 3 || updates.maxFailedLoginAttempts > 10) {
+            return res.status(400).json({
+              error: "Max failed login attempts must be between 3 and 10",
+            });
+          }
+        }
+
+        if (updates.lockoutDurationMinutes !== undefined) {
+          if (updates.lockoutDurationMinutes < 5 || updates.lockoutDurationMinutes > 60) {
+            return res.status(400).json({
+              error: "Lockout duration must be between 5 and 60 minutes",
+            });
+          }
+        }
+
+        // Check if settings exist
+        const [existing] = await db
+          .select()
+          .from(securitySettings)
+          .where(eq(securitySettings.facilityId, facilityId))
+          .limit(1);
+
+        if (existing) {
+          // Update existing
+          await db
+            .update(securitySettings)
+            .set({
+              ...updates,
+              updatedAt: new Date(),
+            })
+            .where(eq(securitySettings.facilityId, facilityId));
+        } else {
+          // Insert new
+          await db.insert(securitySettings).values({
+            facilityId,
+            ...updates,
+          });
+        }
+
+        // Log the security settings change
+        const owner = (req as any).owner;
+        console.log(`[Security] Owner ${owner.name} updated security settings for facility ${facilityId}:`, Object.keys(updates));
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating security settings:", error);
+        res.status(500).json({ error: "Failed to update security settings" });
       }
     }
   );

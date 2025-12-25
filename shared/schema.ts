@@ -1396,3 +1396,109 @@ export const facilityActivity = pgTable("facility_activity", {
 export const insertFacilityActivitySchema = createInsertSchema(facilityActivity).omit({ id: true, createdAt: true });
 export type FacilityActivity = typeof facilityActivity.$inferSelect;
 export type InsertFacilityActivity = z.infer<typeof insertFacilityActivitySchema>;
+
+// ============================================================================
+// HIPAA SECURITY TABLES
+// ============================================================================
+
+// Security configuration per facility
+export const securitySettings = pgTable("security_settings", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).unique(),
+
+  // Session settings
+  sessionTimeoutMinutes: integer("session_timeout_minutes").default(15),
+  maxConcurrentSessions: integer("max_concurrent_sessions").default(3),
+
+  // Login settings
+  maxFailedLoginAttempts: integer("max_failed_login_attempts").default(5),
+  lockoutDurationMinutes: integer("lockout_duration_minutes").default(15),
+
+  // Password policy
+  minPasswordLength: integer("min_password_length").default(12),
+  requireUppercase: boolean("require_uppercase").default(true),
+  requireLowercase: boolean("require_lowercase").default(true),
+  requireNumbers: boolean("require_numbers").default(true),
+  requireSpecialChars: boolean("require_special_chars").default(true),
+  passwordExpiryDays: integer("password_expiry_days").default(90),
+  passwordHistoryCount: integer("password_history_count").default(12),
+
+  // MFA settings (for Phase 2)
+  requireMfaOwners: boolean("require_mfa_owners").default(false),
+  requireMfaStaff: boolean("require_mfa_staff").default(false),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSecuritySettingsSchema = createInsertSchema(securitySettings).omit({ id: true, createdAt: true, updatedAt: true });
+export type SecuritySettings = typeof securitySettings.$inferSelect;
+export type InsertSecuritySettings = z.infer<typeof insertSecuritySettingsSchema>;
+
+// Failed login attempts tracking
+export const failedLoginAttempts = pgTable("failed_login_attempts", {
+  id: serial("id").primaryKey(),
+
+  // Who
+  email: text("email"), // For owner logins
+  staffName: text("staff_name"), // For staff logins
+  facilityId: varchar("facility_id"),
+  userType: text("user_type").notNull(), // 'owner' or 'staff'
+
+  // What
+  attemptedAt: timestamp("attempted_at").defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+
+  // Lockout tracking
+  isLocked: boolean("is_locked").default(false),
+  lockedUntil: timestamp("locked_until"),
+}, (table) => ({
+  emailIdx: index("failed_login_email_idx").on(table.email),
+  staffNameIdx: index("failed_login_staff_name_idx").on(table.staffName),
+  attemptedAtIdx: index("failed_login_attempted_at_idx").on(table.attemptedAt),
+}));
+
+export const insertFailedLoginAttemptSchema = createInsertSchema(failedLoginAttempts).omit({ id: true });
+export type FailedLoginAttempt = typeof failedLoginAttempts.$inferSelect;
+export type InsertFailedLoginAttempt = z.infer<typeof insertFailedLoginAttemptSchema>;
+
+// Active sessions tracking
+export const activeSessions = pgTable("active_sessions", {
+  id: varchar("id").primaryKey(), // Session token ID
+
+  userId: varchar("user_id"),
+  userType: text("user_type").notNull(), // 'owner' or 'staff'
+  facilityId: varchar("facility_id"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  deviceInfo: text("device_info"),
+
+  isValid: boolean("is_valid").default(true),
+}, (table) => ({
+  userIdx: index("active_sessions_user_idx").on(table.userId),
+  expiresIdx: index("active_sessions_expires_idx").on(table.expiresAt),
+}));
+
+export const insertActiveSessionSchema = createInsertSchema(activeSessions);
+export type ActiveSession = typeof activeSessions.$inferSelect;
+export type InsertActiveSession = z.infer<typeof insertActiveSessionSchema>;
+
+// Password history (prevent reuse)
+export const passwordHistory = pgTable("password_history", {
+  id: serial("id").primaryKey(),
+  ownerId: varchar("owner_id").references(() => owners.id, { onDelete: "cascade" }),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  ownerIdx: index("password_history_owner_idx").on(table.ownerId),
+}));
+
+export const insertPasswordHistorySchema = createInsertSchema(passwordHistory).omit({ id: true, createdAt: true });
+export type PasswordHistory = typeof passwordHistory.$inferSelect;
+export type InsertPasswordHistory = z.infer<typeof insertPasswordHistorySchema>;

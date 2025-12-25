@@ -7,6 +7,13 @@ import {
   requireStaffRole,
   requirePermission,
 } from "../middleware/staff-auth";
+import {
+  isAccountLocked,
+  recordFailedLogin,
+  clearFailedAttempts,
+  createActiveSession,
+  getRemainingAttempts,
+} from "../middleware/security";
 
 export function registerEhrRoutes(app: Express) {
   // ============================================================================
@@ -104,6 +111,7 @@ export function registerEhrRoutes(app: Express) {
   /**
    * Staff login with name + individual PIN
    * For staff who were granted portal access with a PIN
+   * Includes HIPAA-compliant lockout protection
    */
   app.post("/api/ehr/auth/name-pin-login", async (req, res) => {
     try {
@@ -117,14 +125,26 @@ export function registerEhrRoutes(app: Express) {
         return res.status(400).json({ error: "Invalid PIN format. Please enter a 4-digit PIN." });
       }
 
+      // Check if account is locked due to failed attempts
+      const lockStatus = await isAccountLocked(staffName, "staff");
+      if (lockStatus.locked) {
+        return res.status(423).json({
+          error: "Account locked",
+          code: "ACCOUNT_LOCKED",
+          message: `Too many failed login attempts. Please try again in ${lockStatus.remainingMinutes} minutes.`,
+          lockedUntil: lockStatus.lockedUntil,
+        });
+      }
+
       // Parse name to first/last for matching
       const nameParts = staffName.trim().split(/\s+/);
       const searchFirstName = nameParts[0]?.toLowerCase() || "";
       const searchLastName = nameParts.slice(1).join(" ").toLowerCase() || "";
 
       // Get all facilities and search for staff by name
-      const allFacilities = await storage.getFacilities();
+      const allFacilities = await storage.getAllFacilities();
       let matchedStaff = null;
+      let matchedFacilityId: string | null = null;
 
       for (const facility of allFacilities) {
         const facilityStaff = await storage.getStaffAuthByFacility(facility.id);
@@ -146,19 +166,45 @@ export function registerEhrRoutes(app: Express) {
 
         if (match && match.status === "active" && match.pin) {
           matchedStaff = match;
+          matchedFacilityId = facility.id;
           break;
         }
       }
 
       if (!matchedStaff || !matchedStaff.pin) {
-        return res.status(401).json({ error: "No staff member found with that name or no PIN set" });
+        await recordFailedLogin(staffName, "staff", undefined, req);
+        const remaining = await getRemainingAttempts(staffName, "staff");
+        return res.status(401).json({
+          error: "No staff member found with that name or no PIN set",
+          remainingAttempts: remaining,
+        });
       }
 
       // Verify hashed PIN
       const isValidPin = await bcrypt.compare(pin, matchedStaff.pin);
       if (!isValidPin) {
-        return res.status(401).json({ error: "Invalid PIN" });
+        await recordFailedLogin(staffName, "staff", matchedFacilityId || undefined, req);
+
+        // Check if now locked after this attempt
+        const newLockStatus = await isAccountLocked(staffName, "staff");
+        if (newLockStatus.locked) {
+          return res.status(423).json({
+            error: "Account locked",
+            code: "ACCOUNT_LOCKED",
+            message: `Too many failed login attempts. Account locked for ${newLockStatus.remainingMinutes} minutes.`,
+            lockedUntil: newLockStatus.lockedUntil,
+          });
+        }
+
+        const remaining = await getRemainingAttempts(staffName, "staff");
+        return res.status(401).json({
+          error: "Invalid PIN",
+          remainingAttempts: remaining,
+        });
       }
+
+      // Clear failed attempts on successful login
+      await clearFailedAttempts(staffName, "staff");
 
       // Update last login
       await storage.updateStaffAuth(matchedStaff.id, { lastLoginAt: new Date() });
@@ -167,6 +213,16 @@ export function registerEhrRoutes(app: Express) {
       req.session.staffId = matchedStaff.id;
       req.session.staffFacilityId = matchedStaff.facilityId;
       req.session.staffRole = matchedStaff.role;
+
+      // Create active session for timeout tracking
+      await createActiveSession(
+        req.sessionID,
+        matchedStaff.id,
+        "staff",
+        matchedStaff.facilityId,
+        req,
+        15 // Default 15 minute timeout
+      );
 
       // Return staff data without sensitive fields
       const { passwordHash: _, pin: __, inviteToken: ___, ...staffData } = matchedStaff;

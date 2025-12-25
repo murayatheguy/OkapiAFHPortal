@@ -6,6 +6,8 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { startDSHSCronJob } from "./dshs-sync";
 import MemoryStore from "memorystore";
+import { securityHeadersMiddleware } from "./middleware/security-headers";
+import { sessionTimeoutMiddleware } from "./middleware/security";
 
 const app = express();
 const httpServer = createServer(app);
@@ -47,6 +49,14 @@ app.use(
     },
   })
 );
+
+// HIPAA Security Headers (apply early in middleware chain)
+app.use(securityHeadersMiddleware());
+
+// Session timeout for protected routes (15 minute default)
+app.use("/api/owners", sessionTimeoutMiddleware(15));
+app.use("/api/facilities", sessionTimeoutMiddleware(15));
+app.use("/api/ehr", sessionTimeoutMiddleware(15));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

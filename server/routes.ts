@@ -8,6 +8,13 @@ import crypto from "crypto";
 import { registerEhrRoutes } from "./routes/ehr";
 import { registerOwnerEhrRoutes } from "./routes/owner-ehr";
 import { ActivityLogger } from "./lib/activity-logger";
+import {
+  isAccountLocked,
+  recordFailedLogin,
+  clearFailedAttempts,
+  createActiveSession,
+  getRemainingAttempts,
+} from "./middleware/security";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -517,7 +524,7 @@ export async function registerRoutes(
     }
   });
 
-  // Owner login
+  // Owner login with HIPAA-compliant lockout protection
   app.post("/api/owners/login", async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -526,13 +533,31 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Email and password are required" });
       }
 
+      // Check if account is locked due to failed attempts
+      const lockStatus = await isAccountLocked(email, "owner");
+      if (lockStatus.locked) {
+        await ActivityLogger.loginFailed(req, email);
+        return res.status(423).json({
+          error: "Account locked",
+          code: "ACCOUNT_LOCKED",
+          message: `Too many failed login attempts. Please try again in ${lockStatus.remainingMinutes} minutes.`,
+          lockedUntil: lockStatus.lockedUntil,
+        });
+      }
+
       const owner = await storage.getOwnerByEmail(email);
       if (!owner) {
+        await recordFailedLogin(email, "owner", undefined, req);
         await ActivityLogger.loginFailed(req, email);
-        return res.status(401).json({ error: "Invalid credentials" });
+        const remaining = await getRemainingAttempts(email, "owner");
+        return res.status(401).json({
+          error: "Invalid credentials",
+          remainingAttempts: remaining,
+        });
       }
 
       if (!owner.passwordHash) {
+        await recordFailedLogin(email, "owner", undefined, req);
         await ActivityLogger.loginFailed(req, email);
         return res.status(401).json({ error: "Password not set. Please complete account setup first." });
       }
@@ -544,9 +569,29 @@ export async function registerRoutes(
 
       const isValid = await bcrypt.compare(password, owner.passwordHash);
       if (!isValid) {
+        await recordFailedLogin(email, "owner", undefined, req);
         await ActivityLogger.loginFailed(req, email);
-        return res.status(401).json({ error: "Invalid credentials" });
+
+        // Check if now locked after this attempt
+        const newLockStatus = await isAccountLocked(email, "owner");
+        if (newLockStatus.locked) {
+          return res.status(423).json({
+            error: "Account locked",
+            code: "ACCOUNT_LOCKED",
+            message: `Too many failed login attempts. Account locked for ${newLockStatus.remainingMinutes} minutes.`,
+            lockedUntil: newLockStatus.lockedUntil,
+          });
+        }
+
+        const remaining = await getRemainingAttempts(email, "owner");
+        return res.status(401).json({
+          error: "Invalid credentials",
+          remainingAttempts: remaining,
+        });
       }
+
+      // Clear failed attempts on successful login
+      await clearFailedAttempts(email, "owner");
 
       await storage.updateOwner(owner.id, { lastLoginAt: new Date() });
 
@@ -554,9 +599,19 @@ export async function registerRoutes(
 
       (req.session as any).ownerId = owner.id;
 
-      // Get owner's first facility ID for logging
+      // Get owner's first facility ID for logging and session tracking
       const facilities = await storage.getFacilitiesByOwner(owner.id);
       const facilityId = facilities.length > 0 ? facilities[0].id : undefined;
+
+      // Create active session for timeout tracking
+      await createActiveSession(
+        req.sessionID,
+        owner.id,
+        "owner",
+        facilityId || null,
+        req,
+        15 // Default 15 minute timeout
+      );
 
       // Log successful login
       await ActivityLogger.login(req, owner.id, owner.name, 'owner', facilityId);

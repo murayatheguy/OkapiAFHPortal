@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTeamMembers, getInquiries, updateInquiry, createTeamMember } from "@/lib/api";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import type { Facility, Inquiry, Review, TeamMember, TransportProvider, TransportBooking } from "@shared/schema";
 import {
   Home, Users, MessageSquare, Star, Settings, LogOut, Building2,
@@ -37,6 +38,7 @@ import { AbuseNeglect10403Wizard } from "@/components/owner/forms/abuse-neglect-
 import { NurseDelegationPRNWizard } from "@/components/owner/forms/nurse-delegation-prn-wizard";
 import { AbuseNeglect27076Wizard } from "@/components/owner/forms/abuse-neglect-27076-wizard";
 import { ActivityLog, ActivityLogWidget } from "@/components/owner/activity-log";
+import { SecuritySettings } from "@/components/owner/security-settings";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -52,6 +54,17 @@ export default function OwnerDashboardPage() {
   const { owner, facilities, claims, isLoading, isAuthenticated, logout } = useOwnerAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // HIPAA-compliant session timeout (15 minutes)
+  useSessionTimeout({
+    timeoutMinutes: 15,
+    warningMinutes: 2,
+    onTimeout: () => {
+      logout();
+      setLocation("/login?reason=timeout");
+    },
+    enabled: isAuthenticated,
+  });
 
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("overview");
@@ -1309,7 +1322,7 @@ export default function OwnerDashboardPage() {
                   <h1 className="text-2xl text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
                     Settings
                   </h1>
-                  
+
                   <Card className="border-gray-200 bg-white shadow-sm">
                     <CardHeader>
                       <CardTitle className="text-gray-900">Account Information</CardTitle>
@@ -1331,6 +1344,15 @@ export default function OwnerDashboardPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* HIPAA Security Settings */}
+                  {selectedFacility && (
+                    <Card className="border-gray-200 bg-stone-900 shadow-sm">
+                      <CardContent className="pt-6">
+                        <SecuritySettings facilityId={selectedFacility.id} />
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
             </>
