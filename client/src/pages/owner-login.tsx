@@ -4,20 +4,22 @@ import { useOwnerAuth } from "@/lib/owner-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
   Home,
   Eye,
   EyeOff,
-  MapPin,
+  Globe,
   ClipboardList,
   CheckCircle,
   Users,
   BarChart3,
   GraduationCap,
-  ArrowRight
+  ArrowRight,
+  Phone,
+  Mail,
 } from "lucide-react";
 
 export default function OwnerLogin() {
@@ -70,11 +72,11 @@ export default function OwnerLogin() {
     );
   }
 
-  const benefits = [
+  const features = [
     {
-      icon: MapPin,
-      title: "FREE Public Listing",
-      description: "Get found by families searching for care in your area"
+      icon: Globe,
+      title: "Public Directory Listing",
+      description: "Get discovered by families searching for quality care in your area"
     },
     {
       icon: ClipboardList,
@@ -99,14 +101,14 @@ export default function OwnerLogin() {
     {
       icon: GraduationCap,
       title: "Okapi Academy",
-      description: "Free training resources and compliance guides"
+      description: "Training resources and compliance guides included"
     }
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="relative z-50 px-5 py-4 flex items-center justify-between border-b border-gray-200 bg-white">
+      <header className="relative z-50 px-6 py-4 flex items-center justify-between border-b border-gray-200 bg-white">
         <Link href="/" className="flex items-center gap-1.5">
           <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#0d9488', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
             OKAPI
@@ -127,125 +129,207 @@ export default function OwnerLogin() {
       {/* Main Content - Two Column Layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* LEFT SIDE - Value Proposition */}
-        <div className="lg:w-1/2 bg-gradient-to-br from-teal-600 to-teal-700 p-8 lg:p-12 flex flex-col justify-center text-white">
-          <div className="max-w-lg mx-auto lg:mx-0">
-            <h1 className="text-3xl lg:text-4xl font-bold mb-3" style={{ fontFamily: "'Cormorant', serif" }}>
-              Grow Your Adult Family Home Business
-            </h1>
-            <p className="text-teal-100 text-lg mb-8">
-              Join Washington's premier AFH platform - trusted by families and facility owners
-            </p>
+        <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-teal-600 to-teal-700 p-12 xl:p-16 flex-col">
+          <div className="flex-1 flex flex-col justify-center max-w-xl">
+            {/* Hero Section */}
+            <div className="space-y-6 mb-10">
+              <p className="text-teal-200 text-sm font-medium tracking-wide uppercase">
+                Washington State's Premier Platform
+              </p>
+              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight" style={{ fontFamily: "'Cormorant', serif" }}>
+                Grow Your Adult Family Home Business
+              </h1>
+              <p className="text-teal-100 text-lg leading-relaxed">
+                Join hundreds of AFH providers using Okapi to streamline operations,
+                stay compliant, and connect with families seeking quality care.
+              </p>
+            </div>
 
-            {/* Benefits List */}
-            <div className="space-y-5">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                    <benefit.icon className="h-5 w-5 text-teal-100" />
+            {/* Trust Indicators */}
+            <div className="flex items-center gap-8 mb-10 pb-10 border-b border-teal-500/30">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white">500+</div>
+                <div className="text-teal-200 text-sm">Active Facilities</div>
+              </div>
+              <div className="w-px h-12 bg-teal-400/30" />
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white">98%</div>
+                <div className="text-teal-200 text-sm">Satisfaction Rate</div>
+              </div>
+              <div className="w-px h-12 bg-teal-400/30" />
+              <div className="text-center">
+                <div className="text-3xl font-bold text-white">24/7</div>
+                <div className="text-teal-200 text-sm">Support Available</div>
+              </div>
+            </div>
+
+            {/* Features List */}
+            <div className="space-y-4">
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-start gap-4 group">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <feature.icon className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">{benefit.title}</h3>
-                    <p className="text-teal-100 text-sm">{benefit.description}</p>
+                    <h3 className="font-semibold text-white">{feature.title}</h3>
+                    <p className="text-teal-100 text-sm">{feature.description}</p>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Claim Facility CTA */}
-            <div className="mt-10 pt-8 border-t border-teal-500/30">
-              <p className="text-teal-100 mb-3">Don't have a facility listed yet?</p>
-              <Link href="/owner">
-                <Button
-                  variant="outline"
-                  className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-teal-700 transition-colors"
-                >
-                  Claim Your Facility
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
+          {/* Contact Section - Bottom of left panel */}
+          <div className="mt-auto pt-10 border-t border-teal-500/30">
+            <p className="text-teal-200 text-sm font-medium mb-4">Questions? We're here to help.</p>
+            <div className="space-y-3">
+              <a
+                href="tel:1-800-225-5652"
+                className="flex items-center gap-3 text-white hover:text-teal-200 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-semibold">1-800-CALL-OKAPI</span>
+                  <span className="text-teal-300 text-sm ml-2">(1-800-225-5652)</span>
+                </div>
+              </a>
+              <a
+                href="mailto:info@okapihealthcare.com"
+                className="flex items-center gap-3 text-white hover:text-teal-200 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <span>info@okapihealthcare.com</span>
+              </a>
             </div>
           </div>
         </div>
 
         {/* RIGHT SIDE - Login Form */}
-        <div className="lg:w-1/2 flex items-center justify-center p-8 lg:p-12 bg-gray-50">
-          <Card className="w-full max-w-md border-gray-200 shadow-lg bg-white">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-2xl text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
-                Provider Login
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Sign in to manage your Adult Family Home listings
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="owner@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isSubmitting}
-                    className="bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500"
-                    data-testid="input-login-email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-700">Password</Label>
-                  <div className="relative">
+        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-gray-50">
+          <div className="w-full max-w-md">
+            {/* Welcome Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
+                Welcome Back
+              </h2>
+              <p className="text-gray-500 mt-2">Sign in to manage your facilities</p>
+            </div>
+
+            {/* Login Card */}
+            <Card className="shadow-xl border-0 bg-white">
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      Email Address
+                    </Label>
                     <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       disabled={isSubmitting}
-                      className="bg-white border-gray-300 text-gray-900 pr-10 focus:border-teal-500 focus:ring-teal-500"
-                      data-testid="input-login-password"
+                      className="h-12 px-4 bg-white border-gray-200 text-gray-900 focus:border-teal-500 focus:ring-teal-500"
+                      data-testid="input-login-email"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4">
-                <Button
-                  type="submit"
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-                  disabled={isSubmitting}
-                  data-testid="button-login-submit"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
-                </Button>
-                <div className="text-center space-y-2">
-                  <Link href="/owner/forgot-password" className="text-sm text-teal-600 hover:text-teal-700 block">
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isSubmitting}
+                        className="h-12 px-4 bg-white border-gray-200 text-gray-900 pr-12 focus:border-teal-500 focus:ring-teal-500"
+                        data-testid="input-login-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-medium text-base transition-colors"
+                    disabled={isSubmitting}
+                    data-testid="button-login-submit"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
+                </form>
+
+                <div className="mt-6 text-center space-y-3">
+                  <Link href="/owner/forgot-password" className="text-teal-600 hover:text-teal-700 text-sm font-medium block transition-colors">
                     Forgot password?
                   </Link>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-gray-500 text-sm">
                     Need help?{" "}
-                    <a href="mailto:support@okapicare.com" className="text-teal-600 hover:text-teal-700">
+                    <a href="mailto:info@okapihealthcare.com" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">
                       Contact support
                     </a>
                   </p>
                 </div>
-              </CardFooter>
-            </form>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* CTA for new users */}
+            <div className="mt-8 text-center">
+              <p className="text-gray-600 mb-4">Don't have a facility listed yet?</p>
+              <Link href="/owner">
+                <Button
+                  variant="outline"
+                  className="border-teal-600 text-teal-600 hover:bg-teal-50 transition-colors"
+                >
+                  Claim Your Facility
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile Contact Info */}
+            <div className="lg:hidden mt-10 pt-8 border-t border-gray-200 text-center">
+              <p className="text-gray-500 text-sm mb-4">Questions? We're here to help.</p>
+              <div className="space-y-2">
+                <a
+                  href="tel:1-800-225-5652"
+                  className="flex items-center justify-center gap-2 text-teal-600 hover:text-teal-700 font-medium"
+                >
+                  <Phone className="w-4 h-4" />
+                  1-800-CALL-OKAPI
+                </a>
+                <a
+                  href="mailto:info@okapihealthcare.com"
+                  className="flex items-center justify-center gap-2 text-teal-600 hover:text-teal-700"
+                >
+                  <Mail className="w-4 h-4" />
+                  info@okapihealthcare.com
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
