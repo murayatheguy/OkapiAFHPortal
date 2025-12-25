@@ -298,7 +298,7 @@ export default function OwnerLogin() {
             {/* CTA for new users */}
             <div className="mt-8 text-center">
               <p className="text-gray-600 mb-4">Don't have a facility listed yet?</p>
-              <Link href="/owner">
+              <Link href="/">
                 <Button
                   variant="outline"
                   className="border-teal-600 text-teal-600 hover:bg-teal-50 transition-colors"
