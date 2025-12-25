@@ -28,6 +28,8 @@ import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
 import { NCPWizard } from "@/components/owner/forms/ncp-wizard";
 import { DisclosureWizard } from "@/components/owner/forms/disclosure-wizard";
 import { NurseDelegationWizard } from "@/components/owner/forms/nurse-delegation-wizard";
+import { AdmissionAgreementWizard } from "@/components/owner/forms/admission-agreement-wizard";
+import { DisclosureServicesWizard } from "@/components/owner/forms/disclosure-services-wizard";
 import { DashboardWidgets } from "@/components/owner/dashboard-widgets";
 
 const TEAM_ROLES = [
@@ -54,6 +56,8 @@ export default function OwnerDashboardPage() {
   const [showNCPWizard, setShowNCPWizard] = useState(false);
   const [showDisclosureWizard, setShowDisclosureWizard] = useState(false);
   const [showNurseDelegationWizard, setShowNurseDelegationWizard] = useState(false);
+  const [showAdmissionAgreementWizard, setShowAdmissionAgreementWizard] = useState(false);
+  const [showDisclosureServicesWizard, setShowDisclosureServicesWizard] = useState(false);
   const [teamMemberForm, setTeamMemberForm] = useState({
     firstName: "",
     lastName: "",
@@ -1023,6 +1027,68 @@ export default function OwnerDashboardPage() {
                       </CardContent>
                     </Card>
 
+                    {/* Admission Agreement Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-teal-50 rounded-lg">
+                            <FileText className="h-5 w-5 text-teal-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Admission Agreement</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">DSHS 10-270</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Resident admission agreement documenting terms and conditions.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Required</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowAdmissionAgreementWizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Disclosure of Services Form Card */}
+                    <Card className="border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-teal-50 rounded-lg">
+                            <ClipboardList className="h-5 w-5 text-teal-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-gray-900 text-base">Disclosure of Services</CardTitle>
+                            <CardDescription className="text-gray-500 text-xs">Services Form</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Services and amenities disclosure for prospective residents.
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Required</Badge>
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-500 text-white gap-1"
+                            onClick={() => setShowDisclosureServicesWizard(true)}
+                          >
+                            Start Form
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <Card className="border-gray-200 bg-gray-50 shadow-sm opacity-60">
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
@@ -1249,6 +1315,22 @@ export default function OwnerDashboardPage() {
         <NurseDelegationWizard
           facilityId={selectedFacilityId}
           onClose={() => setShowNurseDelegationWizard(false)}
+        />
+      )}
+
+      {/* Admission Agreement Wizard */}
+      {showAdmissionAgreementWizard && selectedFacilityId && (
+        <AdmissionAgreementWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowAdmissionAgreementWizard(false)}
+        />
+      )}
+
+      {/* Disclosure of Services Wizard */}
+      {showDisclosureServicesWizard && selectedFacilityId && (
+        <DisclosureServicesWizard
+          facilityId={selectedFacilityId}
+          onClose={() => setShowDisclosureServicesWizard(false)}
         />
       )}
     </div>

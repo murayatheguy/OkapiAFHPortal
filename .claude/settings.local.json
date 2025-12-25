@@ -48,7 +48,8 @@
       "Bash(echo:*)",
       "Bash(node map-pdf-coordinates.cjs:*)",
       "Bash(git restore:*)",
-      "Bash(node analyze-ncp-pdf.cjs:*)"
+      "Bash(node analyze-ncp-pdf.cjs:*)",
+      "Bash(node analyze-forms.cjs:*)"
     ]
   }
 }
