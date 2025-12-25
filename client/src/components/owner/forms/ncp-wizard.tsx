@@ -36,7 +36,13 @@ import {
   Mail,
   Printer,
   Eye,
+  Download,
 } from "lucide-react";
+import {
+  fillNCPPdf,
+  downloadNCPPdf,
+  openNCPPdfForPrint,
+} from "@/lib/forms/ncp-pdf";
 
 // NCP Form Sections
 const NCP_SECTIONS = [
@@ -560,6 +566,47 @@ export function NCPWizard({
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // PDF Generation Handlers
+  const handlePrintOfficialPDF = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      toast({ title: "Generating PDF..." });
+      const pdfBytes = await fillNCPPdf(formData);
+      openNCPPdfForPrint(pdfBytes);
+      toast({ title: "PDF opened for printing" });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Failed to generate PDF",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleDownloadOfficialPDF = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      toast({ title: "Generating PDF..." });
+      const pdfBytes = await fillNCPPdf(formData);
+      const residentName = `${formData.residentInfo.firstName} ${formData.residentInfo.lastName}`.trim();
+      downloadNCPPdf(pdfBytes, residentName || "Resident");
+      toast({ title: "PDF downloaded successfully" });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Failed to generate PDF",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   // Fetch facility data for provider name
   const { data: facility } = useQuery({
@@ -3444,7 +3491,31 @@ export function NCPWizard({
               className="gap-2 border-gray-300 print:hidden"
             >
               <Eye className="h-4 w-4" />
-              Print Preview
+              Preview
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintOfficialPDF}
+              disabled={isGeneratingPdf}
+              className="gap-2 border-gray-300 print:hidden"
+            >
+              {isGeneratingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              Print PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadOfficialPDF}
+              disabled={isGeneratingPdf}
+              className="gap-2 border-gray-300 print:hidden"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
             </Button>
           </div>
         </div>
