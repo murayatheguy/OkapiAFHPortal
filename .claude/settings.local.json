@@ -53,7 +53,8 @@
       "Bash(node test-admission-agreement.cjs:*)",
       "Bash(node test-disclosure-services.cjs:*)",
       "Bash(node:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(start http://localhost:5000)"
     ]
   }
 }
