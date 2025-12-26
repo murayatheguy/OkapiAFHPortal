@@ -25,8 +25,10 @@ import { apiRequest } from "@/lib/queryClient";
 import {
   Users,
   UserCheck,
+  UserCog,
   AlertTriangle,
   FileText,
+  FileBarChart,
   Pill,
   ExternalLink,
   Loader2,
@@ -45,9 +47,12 @@ import {
   UserMinus,
   Bed,
   Shield,
+  Award,
   Plus,
   Trash2,
   Lock,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Dialog,
@@ -183,6 +188,127 @@ function getCredentialStatus(expirationDate?: string): { status: string; color: 
   }
 }
 
+// Section card component for the main navigation
+interface SectionCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  count?: number;
+  badge?: { text: string; variant: "default" | "destructive" | "warning" | "success" };
+  onClick: () => void;
+  color: string;
+  actions?: { label: string; onClick: () => void }[];
+}
+
+function SectionCard({
+  title,
+  description,
+  icon,
+  count,
+  badge,
+  onClick,
+  color,
+  actions
+}: SectionCardProps) {
+  return (
+    <Card
+      className="group cursor-pointer transition-all duration-200 hover:shadow-lg border-2 hover:border-teal-300 relative overflow-hidden"
+      onClick={onClick}
+    >
+      {/* Color accent bar */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${color}`} />
+
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            <div className={`p-3 rounded-xl transition-colors ${color.replace("-500", "-100")} group-hover:scale-110 transition-transform`}>
+              {icon}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg">{title}</h3>
+                {badge && (
+                  <Badge
+                    variant={badge.variant === "warning" || badge.variant === "success" ? "outline" : badge.variant}
+                    className={`
+                      ${badge.variant === "warning" ? "border-orange-500 text-orange-600 bg-orange-50" : ""}
+                      ${badge.variant === "success" ? "border-green-500 text-green-600 bg-green-50" : ""}
+                    `}
+                  >
+                    {badge.text}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {count !== undefined && (
+              <span className="text-3xl font-bold text-gray-700">{count}</span>
+            )}
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-teal-500 transition-colors" />
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        {actions && actions.length > 0 && (
+          <div className="flex gap-2 mt-4 pt-4 border-t">
+            {actions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  action.onClick();
+                }}
+                className="text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Stats row component
+interface StatItemProps {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+  trend?: { value: string; positive: boolean };
+  onClick?: () => void;
+}
+
+function StatItem({ icon, value, label, trend, onClick }: StatItemProps) {
+  return (
+    <div
+      className={`flex items-center gap-3 p-3 rounded-lg bg-white border ${onClick ? "cursor-pointer hover:bg-gray-50 transition-colors" : ""}`}
+      onClick={onClick}
+    >
+      <div className="p-2 rounded-lg bg-gray-100">
+        {icon}
+      </div>
+      <div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xl font-bold">{value}</span>
+          {trend && (
+            <span className={`text-xs font-medium ${trend.positive ? "text-green-600" : "text-red-600"}`}>
+              {trend.value}
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export function CareManagement({ facilityId, facilityName, facilityCapacity = 6, facility, initialTab }: CareManagementProps) {
   // Create facilityData from props for reports
   const facilityData = facility || {
@@ -193,7 +319,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState(initialTab || "residents");
+  const [activeTab, setActiveTab] = useState(initialTab || "overview");
 
   // Update tab when initialTab prop changes (for quick action navigation)
   useEffect(() => {
@@ -900,17 +1026,36 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
     }
   };
 
+  // Calculate values for section cards
+  const activeResidents = residents.filter(r => r.status === "active").length;
+  const hospitalizedResidents = residents.filter(r => r.status === "hospitalized").length;
+  const activeStaff = staff.filter(s => s.status === "active").length;
+  const openIncidents = stats?.openIncidents || incidentSummary?.byStatus?.open || 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
-            Care Management
-          </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            Monitor and manage your facility's EHR system
-          </p>
+        <div className="flex items-center gap-3">
+          {activeTab !== "overview" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTab("overview")}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+          )}
+          <div>
+            <h1 className="text-2xl text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
+              Care Management
+            </h1>
+            <p className="text-gray-600 text-sm mt-1">
+              Monitor and manage your facility's EHR system
+            </p>
+          </div>
         </div>
         <Button
           className="bg-teal-600 hover:bg-teal-500 gap-2"
@@ -931,64 +1076,216 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         </Button>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {overviewStats.map((stat) => {
-          const Icon = stat.icon;
-          const cardContent = (
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                  <Icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl text-gray-900 font-semibold">{stat.value}</p>
-                  <p className="text-gray-500 text-xs">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          );
-          return (
-            <Card
-              key={stat.label}
-              className={`border-gray-200 bg-white shadow-sm ${stat.onClick ? "cursor-pointer hover:border-teal-300 transition-colors" : ""}`}
-              onClick={stat.onClick}
-            >
-              {cardContent}
-            </Card>
-          );
-        })}
-      </div>
+      {/* Overview Section - Show section cards */}
+      {activeTab === "overview" && (
+        <>
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-xl">
+            <StatItem
+              icon={<Bed className="h-4 w-4 text-teal-600" />}
+              value={`${activeResidents}/${facilityCapacity}`}
+              label="Beds Occupied"
+            />
+            <StatItem
+              icon={<Pill className="h-4 w-4 text-green-600" />}
+              value={medCompliance?.summary?.complianceRate || "N/A"}
+              label="Meds Given Rate"
+            />
+            <StatItem
+              icon={<Clock className="h-4 w-4 text-orange-600" />}
+              value={expiringCredentials.length}
+              label="Expiring Soon"
+              onClick={() => setActiveTab("credentials")}
+            />
+            <StatItem
+              icon={<AlertCircle className="h-4 w-4 text-red-600" />}
+              value={openIncidents}
+              label="Open Incidents"
+              onClick={() => setActiveTab("incidents")}
+            />
+          </div>
 
-      {/* Sub-tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-gray-50 border border-gray-200 w-full md:w-auto grid grid-cols-5 md:inline-flex">
-          <TabsTrigger value="residents" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
-            <Users className="h-4 w-4 hidden md:block" />
-            Residents
-          </TabsTrigger>
-          <TabsTrigger value="staff" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
-            <UserCheck className="h-4 w-4 hidden md:block" />
-            Staff
-          </TabsTrigger>
-          <TabsTrigger value="credentials" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1 relative">
-            <Shield className="h-4 w-4 hidden md:block" />
-            Credentials
-            {expiringCredentials.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-teal-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                {expiringCredentials.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="incidents" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
-            <AlertTriangle className="h-4 w-4 hidden md:block" />
-            Incidents
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
-            <FileText className="h-4 w-4 hidden md:block" />
-            Reports
-          </TabsTrigger>
-        </TabsList>
+          {/* Main Section Cards */}
+          <div className="grid gap-4">
+            {/* Row 1: Residents and Staff (most used) */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <SectionCard
+                title="Residents"
+                description="Manage resident profiles, care plans, and documentation"
+                icon={<Users className="h-6 w-6 text-teal-600" />}
+                count={activeResidents}
+                badge={hospitalizedResidents > 0 ? {
+                  text: `${hospitalizedResidents} hospitalized`,
+                  variant: "warning"
+                } : undefined}
+                onClick={() => setActiveTab("residents")}
+                color="bg-teal-500"
+                actions={[
+                  { label: "Add Resident", onClick: () => { setEditingClient(null); setClientDialogOpen(true); } }
+                ]}
+              />
+
+              <SectionCard
+                title="Staff"
+                description="Manage caregivers, schedules, and assignments"
+                icon={<UserCog className="h-6 w-6 text-blue-600" />}
+                count={activeStaff}
+                onClick={() => setActiveTab("staff")}
+                color="bg-blue-500"
+                actions={[
+                  { label: "Add Staff", onClick: () => setInviteDialogOpen(true) }
+                ]}
+              />
+            </div>
+
+            {/* Row 2: Credentials, Incidents, Reports */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <SectionCard
+                title="Credentials"
+                description="Track certifications and expiration dates"
+                icon={<Award className="h-6 w-6 text-purple-600" />}
+                count={expiringCredentials.length}
+                badge={expiringCredentials.length > 0 ? {
+                  text: "Action needed",
+                  variant: "destructive"
+                } : { text: "All current", variant: "success" }}
+                onClick={() => setActiveTab("credentials")}
+                color="bg-purple-500"
+              />
+
+              <SectionCard
+                title="Incidents"
+                description="Document and track incident reports"
+                icon={<AlertTriangle className="h-6 w-6 text-orange-600" />}
+                count={openIncidents}
+                badge={openIncidents > 0 ? {
+                  text: `${openIncidents} open`,
+                  variant: "destructive"
+                } : undefined}
+                onClick={() => setActiveTab("incidents")}
+                color="bg-orange-500"
+              />
+
+              <SectionCard
+                title="Reports"
+                description="Generate compliance and care reports"
+                icon={<FileBarChart className="h-6 w-6 text-emerald-600" />}
+                onClick={() => setActiveTab("reports")}
+                color="bg-emerald-500"
+              />
+            </div>
+          </div>
+
+          {/* Recent Activity Preview */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Recent Resident Activity</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setActiveTab("residents")}
+                >
+                  View all
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {residents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                  <p>No residents yet</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => { setEditingClient(null); setClientDialogOpen(true); }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add your first resident
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {residents.filter(r => r.status === "active").slice(0, 3).map((resident) => (
+                    <div
+                      key={resident.id}
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => setProfileResident(resident)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                          <span className="text-teal-700 font-medium">
+                            {resident.firstName?.[0]}{resident.lastName?.[0]}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {resident.firstName} {resident.lastName}
+                            {resident.preferredName && (
+                              <span className="text-muted-foreground font-normal">
+                                {" "}({resident.preferredName})
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Room {resident.roomNumber || "—"} • Admitted {formatDate(resident.admissionDate || "")}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={`
+                            ${resident.status === "active" ? "border-green-500 text-green-600 bg-green-50" : ""}
+                            ${resident.status === "hospitalized" ? "border-orange-500 text-orange-600 bg-orange-50" : ""}
+                            ${resident.status === "discharged" ? "border-gray-500 text-gray-600 bg-gray-50" : ""}
+                          `}
+                        >
+                          {resident.status}
+                        </Badge>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* Tab Content - Show when not on overview */}
+      {activeTab !== "overview" && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-gray-50 border border-gray-200 w-full md:w-auto grid grid-cols-5 md:inline-flex">
+            <TabsTrigger value="residents" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
+              <Users className="h-4 w-4 hidden md:block" />
+              Residents
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
+              <UserCheck className="h-4 w-4 hidden md:block" />
+              Staff
+            </TabsTrigger>
+            <TabsTrigger value="credentials" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1 relative">
+              <Shield className="h-4 w-4 hidden md:block" />
+              Credentials
+              {expiringCredentials.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-teal-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {expiringCredentials.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="incidents" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
+              <AlertTriangle className="h-4 w-4 hidden md:block" />
+              Incidents
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 gap-1">
+              <FileText className="h-4 w-4 hidden md:block" />
+              Reports
+            </TabsTrigger>
+          </TabsList>
 
         {/* Residents Tab */}
         <TabsContent value="residents" className="mt-6">
@@ -1964,6 +2261,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           </Card>
         </TabsContent>
       </Tabs>
+      )}
 
       {/* Invite Staff Dialog */}
       <InviteStaffDialog
