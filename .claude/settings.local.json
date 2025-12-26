@@ -58,7 +58,8 @@
       "Bash(pip install:*)",
       "Bash(python -m pip install:*)",
       "Bash(npm run seed:*)",
-      "Bash(npm run seed:multi:*)"
+      "Bash(npm run seed:multi:*)",
+      "Bash(npm run seed:new:*)"
     ]
   }
 }

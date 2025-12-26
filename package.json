@@ -12,7 +12,10 @@
     "db:push": "drizzle-kit push",
     "seed": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-test-afhs.ts', {stdio: 'inherit', env: {...process.env}})\"",
     "seed:full": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-test-data.ts', {stdio: 'inherit', env: {...process.env}})\"",
-    "seed:multi": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-multi-facility.ts', {stdio: 'inherit', env: {...process.env}})\""
+    "seed:multi": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-multi-facility.ts', {stdio: 'inherit', env: {...process.env}})\"",
+    "seed:new": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/seeds/seed.ts', {stdio: 'inherit', env: {...process.env}})\"",
+    "seed:clean": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/seeds/clean.ts', {stdio: 'inherit', env: {...process.env}})\"",
+    "seed:reset": "npm run seed:clean -- --force && npm run seed:new"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
