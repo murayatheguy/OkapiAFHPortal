@@ -48,6 +48,8 @@ function Router() {
     <Switch>
       <Route path="/" component={HomeAFH} />
       <Route path="/home-old" component={Home} />
+      <Route path="/find-care" component={SearchResults} />
+      <Route path="/directory" component={SearchResults} />
       <Route path="/search" component={SearchResults} />
       <Route path="/homes" component={SearchResults} />
       <Route path="/facility/:id" component={FacilityDetails} />

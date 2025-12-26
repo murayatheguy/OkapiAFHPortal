@@ -5,14 +5,8 @@
 
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Search, LogIn, ChevronDown } from "lucide-react";
+import { Menu, X, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { AFHFooter, AFHFooterCompact } from "@/components/public/afh-footer";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -28,16 +22,8 @@ export function PublicLayoutAFH({ children, showFullFooter = true }: PublicLayou
 
   const navLinks = [
     { label: "Find Care", href: "/find-care" },
-    { label: "About AFHs", href: "/about-afh" },
-    {
-      label: "Resources",
-      children: [
-        { label: "Family Guide", href: "/resources/families" },
-        { label: "Cost Calculator", href: "/resources/calculator" },
-        { label: "DSHS Information", href: "/resources/dshs" },
-      ],
-    },
-    { label: "For Owners", href: "/for-owners" },
+    { label: "Directory", href: "/directory" },
+    { label: "For Owners", href: "/owner/login" },
   ];
 
   const isActive = (href: string) => location === href;
@@ -63,39 +49,20 @@ export function PublicLayoutAFH({ children, showFullFooter = true }: PublicLayou
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
-              {navLinks.map((link) =>
-                link.children ? (
-                  <DropdownMenu key={link.label}>
-                    <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900">
-                      {link.label}
-                      <ChevronDown className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {link.children.map((child) => (
-                        <DropdownMenuItem
-                          key={child.href}
-                          onClick={() => setLocation(child.href)}
-                        >
-                          {child.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Link key={link.href} href={link.href}>
-                    <a
-                      className={cn(
-                        "text-sm font-medium transition-colors",
-                        isActive(link.href)
-                          ? "text-teal-600"
-                          : "text-gray-600 hover:text-gray-900"
-                      )}
-                    >
-                      {link.label}
-                    </a>
-                  </Link>
-                )
-              )}
+              {navLinks.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  <a
+                    className={cn(
+                      "text-sm font-medium transition-colors",
+                      isActive(link.href)
+                        ? "text-teal-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    )}
+                  >
+                    {link.label}
+                  </a>
+                </Link>
+              ))}
             </nav>
 
             {/* Actions */}
@@ -112,7 +79,7 @@ export function PublicLayoutAFH({ children, showFullFooter = true }: PublicLayou
               <Button
                 size="sm"
                 className="bg-teal-600 hover:bg-teal-700"
-                onClick={() => setLocation("/login")}
+                onClick={() => setLocation("/owner/login")}
               >
                 <LogIn className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Owner Login</span>
@@ -136,47 +103,25 @@ export function PublicLayoutAFH({ children, showFullFooter = true }: PublicLayou
           {mobileMenuOpen && (
             <nav className="md:hidden py-4 border-t">
               <div className="space-y-2">
-                {navLinks.map((link) =>
-                  link.children ? (
-                    <div key={link.label} className="space-y-1">
-                      <p className="px-3 py-2 text-sm font-medium text-gray-500">
-                        {link.label}
-                      </p>
-                      {link.children.map((child) => (
-                        <a
-                          key={child.href}
-                          href={child.href}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setLocation(child.href);
-                            setMobileMenuOpen(false);
-                          }}
-                          className="block px-6 py-2 text-sm text-gray-600 hover:bg-gray-50"
-                        >
-                          {child.label}
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setLocation(link.href);
-                        setMobileMenuOpen(false);
-                      }}
-                      className={cn(
-                        "block px-3 py-2 text-sm font-medium rounded-lg",
-                        isActive(link.href)
-                          ? "bg-teal-50 text-teal-600"
-                          : "text-gray-600 hover:bg-gray-50"
-                      )}
-                    >
-                      {link.label}
-                    </a>
-                  )
-                )}
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setLocation(link.href);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={cn(
+                      "block px-3 py-2 text-sm font-medium rounded-lg",
+                      isActive(link.href)
+                        ? "bg-teal-50 text-teal-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    )}
+                  >
+                    {link.label}
+                  </a>
+                ))}
               </div>
             </nav>
           )}

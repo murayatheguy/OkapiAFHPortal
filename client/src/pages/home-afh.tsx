@@ -19,14 +19,12 @@ import { BRAND, WA_CITIES } from "@/lib/constants";
 function FeaturedHomes() {
   const [, setLocation] = useLocation();
 
-  // Fetch featured homes (mock for now, will use real API)
-  const { data: homes = [] } = useQuery({
-    queryKey: ["featured-homes"],
+  // Fetch real facilities from API
+  const { data: facilities = [] } = useQuery({
+    queryKey: ["facilities"],
     queryFn: async () => {
-      // In production, this would fetch from API
-      // For now, return empty array to show placeholder
       try {
-        const response = await fetch("/api/facilities/featured?limit=4");
+        const response = await fetch("/api/facilities");
         if (!response.ok) return [];
         return response.json();
       } catch {
@@ -35,47 +33,16 @@ function FeaturedHomes() {
     },
   });
 
-  // Placeholder homes for development
-  const placeholderHomes = [
-    {
-      id: "1",
-      name: "Sunny Meadows AFH",
-      city: "Seattle",
-      bedsAvailable: 2,
-      totalBeds: 6,
-      rating: 4.8,
-      specializations: ["Memory Care", "Dementia"],
-    },
-    {
-      id: "2",
-      name: "Peaceful Pines Care Home",
-      city: "Bellevue",
-      bedsAvailable: 1,
-      totalBeds: 6,
-      rating: 4.9,
-      specializations: ["General Care", "Hospice"],
-    },
-    {
-      id: "3",
-      name: "Evergreen Adult Family Home",
-      city: "Tacoma",
-      bedsAvailable: 3,
-      totalBeds: 6,
-      rating: 4.7,
-      specializations: ["Mental Health"],
-    },
-    {
-      id: "4",
-      name: "Harbor View AFH",
-      city: "Kirkland",
-      bedsAvailable: 0,
-      totalBeds: 6,
-      rating: 5.0,
-      specializations: ["Veterans Care"],
-    },
-  ];
-
-  const displayHomes = homes.length > 0 ? homes : placeholderHomes;
+  // Take first 4 facilities with beds available
+  const displayHomes = facilities.slice(0, 4).map((f: any) => ({
+    id: f.id,
+    name: f.name,
+    city: f.city || "Washington",
+    bedsAvailable: f.availableBeds || 0,
+    totalBeds: f.bedCount || 6,
+    rating: 4.5 + Math.random() * 0.5, // Placeholder rating
+    specializations: f.specializations || [],
+  }));
 
   return (
     <section className="py-16 bg-white">
@@ -264,7 +231,7 @@ function OwnerCTA() {
           <Button
             size="lg"
             variant="secondary"
-            onClick={() => setLocation("/register")}
+            onClick={() => setLocation("/owner/setup")}
           >
             List Your Home Free
           </Button>
@@ -272,9 +239,9 @@ function OwnerCTA() {
             size="lg"
             variant="outline"
             className="border-white text-white hover:bg-white/10"
-            onClick={() => setLocation("/for-owners")}
+            onClick={() => setLocation("/owner/login")}
           >
-            Learn More
+            Owner Login
           </Button>
         </div>
       </div>

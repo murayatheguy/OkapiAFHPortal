@@ -19,15 +19,13 @@ export function AFHFooter() {
   const footerLinks = {
     families: [
       { label: "Find an AFH", href: "/find-care" },
-      { label: "What is an AFH?", href: "/about-afh" },
-      { label: "Care Matching", href: "/find-care?wizard=true" },
-      { label: "Family Resources", href: "/resources/families" },
+      { label: "Browse Directory", href: "/directory" },
+      { label: "Search by City", href: "/search" },
     ],
     owners: [
-      { label: "Owner Login", href: "/login" },
-      { label: "List Your Home", href: "/register" },
-      { label: "EHR Features", href: "/features" },
-      { label: "DSHS Forms", href: "/forms" },
+      { label: "Owner Login", href: "/owner/login" },
+      { label: "Owner Dashboard", href: "/owner/dashboard" },
+      { label: "Get Started", href: "/owner/setup" },
     ],
     resources: [
       { label: "DSHS Provider Lookup", href: WA_DSHS.providerSearchUrl, external: true },
@@ -36,8 +34,6 @@ export function AFHFooter() {
       { label: "RCW 70.128 AFH Law", href: "https://app.leg.wa.gov/rcw/default.aspx?cite=70.128", external: true },
     ],
     company: [
-      { label: "About Us", href: "/about" },
-      { label: "Contact", href: "/contact" },
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms of Service", href: "/terms" },
     ],
@@ -47,7 +43,7 @@ export function AFHFooter() {
     <footer className="bg-gray-900 text-white">
       {/* Main Footer */}
       <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">

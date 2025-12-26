@@ -139,27 +139,27 @@ export function WhatIsAFH() {
           <h3 className="text-2xl font-bold text-center mb-8">
             How AFHs Compare to Other Options
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full bg-white rounded-xl shadow-sm">
+          <div className="overflow-x-auto -mx-4 px-4">
+            <table className="w-full min-w-[600px] bg-white rounded-xl shadow-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-4 font-medium text-gray-500"></th>
-                  <th className="p-4 bg-teal-50">
-                    <div className="flex items-center justify-center gap-2">
-                      <Home className="h-5 w-5 text-teal-600" />
-                      <span className="font-bold text-teal-800">Adult Family Home</span>
+                  <th className="text-left p-3 md:p-4 font-medium text-gray-500 min-w-[100px]"></th>
+                  <th className="p-3 md:p-4 bg-teal-50 min-w-[140px]">
+                    <div className="flex items-center justify-center gap-1 md:gap-2">
+                      <Home className="h-4 w-4 md:h-5 md:w-5 text-teal-600" />
+                      <span className="font-bold text-teal-800 text-sm md:text-base">AFH</span>
                     </div>
                   </th>
-                  <th className="p-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <Building2 className="h-5 w-5 text-gray-400" />
-                      <span className="font-medium text-gray-600">Assisted Living</span>
+                  <th className="p-3 md:p-4 min-w-[120px]">
+                    <div className="flex items-center justify-center gap-1 md:gap-2">
+                      <Building2 className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                      <span className="font-medium text-gray-600 text-sm md:text-base">Assisted</span>
                     </div>
                   </th>
-                  <th className="p-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <Building2 className="h-5 w-5 text-gray-400" />
-                      <span className="font-medium text-gray-600">Nursing Home</span>
+                  <th className="p-3 md:p-4 min-w-[120px]">
+                    <div className="flex items-center justify-center gap-1 md:gap-2">
+                      <Building2 className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
+                      <span className="font-medium text-gray-600 text-sm md:text-base">Nursing</span>
                     </div>
                   </th>
                 </tr>
@@ -167,12 +167,12 @@ export function WhatIsAFH() {
               <tbody>
                 {comparisonPoints.map((point, index) => (
                   <tr key={point.label} className={index % 2 === 0 ? "bg-gray-50" : ""}>
-                    <td className="p-4 font-medium text-gray-700">{point.label}</td>
-                    <td className="p-4 text-center bg-teal-50/50 font-semibold text-teal-700">
+                    <td className="p-3 md:p-4 font-medium text-gray-700 text-sm md:text-base">{point.label}</td>
+                    <td className="p-3 md:p-4 text-center bg-teal-50/50 font-semibold text-teal-700 text-sm md:text-base">
                       {point.afh}
                     </td>
-                    <td className="p-4 text-center text-gray-600">{point.assistedLiving}</td>
-                    <td className="p-4 text-center text-gray-600">{point.nursingHome}</td>
+                    <td className="p-3 md:p-4 text-center text-gray-600 text-sm md:text-base">{point.assistedLiving}</td>
+                    <td className="p-3 md:p-4 text-center text-gray-600 text-sm md:text-base">{point.nursingHome}</td>
                   </tr>
                 ))}
               </tbody>

@@ -53,8 +53,8 @@ export function AFHHero() {
           </p>
 
           {/* Search Bar */}
-          <div className="max-w-xl mx-auto mb-8">
-            <div className="flex gap-2 p-2 bg-white rounded-xl shadow-lg border">
+          <div className="max-w-xl mx-auto mb-8 px-2">
+            <div className="flex flex-col sm:flex-row gap-2 p-2 bg-white rounded-xl shadow-lg border">
               <div className="relative flex-1">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
@@ -63,7 +63,7 @@ export function AFHHero() {
                   value={searchCity}
                   onChange={(e) => setSearchCity(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-10 border-0 focus-visible:ring-0 text-lg h-12"
+                  className="pl-10 border-0 focus-visible:ring-0 text-base sm:text-lg h-12"
                   list="wa-cities"
                 />
                 <datalist id="wa-cities">
@@ -75,7 +75,7 @@ export function AFHHero() {
               <Button
                 size="lg"
                 onClick={handleSearch}
-                className="bg-teal-600 hover:bg-teal-700 h-12 px-6"
+                className="bg-teal-600 hover:bg-teal-700 h-12 px-6 w-full sm:w-auto"
               >
                 <Search className="h-5 w-5 mr-2" />
                 Search
@@ -89,18 +89,18 @@ export function AFHHero() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span>DSHS Licensed Homes</span>
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+              <span>DSHS Licensed</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span>Real-Time Availability</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+              <span>Real-Time Beds</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span>100% Free for Families</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+              <span>Free for Families</span>
             </div>
           </div>
         </div>

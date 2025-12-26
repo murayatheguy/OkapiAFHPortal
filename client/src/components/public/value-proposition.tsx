@@ -67,7 +67,7 @@ export function ValueProposition() {
         { icon: Activity, text: "Incident logs" },
       ],
       cta: "Owner Login",
-      ctaLink: "/login",
+      ctaLink: "/owner/login",
     },
     {
       id: "prove-care",
@@ -88,7 +88,7 @@ export function ValueProposition() {
         { icon: Shield, text: "RCW/WAC compliant" },
       ],
       cta: "Learn More",
-      ctaLink: "/compliance",
+      ctaLink: "/owner/login",
     },
   ];
 
@@ -251,7 +251,7 @@ export function ValuePropositionCompact() {
             <Button
               size="sm"
               className="bg-teal-600 hover:bg-teal-700"
-              onClick={() => setLocation("/login")}
+              onClick={() => setLocation("/owner/login")}
             >
               Owner Login
             </Button>
