@@ -7,6 +7,7 @@ import { OwnerAuthProvider } from "@/lib/owner-auth";
 import { StaffAuthProvider, useStaffAuth } from "@/lib/staff-auth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import HomeAFH from "@/pages/home-afh";
 import SearchResults from "@/pages/search-results";
 import FacilityDetails from "@/pages/facility-details";
 import OwnerPortal from "@/pages/owner-portal";
@@ -46,6 +47,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/home-new" component={HomeAFH} />
       <Route path="/search" component={SearchResults} />
       <Route path="/homes" component={SearchResults} />
       <Route path="/facility/:id" component={FacilityDetails} />
