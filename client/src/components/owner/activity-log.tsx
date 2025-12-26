@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, subDays } from "date-fns";
+import { DateRange } from "react-day-picker";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -15,10 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Activity,
   Users,
@@ -44,6 +44,7 @@ import {
   Filter,
   Calendar,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 
 interface ActivityLogEntry {
@@ -135,26 +136,36 @@ const CATEGORY_LABELS: Record<string, string> = {
 interface ActivityLogProps {
   facilityId: string;
   compact?: boolean;
+  onViewAll?: () => void;
 }
 
-export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
+export function ActivityLog({ facilityId, compact = false, onViewAll }: ActivityLogProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<string>("7");
+  // Default to last 7 days
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const today = new Date();
+    return { from: subDays(today, 7), to: today };
+  });
 
-  const getDateRange = () => {
-    const days = parseInt(dateRange);
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+  const getDateParams = () => {
+    if (dateRange?.from) {
+      return {
+        startDate: dateRange.from.toISOString().split("T")[0],
+        endDate: dateRange.to
+          ? dateRange.to.toISOString().split("T")[0]
+          : dateRange.from.toISOString().split("T")[0],
+      };
+    }
+    // Default to all time if no range selected
     return {
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
+      startDate: "2020-01-01",
+      endDate: new Date().toISOString().split("T")[0],
     };
   };
 
-  const { startDate, endDate } = getDateRange();
+  const { startDate, endDate } = getDateParams();
 
-  const { data: logs, isLoading } = useQuery<ActivityLogEntry[]>({
+  const { data: logs, isLoading, refetch } = useQuery<ActivityLogEntry[]>({
     queryKey: [
       "activity-log",
       facilityId,
@@ -166,7 +177,7 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
       const params = new URLSearchParams({
         startDate,
         endDate,
-        limit: compact ? "10" : "100",
+        limit: compact ? "10" : "200",
       });
       if (selectedCategory !== "all") {
         params.append("category", selectedCategory);
@@ -206,6 +217,13 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
     return CATEGORY_COLORS[category || ""] || "bg-gray-100 text-gray-800";
   };
 
+  const hasActiveFilters = dateRange || selectedCategory !== "all";
+
+  const clearFilters = () => {
+    setDateRange(undefined);
+    setSelectedCategory("all");
+  };
+
   if (compact) {
     return (
       <Card>
@@ -215,9 +233,11 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
               <Activity className="h-4 w-4" />
               Recent Activity
             </CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs">
-              View All <ChevronRight className="h-3 w-3 ml-1" />
-            </Button>
+            {onViewAll && (
+              <Button variant="ghost" size="sm" className="text-xs" onClick={onViewAll}>
+                View All <ChevronRight className="h-3 w-3 ml-1" />
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -333,7 +353,8 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
                 <Badge
                   key={cat}
                   variant="outline"
-                  className={`${getCategoryColor(cat)} border-0 gap-1.5`}
+                  className={`${getCategoryColor(cat)} border-0 gap-1.5 cursor-pointer hover:opacity-80`}
+                  onClick={() => setSelectedCategory(cat)}
                 >
                   {getCategoryIcon(cat)}
                   {CATEGORY_LABELS[cat] || cat}: {count}
@@ -347,37 +368,113 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
       {/* Filters */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Activity Log</CardTitle>
-            <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-[140px] h-8">
-                  <SelectValue placeholder="Time range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Last 24 hours</SelectItem>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[160px] h-8">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="auth">Authentication</SelectItem>
-                  <SelectItem value="resident">Residents</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="medication">Medications</SelectItem>
-                  <SelectItem value="incident">Incidents</SelectItem>
-                  <SelectItem value="form">Forms</SelectItem>
-                  <SelectItem value="credential">Credentials</SelectItem>
-                  <SelectItem value="facility">Facility</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                Activity Log
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="text-xs">
+                    Filtered
+                  </Badge>
+                )}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetch()}
+                  className="h-8"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
+
+            {/* Filter Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Date Range Picker */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Date Range</span>
+                <DateRangePicker
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                  placeholder="All time"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Category</span>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[160px] h-9">
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="auth">Authentication</SelectItem>
+                    <SelectItem value="resident">Residents</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="medication">Medications</SelectItem>
+                    <SelectItem value="incident">Incidents</SelectItem>
+                    <SelectItem value="form">Forms</SelectItem>
+                    <SelectItem value="credential">Credentials</SelectItem>
+                    <SelectItem value="facility">Facility</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground invisible">Clear</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-9 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear filters
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Active Filter Summary */}
+            {hasActiveFilters && (
+              <div className="text-sm text-muted-foreground">
+                Showing activity
+                {dateRange?.from && (
+                  <>
+                    {" "}from{" "}
+                    <span className="font-medium text-foreground">
+                      {format(dateRange.from, "MMM d, yyyy")}
+                    </span>
+                    {dateRange.to && (
+                      <>
+                        {" "}to{" "}
+                        <span className="font-medium text-foreground">
+                          {format(dateRange.to, "MMM d, yyyy")}
+                        </span>
+                      </>
+                    )}
+                  </>
+                )}
+                {selectedCategory !== "all" && (
+                  <>
+                    {" "}in{" "}
+                    <span className="font-medium text-foreground">
+                      {CATEGORY_LABELS[selectedCategory] || selectedCategory}
+                    </span>
+                  </>
+                )}
+                {logs && (
+                  <>
+                    {" "}({logs.length} {logs.length === 1 ? "entry" : "entries"})
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -416,6 +513,12 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
                           </span>
                         )}
                         <span>·</span>
+                        <span title={format(new Date(log.createdAt), "PPpp")}>
+                          {formatDistanceToNow(new Date(log.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                        <span>·</span>
                         <span>
                           {format(new Date(log.createdAt), "MMM d, yyyy h:mm a")}
                         </span>
@@ -434,7 +537,9 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                No activity found for the selected filters
+                {hasActiveFilters
+                  ? "No activity found for the selected filters"
+                  : "No activity found"}
               </div>
             )}
           </ScrollArea>
@@ -445,6 +550,12 @@ export function ActivityLog({ facilityId, compact = false }: ActivityLogProps) {
 }
 
 // Widget version for dashboard
-export function ActivityLogWidget({ facilityId }: { facilityId: string }) {
-  return <ActivityLog facilityId={facilityId} compact />;
+export function ActivityLogWidget({
+  facilityId,
+  onViewAll
+}: {
+  facilityId: string;
+  onViewAll?: () => void;
+}) {
+  return <ActivityLog facilityId={facilityId} compact onViewAll={onViewAll} />;
 }
