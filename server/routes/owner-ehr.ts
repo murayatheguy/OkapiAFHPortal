@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { storage } from "../storage";
 import { ActivityLogger } from "../lib/activity-logger";
 import { db } from "../db";
-import { securitySettings } from "@shared/schema";
+import { securitySettings, facilityCapabilities } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { DEFAULT_SECURITY_SETTINGS } from "../middleware/security";
 
@@ -1916,6 +1916,115 @@ export function registerOwnerEhrRoutes(app: Express) {
       } catch (error) {
         console.error("Error updating security settings:", error);
         res.status(500).json({ error: "Failed to update security settings" });
+      }
+    }
+  );
+
+  // ============================================================================
+  // FACILITY CAPABILITIES FOR CARE MATCHING
+  // ============================================================================
+
+  /**
+   * Get facility capabilities for care matching
+   */
+  app.get(
+    "/api/owners/facilities/:facilityId/capabilities",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+
+        const [capabilities] = await db
+          .select()
+          .from(facilityCapabilities)
+          .where(eq(facilityCapabilities.facilityId, facilityId))
+          .limit(1);
+
+        if (!capabilities) {
+          return res.status(404).json(null);
+        }
+
+        res.json(capabilities);
+      } catch (error) {
+        console.error("Error fetching facility capabilities:", error);
+        res.status(500).json({ error: "Failed to fetch capabilities" });
+      }
+    }
+  );
+
+  /**
+   * Update facility capabilities for care matching (upsert)
+   */
+  app.put(
+    "/api/owners/facilities/:facilityId/capabilities",
+    requireOwnerAuth,
+    requireFacilityOwnership,
+    async (req, res) => {
+      try {
+        const { facilityId } = req.params;
+        const {
+          specializations,
+          medicalServices,
+          adlCapabilities,
+          paymentAccepted,
+          pricing,
+          amenities,
+          staffing,
+          culturalServices,
+          availability,
+        } = req.body;
+
+        // Check if capabilities exist
+        const [existing] = await db
+          .select()
+          .from(facilityCapabilities)
+          .where(eq(facilityCapabilities.facilityId, facilityId))
+          .limit(1);
+
+        if (existing) {
+          // Update existing capabilities
+          const [updated] = await db
+            .update(facilityCapabilities)
+            .set({
+              specializations,
+              medicalServices,
+              adlCapabilities,
+              paymentAccepted,
+              pricing,
+              amenities,
+              staffing,
+              culturalServices,
+              availability,
+              updatedAt: new Date(),
+            })
+            .where(eq(facilityCapabilities.facilityId, facilityId))
+            .returning();
+
+          return res.json(updated);
+        } else {
+          // Insert new capabilities
+          const [created] = await db
+            .insert(facilityCapabilities)
+            .values({
+              facilityId,
+              specializations,
+              medicalServices,
+              adlCapabilities,
+              paymentAccepted,
+              pricing,
+              amenities,
+              staffing,
+              culturalServices,
+              availability,
+            })
+            .returning();
+
+          return res.json(created);
+        }
+      } catch (error) {
+        console.error("Error saving facility capabilities:", error);
+        res.status(500).json({ error: "Failed to save capabilities" });
       }
     }
   );

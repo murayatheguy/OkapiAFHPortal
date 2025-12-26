@@ -52,6 +52,33 @@ export async function searchFacilities(params?: {
   return response.json();
 }
 
+// Facilities with Capabilities API (for care matching)
+export async function searchFacilitiesWithCapabilities(params?: {
+  city?: string;
+  county?: string;
+  specialties?: string[];
+  acceptsMedicaid?: boolean;
+  availableBeds?: boolean;
+}): Promise<(Facility & { capabilities: any })[]> {
+  const searchParams = new URLSearchParams();
+
+  if (params?.city) searchParams.append("city", params.city);
+  if (params?.county) searchParams.append("county", params.county);
+  if (params?.specialties) {
+    params.specialties.forEach(s => searchParams.append("specialties", s));
+  }
+  if (params?.acceptsMedicaid !== undefined) {
+    searchParams.append("acceptsMedicaid", String(params.acceptsMedicaid));
+  }
+  if (params?.availableBeds !== undefined) {
+    searchParams.append("availableBeds", String(params.availableBeds));
+  }
+
+  const response = await fetch(`${API_BASE}/facilities/with-capabilities?${searchParams}`, fetchWithCredentials());
+  if (!response.ok) throw new Error("Failed to fetch facilities with capabilities");
+  return response.json();
+}
+
 export async function getFacility(id: string): Promise<Facility> {
   const response = await fetch(`${API_BASE}/facilities/${id}`, fetchWithCredentials());
   if (!response.ok) throw new Error("Failed to fetch facility");

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
-import { getFeaturedFacilities, searchFacilities, autocompleteFacilities, type AutocompleteResult } from "@/lib/api";
+import { getFeaturedFacilities, searchFacilities, searchFacilitiesWithCapabilities, autocompleteFacilities, type AutocompleteResult } from "@/lib/api";
 import { getFacilityPhotos } from "@/lib/facility-photos";
 import { Home as HomeIcon, Building2, Hospital, Heart, Sparkles } from "lucide-react";
 import { CareNeedsWizard } from "@/components/public/care-needs-wizard";
@@ -17,6 +17,7 @@ const FACILITY_TYPES = [
 ] as const;
 
 // Calculate match score for a facility based on care needs
+// Uses facility.capabilities when available for enhanced matching
 function calculateMatchScore(facility: any, needs: CareNeeds): MatchScore {
   const reasons: MatchScore['reasons'] = [];
   let careMatch = 50;
@@ -25,10 +26,30 @@ function calculateMatchScore(facility: any, needs: CareNeeds): MatchScore {
   let servicesMatch = 50;
   let availabilityMatch = 50;
 
-  // Care type matching
+  const capabilities = facility.capabilities;
+
+  // Care type matching - use capabilities if available
   if (needs.careType !== 'any') {
     const facilityType = facility.facilityType?.toLowerCase() || '';
-    if (facilityType === needs.careType || facilityType.includes(needs.careType)) {
+    const careTypes = capabilities?.careTypes;
+
+    // Check capabilities first
+    if (careTypes) {
+      const careTypeMap: Record<string, keyof typeof careTypes> = {
+        'afh': 'afh',
+        'alf': 'assistedLiving',
+        'snf': 'skilledNursing',
+        'hospice': 'hospice',
+      };
+      const capabilityKey = careTypeMap[needs.careType];
+      if (capabilityKey && careTypes[capabilityKey]) {
+        careMatch = 100;
+        reasons.push({ category: 'specialty', positive: true, text: 'Offers your care type', weight: 20 });
+      } else {
+        careMatch = 30;
+        reasons.push({ category: 'specialty', positive: false, text: 'Different care type', weight: 0 });
+      }
+    } else if (facilityType === needs.careType || facilityType.includes(needs.careType)) {
       careMatch = 100;
       reasons.push({ category: 'specialty', positive: true, text: 'Matches care type', weight: 20 });
     } else {
@@ -39,23 +60,67 @@ function calculateMatchScore(facility: any, needs: CareNeeds): MatchScore {
     careMatch = 80;
   }
 
-  // Medical needs matching
+  // Medical needs matching - enhanced with capabilities
   const specialties = facility.specialties || [];
   const specialtiesLower = specialties.map((s: string) => s.toLowerCase());
+  const specializations = capabilities?.specializations;
+  const medicalServices = capabilities?.medicalServices;
   let matchedNeeds = 0;
+  let totalNeedsChecked = 0;
 
   needs.medicalNeeds.forEach((need) => {
-    const needLabels: Record<string, string[]> = {
-      dementia: ['dementia', 'memory care', 'alzheimer'],
-      mental_health: ['mental health', 'behavioral', 'psychiatric'],
-      developmental_disabilities: ['developmental', 'disabilities', 'dd'],
-      diabetes: ['diabetes', 'diabetic'],
-      mobility: ['mobility', 'wheelchair', 'ambulatory'],
-    };
-    const searchTerms = needLabels[need] || [need.replace('_', ' ')];
-    if (searchTerms.some(term => specialtiesLower.some((s: string) => s.includes(term)))) {
-      matchedNeeds++;
+    totalNeedsChecked++;
+    let matched = false;
+
+    // Check capabilities specializations first
+    if (specializations) {
+      const specializationMap: Record<string, keyof typeof specializations> = {
+        dementia: 'dementia',
+        mental_health: 'mentalHealth',
+        developmental_disabilities: 'developmentalDisabilities',
+        diabetes: 'diabetes',
+        hospice: 'hospicePalliative',
+        parkinsons: 'parkinsons',
+        brain_injury: 'traumaticBrainInjury',
+      };
+      const specKey = specializationMap[need];
+      if (specKey && specializations[specKey]) {
+        matched = true;
+      }
     }
+
+    // Check medical services for specific needs
+    if (!matched && medicalServices) {
+      const serviceMap: Record<string, (keyof typeof medicalServices)[]> = {
+        diabetes: ['bloodGlucoseMonitoring', 'injections'],
+        wound_care: ['woundCare'],
+        catheter: ['catheterCare'],
+        oxygen: ['oxygenTherapy'],
+        feeding_tube: ['feedingTube'],
+        medication_management: ['medicationManagement', 'medicationAdministration'],
+      };
+      const serviceKeys = serviceMap[need] || [];
+      if (serviceKeys.some(key => medicalServices[key])) {
+        matched = true;
+      }
+    }
+
+    // Fall back to specialty text matching
+    if (!matched) {
+      const needLabels: Record<string, string[]> = {
+        dementia: ['dementia', 'memory care', 'alzheimer'],
+        mental_health: ['mental health', 'behavioral', 'psychiatric'],
+        developmental_disabilities: ['developmental', 'disabilities', 'dd'],
+        diabetes: ['diabetes', 'diabetic'],
+        mobility: ['mobility', 'wheelchair', 'ambulatory'],
+      };
+      const searchTerms = needLabels[need] || [need.replace('_', ' ')];
+      if (searchTerms.some(term => specialtiesLower.some((s: string) => s.includes(term)))) {
+        matched = true;
+      }
+    }
+
+    if (matched) matchedNeeds++;
   });
 
   if (needs.medicalNeeds.length > 0) {
@@ -92,8 +157,10 @@ function calculateMatchScore(facility: any, needs: CareNeeds): MatchScore {
     locationMatch = 70;
   }
 
-  // Budget matching
-  const facilityPrice = facility.priceMin || 0;
+  // Budget matching - enhanced with capabilities pricing
+  const pricing = capabilities?.pricing;
+  const facilityPrice = pricing?.baseRateMin || facility.priceMin || 0;
+
   if (facilityPrice > 0 && needs.budget.max > 0) {
     if (facilityPrice <= needs.budget.max && facilityPrice >= needs.budget.min) {
       budgetMatch = 100;
@@ -110,17 +177,55 @@ function calculateMatchScore(facility: any, needs: CareNeeds): MatchScore {
     reasons.push({ category: 'price', positive: false, text: 'Contact for pricing', weight: 5 });
   }
 
-  // Availability matching
-  if (facility.availableBeds > 0) {
+  // Payment type matching - check if facility accepts needed payment methods
+  const paymentAccepted = capabilities?.paymentAccepted;
+  if (paymentAccepted && needs.budget.hasMedicaid) {
+    if (paymentAccepted.medicaidCOPES || paymentAccepted.medicaidWaiver) {
+      budgetMatch = Math.min(100, budgetMatch + 20);
+      reasons.push({ category: 'price', positive: true, text: 'Accepts Medicaid', weight: 18 });
+    } else {
+      budgetMatch = Math.max(20, budgetMatch - 30);
+      reasons.push({ category: 'price', positive: false, text: 'May not accept Medicaid', weight: 0 });
+    }
+  }
+
+  // Availability matching - enhanced with capabilities
+  const availability = capabilities?.availability;
+  const availableBeds = availability?.availableBeds ?? facility.availableBeds ?? 0;
+  const acceptingNew = availability?.acceptingNewResidents ?? true;
+
+  if (availableBeds > 0 && acceptingNew) {
     availabilityMatch = 100;
     if (needs.timeline === 'immediate') {
       reasons.push({ category: 'availability', positive: true, text: 'Immediate availability', weight: 20 });
     } else {
       reasons.push({ category: 'availability', positive: true, text: 'Has openings', weight: 10 });
     }
+  } else if (!acceptingNew) {
+    availabilityMatch = 20;
+    reasons.push({ category: 'availability', positive: false, text: 'Not accepting new residents', weight: 0 });
   } else {
     availabilityMatch = needs.timeline === 'planning' ? 60 : 30;
     reasons.push({ category: 'availability', positive: false, text: 'May have waitlist', weight: 5 });
+  }
+
+  // Bonus for amenities matching preferences (if capabilities exist)
+  const amenities = capabilities?.amenities;
+  if (amenities && needs.preferences.length > 0) {
+    let amenityBonus = 0;
+    if (needs.preferences.includes('pets_allowed') && amenities.petFriendly) {
+      amenityBonus += 5;
+      reasons.push({ category: 'services', positive: true, text: 'Pet friendly', weight: 8 });
+    }
+    if (needs.preferences.includes('private_room') && amenities.privateRooms) {
+      amenityBonus += 5;
+      reasons.push({ category: 'services', positive: true, text: 'Private rooms available', weight: 8 });
+    }
+    if (needs.preferences.includes('outdoor_space') && (amenities.outdoorSpace || amenities.garden)) {
+      amenityBonus += 5;
+      reasons.push({ category: 'services', positive: true, text: 'Outdoor space available', weight: 8 });
+    }
+    servicesMatch = Math.min(100, servicesMatch + amenityBonus);
   }
 
   // Calculate overall score (weighted average)
@@ -259,7 +364,7 @@ export default function Home() {
     setLocation(`/search${params.toString() ? '?' + params.toString() : ''}`);
   };
 
-  // Handle wizard completion - fetch and score facilities
+  // Handle wizard completion - fetch and score facilities using capabilities
   const handleWizardComplete = async (needs: CareNeeds) => {
     setCareNeeds(needs);
     setShowWizard(false);
@@ -270,7 +375,6 @@ export default function Home() {
       // Build search params from needs
       const searchParams: any = {};
       if (needs.location.city) searchParams.city = needs.location.city;
-      if (needs.careType !== 'any') searchParams.facilityType = needs.careType;
       if (needs.medicalNeeds.length > 0) {
         // Map medical needs to specialty search terms
         const specialtyMap: Record<string, string> = {
@@ -284,16 +388,17 @@ export default function Home() {
         if (specialties.length > 0) searchParams.specialties = specialties;
       }
 
-      // Fetch facilities
-      const facilities = await searchFacilities(searchParams);
+      // Fetch facilities with capabilities for enhanced matching
+      const facilities = await searchFacilitiesWithCapabilities(searchParams);
 
-      // Calculate match scores for each facility
+      // Calculate match scores for each facility using capabilities data
       const facilitiesWithScores: FacilityWithMatch[] = facilities.map((f: any) => ({
         ...f,
         matchScore: calculateMatchScore(f, needs),
       }));
 
-      // Sort by match score
+      // Sort by match score (highest first)
+      // Facilities with capabilities data that don't match get lower scores
       facilitiesWithScores.sort((a, b) => b.matchScore.overall - a.matchScore.overall);
 
       setMatchedFacilities(facilitiesWithScores.slice(0, 20));

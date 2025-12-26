@@ -39,6 +39,7 @@ import { NurseDelegationPRNWizard } from "@/components/owner/forms/nurse-delegat
 import { AbuseNeglect27076Wizard } from "@/components/owner/forms/abuse-neglect-27076-wizard";
 import { ActivityLog, ActivityLogWidget } from "@/components/owner/activity-log";
 import { SecuritySettings } from "@/components/owner/security-settings";
+import { FacilityCapabilitiesForm } from "@/components/owner/facility-capabilities-form";
 
 const TEAM_ROLES = [
   { value: "caregiver", label: "Caregiver" },
@@ -1358,6 +1359,11 @@ export default function OwnerDashboardPage() {
                         <SecuritySettings facilityId={selectedFacility.id} />
                       </CardContent>
                     </Card>
+                  )}
+
+                  {/* Facility Capabilities for Care Matching */}
+                  {selectedFacility && (
+                    <FacilityCapabilitiesForm facilityId={selectedFacility.id} />
                   )}
                 </div>
               )}

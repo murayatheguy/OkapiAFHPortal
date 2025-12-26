@@ -8,6 +8,9 @@ import crypto from "crypto";
 import { registerEhrRoutes } from "./routes/ehr";
 import { registerOwnerEhrRoutes } from "./routes/owner-ehr";
 import { registerPdfRoutes } from "./routes/pdf-generator";
+import { facilityCapabilities } from "@shared/schema";
+import { db } from "./db";
+import { eq, inArray } from "drizzle-orm";
 import { ActivityLogger } from "./lib/activity-logger";
 import {
   isAccountLocked,
@@ -49,6 +52,68 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting featured facilities:", error);
       res.status(500).json({ error: "Failed to get featured facilities" });
+    }
+  });
+
+  // Get facilities with their capabilities for care matching
+  app.get("/api/facilities/with-capabilities", async (req, res) => {
+    try {
+      const { city, county, specialties, acceptsMedicaid, availableBeds } = req.query;
+
+      const searchParams: any = {};
+
+      if (city) searchParams.city = String(city);
+      if (county) searchParams.county = String(county);
+      if (specialties) {
+        searchParams.specialties = typeof specialties === 'string'
+          ? [specialties]
+          : specialties;
+      }
+      if (acceptsMedicaid !== undefined) {
+        searchParams.acceptsMedicaid = acceptsMedicaid === 'true';
+      }
+      const filterByAvailableBeds = availableBeds === 'true';
+
+      const facilities = await storage.searchFacilities(searchParams);
+
+      // Calculate availableBeds dynamically for each facility
+      const facilitiesWithCalculatedBeds = await Promise.all(
+        facilities.map(async (facility) => {
+          const activeResidentCount = await storage.getActiveResidentCount(facility.id);
+          const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
+          return {
+            ...facility,
+            availableBeds: calculatedAvailableBeds,
+            currentOccupancy: activeResidentCount
+          };
+        })
+      );
+
+      // Apply availableBeds filter if requested
+      const filteredFacilities = filterByAvailableBeds
+        ? facilitiesWithCalculatedBeds.filter(f => f.availableBeds > 0)
+        : facilitiesWithCalculatedBeds;
+
+      // Fetch capabilities for all facilities
+      const facilityIds = filteredFacilities.map(f => f.id);
+      const capabilities = await db
+        .select()
+        .from(facilityCapabilities)
+        .where(inArray(facilityCapabilities.facilityId, facilityIds.length > 0 ? facilityIds : ['']));
+
+      // Create a map for quick lookup
+      const capabilitiesMap = new Map(capabilities.map(c => [c.facilityId, c]));
+
+      // Combine facilities with their capabilities
+      const facilitiesWithCapabilities = filteredFacilities.map(f => ({
+        ...f,
+        capabilities: capabilitiesMap.get(f.id) || null
+      }));
+
+      res.json(facilitiesWithCapabilities);
+    } catch (error) {
+      console.error("Error getting facilities with capabilities:", error);
+      res.status(500).json({ error: "Failed to get facilities with capabilities" });
     }
   });
 

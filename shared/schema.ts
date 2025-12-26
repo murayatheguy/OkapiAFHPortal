@@ -1502,3 +1502,215 @@ export const passwordHistory = pgTable("password_history", {
 export const insertPasswordHistorySchema = createInsertSchema(passwordHistory).omit({ id: true, createdAt: true });
 export type PasswordHistory = typeof passwordHistory.$inferSelect;
 export type InsertPasswordHistory = z.infer<typeof insertPasswordHistorySchema>;
+
+// ============================================
+// FACILITY CAPABILITIES FOR CARE MATCHING
+// ============================================
+
+// Type definitions for facility capabilities JSON fields
+export type CareTypesCapability = {
+  afh: boolean;
+  assistedLiving: boolean;
+  skilledNursing: boolean;
+  hospice: boolean;
+  respiteCare: boolean;
+  adultDaycare: boolean;
+};
+
+export type SpecializationsCapability = {
+  dementia: boolean;
+  alzheimers: boolean;
+  mentalHealth: boolean;
+  developmentalDisabilities: boolean;
+  traumaticBrainInjury: boolean;
+  parkinsons: boolean;
+  diabetes: boolean;
+  dialysis: boolean;
+  hospicePalliative: boolean;
+  postSurgeryRehab: boolean;
+  bariatric: boolean;
+  youngAdults: boolean;
+  veterans: boolean;
+};
+
+export type MedicalServicesCapability = {
+  nursingCare24hr: boolean;
+  rnOnSite: boolean;
+  lpnOnSite: boolean;
+  medicationManagement: boolean;
+  medicationAdministration: boolean;
+  injections: boolean;
+  woundCare: boolean;
+  catheterCare: boolean;
+  ostomyCare: boolean;
+  oxygenTherapy: boolean;
+  cpapBipap: boolean;
+  feedingTube: boolean;
+  physicalTherapy: boolean;
+  occupationalTherapy: boolean;
+  speechTherapy: boolean;
+  bloodGlucoseMonitoring: boolean;
+  vitalSignsMonitoring: boolean;
+  hospiceCoordination: boolean;
+};
+
+export type AdlLevel = 'independent-only' | 'some-assistance' | 'full-assistance' | 'all-levels';
+export type MobilityLevel = 'ambulatory-only' | 'wheelchair' | 'bedridden' | 'all-levels';
+export type TransferLevel = 'independent-only' | 'one-person' | 'two-person' | 'hoyer-lift' | 'all-levels';
+export type ContinenceLevel = 'continent-only' | 'incontinent-ok' | 'all-levels';
+
+export type AdlCapabilitiesType = {
+  bathing: AdlLevel;
+  dressing: AdlLevel;
+  eating: AdlLevel;
+  mobility: MobilityLevel;
+  toileting: AdlLevel;
+  transferring: TransferLevel;
+  continence: ContinenceLevel;
+};
+
+export type PaymentAcceptedCapability = {
+  privatePay: boolean;
+  medicaidCOPES: boolean;
+  medicaidWaiver: boolean;
+  medicare: boolean;
+  longTermCareInsurance: boolean;
+  vaAidAttendance: boolean;
+  vaCommunityLiving: boolean;
+  slidingScale: boolean;
+  financialAssistance: boolean;
+};
+
+export type PricingCapability = {
+  baseRateMin: number;
+  baseRateMax: number;
+  medicaidRate: number | null;
+  additionalCareRates: {
+    level1: number;
+    level2: number;
+    level3: number;
+  };
+  includesInPricing: string[];
+  additionalFees: { name: string; amount: number }[];
+};
+
+export type AmenitiesCapability = {
+  privateRooms: boolean;
+  sharedRooms: boolean;
+  privateBathroom: boolean;
+  wheelchairAccessible: boolean;
+  hospitalBeds: boolean;
+  hoyerLift: boolean;
+  walkInShower: boolean;
+  emergencyCallSystem: boolean;
+  securedMemoryCare: boolean;
+  wanderPrevention: boolean;
+  outdoorSpace: boolean;
+  garden: boolean;
+  petFriendly: boolean;
+  petsOnSite: boolean;
+  smokingAllowed: boolean;
+  wifi: boolean;
+  cableTV: boolean;
+  airConditioning: boolean;
+  homeCookedMeals: boolean;
+  specialDiets: boolean;
+  activities: boolean;
+  transportation: boolean;
+  laundry: boolean;
+  housekeeping: boolean;
+};
+
+export type StaffingCapability = {
+  staffToResidentRatio: string;
+  rnHoursPerWeek: number;
+  lpnHoursPerWeek: number;
+  cnaCount: number;
+  overnightStaffAwake: boolean;
+  bilingualStaff: boolean;
+  languages: string[];
+  specializedTraining: string[];
+};
+
+export type CulturalServicesCapability = {
+  languagesSpoken: string[];
+  culturalFoods: string[];
+  religiousServices: boolean;
+  religiousAffiliation: string | null;
+  lgbtqFriendly: boolean;
+  culturalActivities: string[];
+};
+
+export type AvailabilityCapability = {
+  totalBeds: number;
+  currentOccupancy: number;
+  availableBeds: number;
+  waitlistLength: number;
+  acceptingNewResidents: boolean;
+  respiteCareAvailable: boolean;
+};
+
+export type AdditionalInfoCapability = {
+  yearEstablished: number | null;
+  ownerOperatedOnSite: boolean;
+  visitingHours: string;
+  trialStayAvailable: boolean;
+  minimumStayDays: number | null;
+  maxResidentAge: number | null;
+  minResidentAge: number | null;
+};
+
+// Facility Capabilities table for detailed matching
+export const facilityCapabilities = pgTable("facility_capabilities", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").notNull().references(() => facilities.id, { onDelete: "cascade" }).unique(),
+
+  // Care Types Offered
+  careTypes: json("care_types").$type<CareTypesCapability>(),
+
+  // Specializations (what conditions/populations they serve)
+  specializations: json("specializations").$type<SpecializationsCapability>(),
+
+  // Medical Services Provided
+  medicalServices: json("medical_services").$type<MedicalServicesCapability>(),
+
+  // ADL Assistance Levels (what level of care they can provide)
+  adlCapabilities: json("adl_capabilities").$type<AdlCapabilitiesType>(),
+
+  // Payment Types Accepted
+  paymentAccepted: json("payment_accepted").$type<PaymentAcceptedCapability>(),
+
+  // Pricing
+  pricing: json("pricing").$type<PricingCapability>(),
+
+  // Amenities & Features
+  amenities: json("amenities").$type<AmenitiesCapability>(),
+
+  // Staff Information
+  staffing: json("staffing").$type<StaffingCapability>(),
+
+  // Cultural & Religious
+  culturalServices: json("cultural_services").$type<CulturalServicesCapability>(),
+
+  // Availability
+  availability: json("availability").$type<AvailabilityCapability>(),
+
+  // Additional Info
+  additionalInfo: json("additional_info").$type<AdditionalInfoCapability>(),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("facility_capabilities_facility_idx").on(table.facilityId),
+}));
+
+export const facilityCapabilitiesRelations = relations(facilityCapabilities, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [facilityCapabilities.facilityId],
+    references: [facilities.id],
+  }),
+}));
+
+export const insertFacilityCapabilitiesSchema = createInsertSchema(facilityCapabilities).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFacilityCapabilities = z.infer<typeof insertFacilityCapabilitiesSchema>;
+export type FacilityCapabilities = typeof facilityCapabilities.$inferSelect;
