@@ -10,8 +10,8 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "seed": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-test-data.ts', {stdio: 'inherit', env: {...process.env}})\"",
-    "seed:test": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-test-data.ts', {stdio: 'inherit', env: {...process.env}})\""
+    "seed": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-test-afhs.ts', {stdio: 'inherit', env: {...process.env}})\"",
+    "seed:full": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-test-data.ts', {stdio: 'inherit', env: {...process.env}})\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
