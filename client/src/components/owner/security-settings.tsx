@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Shield,
   Lock,
@@ -133,56 +134,47 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-amber-600/20 flex items-center justify-center">
-            <Shield className="h-5 w-5 text-amber-500" />
+    <Card className="mt-6">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-teal-100">
+              <Shield className="h-5 w-5 text-teal-600" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">HIPAA Security Settings</CardTitle>
+              <CardDescription>Configure security policies for your facility</CardDescription>
+            </div>
           </div>
-          <div>
-            <h2
-              className="text-xl font-semibold text-amber-100"
-              style={{ fontFamily: "'Cormorant', serif" }}
-            >
-              HIPAA Security Settings
-            </h2>
-            <p className="text-sm text-stone-400">
-              Configure security policies for your facility
-            </p>
-          </div>
+          <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            HIPAA Compliant
+          </Badge>
         </div>
-        <Badge
-          variant="outline"
-          className="border-green-600/50 text-green-400 bg-green-900/20"
-        >
-          <CheckCircle2 className="h-3 w-3 mr-1" />
-          HIPAA Compliant
-        </Badge>
-      </div>
+      </CardHeader>
 
-      {/* Session Security */}
-      <Card className="bg-stone-900 border-amber-900/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-amber-100 text-lg">
-            <Clock className="h-5 w-5 text-amber-500" />
-            Session Security
-          </CardTitle>
-          <CardDescription className="text-stone-400">
+      <CardContent className="space-y-6">
+        {/* Session Security */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-gray-600" />
+            <h3 className="font-medium text-gray-900">Session Security</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Control session timeout and concurrent access
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-stone-300">Session Timeout (minutes)</Label>
+              <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
               <Input
+                id="sessionTimeout"
                 type="number"
                 min={5}
                 max={60}
@@ -190,16 +182,16 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                 onChange={(e) =>
                   updateField("sessionTimeoutMinutes", parseInt(e.target.value) || 15)
                 }
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
-              <p className="text-xs text-stone-500 flex items-center gap-1">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Info className="h-3 w-3" />
                 HIPAA recommends 15 minutes or less
               </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-stone-300">Max Concurrent Sessions</Label>
+              <Label htmlFor="maxSessions">Max Concurrent Sessions</Label>
               <Input
+                id="maxSessions"
                 type="number"
                 min={1}
                 max={10}
@@ -207,32 +199,31 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                 onChange={(e) =>
                   updateField("maxConcurrentSessions", parseInt(e.target.value) || 3)
                 }
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-muted-foreground">
                 Limit simultaneous logins per user
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Login Security */}
-      <Card className="bg-stone-900 border-amber-900/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-amber-100 text-lg">
-            <Lock className="h-5 w-5 text-amber-500" />
-            Login Security
-          </CardTitle>
-          <CardDescription className="text-stone-400">
+        <Separator />
+
+        {/* Login Security */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-gray-600" />
+            <h3 className="font-medium text-gray-900">Login Security</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Protect against brute force attacks
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-stone-300">Max Failed Login Attempts</Label>
+              <Label htmlFor="maxAttempts">Max Failed Login Attempts</Label>
               <Input
+                id="maxAttempts"
                 type="number"
                 min={3}
                 max={10}
@@ -240,15 +231,15 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                 onChange={(e) =>
                   updateField("maxFailedLoginAttempts", parseInt(e.target.value) || 5)
                 }
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-muted-foreground">
                 Account locks after this many failed attempts
               </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-stone-300">Lockout Duration (minutes)</Label>
+              <Label htmlFor="lockoutDuration">Lockout Duration (minutes)</Label>
               <Input
+                id="lockoutDuration"
                 type="number"
                 min={5}
                 max={60}
@@ -256,32 +247,31 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                 onChange={(e) =>
                   updateField("lockoutDurationMinutes", parseInt(e.target.value) || 15)
                 }
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-muted-foreground">
                 How long account stays locked
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Password Policy */}
-      <Card className="bg-stone-900 border-amber-900/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-amber-100 text-lg">
-            <Key className="h-5 w-5 text-amber-500" />
-            Password Policy
-          </CardTitle>
-          <CardDescription className="text-stone-400">
+        <Separator />
+
+        {/* Password Policy */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Key className="h-4 w-4 text-gray-600" />
+            <h3 className="font-medium text-gray-900">Password Policy</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Enforce strong password requirements
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-stone-300">Minimum Password Length</Label>
+              <Label htmlFor="minPasswordLength">Minimum Password Length</Label>
               <Input
+                id="minPasswordLength"
                 type="number"
                 min={8}
                 max={32}
@@ -289,16 +279,16 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                 onChange={(e) =>
                   updateField("minPasswordLength", parseInt(e.target.value) || 12)
                 }
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
-              <p className="text-xs text-stone-500 flex items-center gap-1">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Info className="h-3 w-3" />
                 HIPAA recommends 12+ characters
               </p>
             </div>
             <div className="space-y-2">
-              <Label className="text-stone-300">Password Expiry (days)</Label>
+              <Label htmlFor="passwordExpiry">Password Expiry (days)</Label>
               <Input
+                id="passwordExpiry"
                 type="number"
                 min={30}
                 max={365}
@@ -306,21 +296,20 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                 onChange={(e) =>
                   updateField("passwordExpiryDays", parseInt(e.target.value) || 90)
                 }
-                className="bg-stone-800 border-amber-900/30 text-stone-200"
               />
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-muted-foreground">
                 Force password change after this many days
               </p>
             </div>
           </div>
 
-          <div className="border-t border-amber-900/20 pt-4 space-y-3">
-            <p className="text-sm text-stone-400 font-medium">
+          <div className="pt-4 space-y-3">
+            <p className="text-sm font-medium text-gray-700">
               Password Complexity Requirements
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex items-center justify-between p-3 bg-stone-800/50 rounded-lg">
-                <Label className="text-stone-300">Require Uppercase Letters</Label>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                <Label className="text-gray-700 cursor-pointer">Require Uppercase Letters</Label>
                 <Switch
                   checked={formData.requireUppercase}
                   onCheckedChange={(checked) =>
@@ -328,8 +317,8 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                   }
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-stone-800/50 rounded-lg">
-                <Label className="text-stone-300">Require Lowercase Letters</Label>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                <Label className="text-gray-700 cursor-pointer">Require Lowercase Letters</Label>
                 <Switch
                   checked={formData.requireLowercase}
                   onCheckedChange={(checked) =>
@@ -337,8 +326,8 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                   }
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-stone-800/50 rounded-lg">
-                <Label className="text-stone-300">Require Numbers</Label>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                <Label className="text-gray-700 cursor-pointer">Require Numbers</Label>
                 <Switch
                   checked={formData.requireNumbers}
                   onCheckedChange={(checked) =>
@@ -346,8 +335,8 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
                   }
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-stone-800/50 rounded-lg">
-                <Label className="text-stone-300">Require Special Characters</Label>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                <Label className="text-gray-700 cursor-pointer">Require Special Characters</Label>
                 <Switch
                   checked={formData.requireSpecialChars}
                   onCheckedChange={(checked) =>
@@ -359,8 +348,9 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-stone-300">Password History Count</Label>
+            <Label htmlFor="passwordHistory">Password History Count</Label>
             <Input
+              id="passwordHistory"
               type="number"
               min={1}
               max={24}
@@ -368,86 +358,89 @@ export function SecuritySettings({ facilityId }: SecuritySettingsProps) {
               onChange={(e) =>
                 updateField("passwordHistoryCount", parseInt(e.target.value) || 12)
               }
-              className="bg-stone-800 border-amber-900/30 text-stone-200 max-w-xs"
+              className="max-w-xs"
             />
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-muted-foreground">
               Prevent reuse of last N passwords
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* MFA Settings (Coming Soon) */}
-      <Card className="bg-stone-900 border-amber-900/30 opacity-75">
-        <CardHeader className="pb-3">
+        <Separator />
+
+        {/* MFA Settings (Coming Soon) */}
+        <div className="space-y-4 opacity-60">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-amber-100 text-lg">
-              <Shield className="h-5 w-5 text-amber-500" />
-              Multi-Factor Authentication
-            </CardTitle>
-            <Badge variant="outline" className="border-amber-600/50 text-amber-400">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-gray-600" />
+              <h3 className="font-medium text-gray-900">Multi-Factor Authentication</h3>
+            </div>
+            <Badge variant="outline" className="border-teal-500 text-teal-600">
               Coming in Phase 2
             </Badge>
           </div>
-          <CardDescription className="text-stone-400">
+          <p className="text-sm text-muted-foreground">
             Additional security layer for sensitive operations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-stone-800/30 rounded-lg">
-            <div>
-              <Label className="text-stone-400">Require MFA for Owners</Label>
-              <p className="text-xs text-stone-500">
-                Require 2FA for all owner accounts
-              </p>
-            </div>
-            <Switch disabled checked={formData.requireMfaOwners} />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-stone-800/30 rounded-lg">
-            <div>
-              <Label className="text-stone-400">Require MFA for Staff</Label>
-              <p className="text-xs text-stone-500">
-                Require 2FA for staff accessing PHI
-              </p>
-            </div>
-            <Switch disabled checked={formData.requireMfaStaff} />
-          </div>
-        </CardContent>
-      </Card>
+          </p>
 
-      {/* Save Button */}
-      <div className="flex items-center justify-between pt-4 border-t border-amber-900/20">
-        <div className="flex items-center gap-2 text-sm text-stone-400">
-          {hasChanges ? (
-            <>
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-              You have unsaved changes
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              All changes saved
-            </>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+              <div>
+                <Label className="text-gray-500">Require MFA for Owners</Label>
+                <p className="text-xs text-muted-foreground">
+                  Require 2FA for all owner accounts
+                </p>
+              </div>
+              <Switch disabled checked={formData.requireMfaOwners} />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+              <div>
+                <Label className="text-gray-500">Require MFA for Staff</Label>
+                <p className="text-xs text-muted-foreground">
+                  Require 2FA for staff accessing PHI
+                </p>
+              </div>
+              <Switch disabled checked={formData.requireMfaStaff} />
+            </div>
+          </div>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges || mutation.isPending}
-          className="bg-amber-600 hover:bg-amber-500 text-white"
-        >
-          {mutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Security Settings
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
+
+        <Separator />
+
+        {/* Save Button */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {hasChanges ? (
+              <>
+                <AlertTriangle className="h-4 w-4 text-orange-500" />
+                You have unsaved changes
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                All changes saved
+              </>
+            )}
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || mutation.isPending}
+            className="bg-teal-600 hover:bg-teal-500 text-white"
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Security Settings
+              </>
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
