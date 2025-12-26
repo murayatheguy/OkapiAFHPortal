@@ -56,7 +56,9 @@
       "Bash(grep:*)",
       "Bash(start http://localhost:5000)",
       "Bash(pip install:*)",
-      "Bash(python -m pip install:*)"
+      "Bash(python -m pip install:*)",
+      "Bash(npm run seed:*)",
+      "Bash(npm run seed:multi:*)"
     ]
   }
 }
