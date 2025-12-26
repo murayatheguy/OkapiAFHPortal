@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence } from "framer-motion";
 import { getFeaturedFacilities, searchFacilities, autocompleteFacilities, type AutocompleteResult } from "@/lib/api";
 import { getFacilityPhotos } from "@/lib/facility-photos";
-import { Home as HomeIcon, Building2, Hospital, Heart } from "lucide-react";
+import { Home as HomeIcon, Building2, Hospital, Heart, Sparkles } from "lucide-react";
+import { CareNeedsWizard } from "@/components/public/care-needs-wizard";
+import { MatchResults } from "@/components/public/match-results";
+import { CareNeeds, FacilityWithMatch, MatchScore } from "@/types/care-matching";
 
 const FACILITY_TYPES = [
   { id: 'afh', label: 'Adult Family Home', short: 'AFH', description: '2-6 beds', icon: HomeIcon },
@@ -11,6 +15,135 @@ const FACILITY_TYPES = [
   { id: 'snf', label: 'Skilled Nursing', short: 'Skilled Nursing', description: 'Medical Care', icon: Hospital },
   { id: 'hospice', label: 'Hospice Care', short: 'Hospice', description: 'End of Life', icon: Heart },
 ] as const;
+
+// Calculate match score for a facility based on care needs
+function calculateMatchScore(facility: any, needs: CareNeeds): MatchScore {
+  const reasons: MatchScore['reasons'] = [];
+  let careMatch = 50;
+  let locationMatch = 50;
+  let budgetMatch = 50;
+  let servicesMatch = 50;
+  let availabilityMatch = 50;
+
+  // Care type matching
+  if (needs.careType !== 'any') {
+    const facilityType = facility.facilityType?.toLowerCase() || '';
+    if (facilityType === needs.careType || facilityType.includes(needs.careType)) {
+      careMatch = 100;
+      reasons.push({ category: 'specialty', positive: true, text: 'Matches care type', weight: 20 });
+    } else {
+      careMatch = 30;
+      reasons.push({ category: 'specialty', positive: false, text: 'Different care type', weight: 0 });
+    }
+  } else {
+    careMatch = 80;
+  }
+
+  // Medical needs matching
+  const specialties = facility.specialties || [];
+  const specialtiesLower = specialties.map((s: string) => s.toLowerCase());
+  let matchedNeeds = 0;
+
+  needs.medicalNeeds.forEach((need) => {
+    const needLabels: Record<string, string[]> = {
+      dementia: ['dementia', 'memory care', 'alzheimer'],
+      mental_health: ['mental health', 'behavioral', 'psychiatric'],
+      developmental_disabilities: ['developmental', 'disabilities', 'dd'],
+      diabetes: ['diabetes', 'diabetic'],
+      mobility: ['mobility', 'wheelchair', 'ambulatory'],
+    };
+    const searchTerms = needLabels[need] || [need.replace('_', ' ')];
+    if (searchTerms.some(term => specialtiesLower.some((s: string) => s.includes(term)))) {
+      matchedNeeds++;
+    }
+  });
+
+  if (needs.medicalNeeds.length > 0) {
+    const needsScore = (matchedNeeds / needs.medicalNeeds.length) * 100;
+    servicesMatch = Math.round(needsScore);
+    if (matchedNeeds > 0) {
+      reasons.push({ category: 'services', positive: true, text: `${matchedNeeds} of ${needs.medicalNeeds.length} needs met`, weight: 15 });
+    }
+    if (matchedNeeds < needs.medicalNeeds.length) {
+      reasons.push({ category: 'services', positive: false, text: 'Some needs may require verification', weight: 5 });
+    }
+  } else {
+    servicesMatch = 70;
+  }
+
+  // Location matching
+  if (needs.location.city || needs.location.zipCode) {
+    const facilityCity = facility.city?.toLowerCase() || '';
+    const facilityZip = facility.zipCode || '';
+    const searchCity = needs.location.city?.toLowerCase() || '';
+    const searchZip = needs.location.zipCode || '';
+
+    if (facilityCity === searchCity || facilityZip === searchZip) {
+      locationMatch = 100;
+      reasons.push({ category: 'location', positive: true, text: 'In your preferred area', weight: 15 });
+    } else if (facilityCity.includes(searchCity) || searchCity.includes(facilityCity)) {
+      locationMatch = 80;
+      reasons.push({ category: 'location', positive: true, text: 'Near preferred area', weight: 10 });
+    } else {
+      locationMatch = 40;
+      reasons.push({ category: 'location', positive: false, text: 'Outside preferred area', weight: 5 });
+    }
+  } else {
+    locationMatch = 70;
+  }
+
+  // Budget matching
+  const facilityPrice = facility.priceMin || 0;
+  if (facilityPrice > 0 && needs.budget.max > 0) {
+    if (facilityPrice <= needs.budget.max && facilityPrice >= needs.budget.min) {
+      budgetMatch = 100;
+      reasons.push({ category: 'price', positive: true, text: 'Within budget', weight: 15 });
+    } else if (facilityPrice <= needs.budget.max * 1.1) {
+      budgetMatch = 70;
+      reasons.push({ category: 'price', positive: false, text: 'Slightly above budget', weight: 8 });
+    } else {
+      budgetMatch = 30;
+      reasons.push({ category: 'price', positive: false, text: 'Above budget', weight: 0 });
+    }
+  } else {
+    budgetMatch = 60;
+    reasons.push({ category: 'price', positive: false, text: 'Contact for pricing', weight: 5 });
+  }
+
+  // Availability matching
+  if (facility.availableBeds > 0) {
+    availabilityMatch = 100;
+    if (needs.timeline === 'immediate') {
+      reasons.push({ category: 'availability', positive: true, text: 'Immediate availability', weight: 20 });
+    } else {
+      reasons.push({ category: 'availability', positive: true, text: 'Has openings', weight: 10 });
+    }
+  } else {
+    availabilityMatch = needs.timeline === 'planning' ? 60 : 30;
+    reasons.push({ category: 'availability', positive: false, text: 'May have waitlist', weight: 5 });
+  }
+
+  // Calculate overall score (weighted average)
+  const overall = Math.round(
+    careMatch * 0.25 +
+    servicesMatch * 0.25 +
+    locationMatch * 0.2 +
+    budgetMatch * 0.15 +
+    availabilityMatch * 0.15
+  );
+
+  return {
+    overall,
+    breakdown: {
+      careMatch,
+      locationMatch,
+      budgetMatch,
+      servicesMatch,
+      availabilityMatch,
+    },
+    reasons: reasons.sort((a, b) => b.weight - a.weight),
+  };
+}
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -22,6 +155,13 @@ export default function Home() {
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Smart matching state
+  const [showWizard, setShowWizard] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [matchedFacilities, setMatchedFacilities] = useState<FacilityWithMatch[]>([]);
+  const [careNeeds, setCareNeeds] = useState<CareNeeds | null>(null);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
   // Debounced autocomplete effect
   useEffect(() => {
@@ -117,6 +257,58 @@ export default function Home() {
     if (searchValue) params.set('q', searchValue);
     if (selectedFacilityTypes.length > 0) params.set('type', selectedFacilityTypes.join(','));
     setLocation(`/search${params.toString() ? '?' + params.toString() : ''}`);
+  };
+
+  // Handle wizard completion - fetch and score facilities
+  const handleWizardComplete = async (needs: CareNeeds) => {
+    setCareNeeds(needs);
+    setShowWizard(false);
+    setShowResults(true);
+    setIsLoadingMatches(true);
+
+    try {
+      // Build search params from needs
+      const searchParams: any = {};
+      if (needs.location.city) searchParams.city = needs.location.city;
+      if (needs.careType !== 'any') searchParams.facilityType = needs.careType;
+      if (needs.medicalNeeds.length > 0) {
+        // Map medical needs to specialty search terms
+        const specialtyMap: Record<string, string> = {
+          dementia: 'Dementia',
+          mental_health: 'Mental Health',
+          developmental_disabilities: 'Developmental Disabilities',
+        };
+        const specialties = needs.medicalNeeds
+          .filter(need => specialtyMap[need])
+          .map(need => specialtyMap[need]);
+        if (specialties.length > 0) searchParams.specialties = specialties;
+      }
+
+      // Fetch facilities
+      const facilities = await searchFacilities(searchParams);
+
+      // Calculate match scores for each facility
+      const facilitiesWithScores: FacilityWithMatch[] = facilities.map((f: any) => ({
+        ...f,
+        matchScore: calculateMatchScore(f, needs),
+      }));
+
+      // Sort by match score
+      facilitiesWithScores.sort((a, b) => b.matchScore.overall - a.matchScore.overall);
+
+      setMatchedFacilities(facilitiesWithScores.slice(0, 20));
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      setMatchedFacilities([]);
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
+
+  const handleBackToHome = () => {
+    setShowResults(false);
+    setCareNeeds(null);
+    setMatchedFacilities([]);
   };
 
   // Apply facility type filter to the results
@@ -310,6 +502,22 @@ export default function Home() {
                 No selection = All types shown
               </p>
             )}
+
+            {/* Smart Matching Button */}
+            <button
+              onClick={() => setShowWizard(true)}
+              className="mt-6 mx-auto flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, letterSpacing: '0.05em' }}
+            >
+              <Sparkles className="w-5 h-5" />
+              Find My Perfect Match
+            </button>
+            <p
+              className="mt-2 text-center"
+              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.7rem', color: '#a8a49c' }}
+            >
+              Answer a few questions for personalized recommendations
+            </p>
           </div>
 
           {/* Search Box - Compact */}
@@ -679,6 +887,32 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Smart Matching Wizard Modal */}
+      <AnimatePresence>
+        {showWizard && (
+          <CareNeedsWizard
+            onComplete={handleWizardComplete}
+            onClose={() => setShowWizard(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Match Results Overlay */}
+      <AnimatePresence>
+        {showResults && careNeeds && (
+          <div className="fixed inset-0 z-50 bg-[#0d1a14] overflow-y-auto">
+            <div className="min-h-screen py-8 px-4">
+              <MatchResults
+                matches={matchedFacilities}
+                careNeeds={careNeeds}
+                onBack={handleBackToHome}
+                isLoading={isLoadingMatches}
+              />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
