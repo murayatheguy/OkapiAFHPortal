@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStaffAuth } from "@/lib/staff-auth";
 import {
@@ -40,17 +40,25 @@ const NOTE_TYPES = [
 interface AddNoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedResidentId?: string;
 }
 
-export function AddNoteDialog({ open, onOpenChange }: AddNoteDialogProps) {
+export function AddNoteDialog({ open, onOpenChange, preselectedResidentId }: AddNoteDialogProps) {
   const { staff } = useStaffAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const facilityId = staff?.facilityId;
 
-  const [selectedResidentId, setSelectedResidentId] = useState("");
+  const [selectedResidentId, setSelectedResidentId] = useState(preselectedResidentId || "");
   const [noteType, setNoteType] = useState("general");
   const [noteText, setNoteText] = useState("");
+
+  // Update selectedResidentId when preselectedResidentId changes
+  useEffect(() => {
+    if (preselectedResidentId && open) {
+      setSelectedResidentId(preselectedResidentId);
+    }
+  }, [preselectedResidentId, open]);
 
   // Fetch residents
   const { data: residents = [], isLoading: residentsLoading } = useQuery<Resident[]>({

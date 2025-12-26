@@ -48,6 +48,7 @@ const INCIDENT_TYPES = [
 interface FileIncidentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedResidentId?: string;
 }
 
 interface SavedIncident {
@@ -65,13 +66,13 @@ interface SavedIncident {
   witnesses?: string;
 }
 
-export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogProps) {
+export function FileIncidentDialog({ open, onOpenChange, preselectedResidentId }: FileIncidentDialogProps) {
   const { staff } = useStaffAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const facilityId = staff?.facilityId;
 
-  const [selectedResidentId, setSelectedResidentId] = useState("");
+  const [selectedResidentId, setSelectedResidentId] = useState(preselectedResidentId || "");
   const [incidentType, setIncidentType] = useState("");
   const [incidentDate, setIncidentDate] = useState(new Date().toISOString().split("T")[0]);
   const [incidentTime, setIncidentTime] = useState(
@@ -87,6 +88,13 @@ export function FileIncidentDialog({ open, onOpenChange }: FileIncidentDialogPro
 
   const [savedIncident, setSavedIncident] = useState<SavedIncident | null>(null);
   const [showPrintView, setShowPrintView] = useState(false);
+
+  // Update selectedResidentId when preselectedResidentId changes
+  useEffect(() => {
+    if (preselectedResidentId && open) {
+      setSelectedResidentId(preselectedResidentId);
+    }
+  }, [preselectedResidentId, open]);
 
   // Auto-set DSHS reportable based on incident type
   useEffect(() => {
