@@ -68,7 +68,7 @@ export default function OwnerDashboardPage() {
 
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("overview");
-  const [activeCareTab, setActiveCareTab] = useState("residents");
+  const [activeCareTab, setActiveCareTab] = useState<string | undefined>(undefined);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Add Team Member dialog state
@@ -312,7 +312,13 @@ export default function OwnerDashboardPage() {
             ].map(item => (
               <button
                 key={item.id}
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => {
+                  setActiveSection(item.id);
+                  // Reset care tab to overview when clicking Care Management from sidebar
+                  if (item.id === "care") {
+                    setActiveCareTab(undefined);
+                  }
+                }}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
                   activeSection === item.id
                     ? "bg-teal-50 text-teal-700"
