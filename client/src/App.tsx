@@ -46,8 +46,8 @@ function ProtectedStaffRoute({ component: Component }: { component: React.Compon
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/home-new" component={HomeAFH} />
+      <Route path="/" component={HomeAFH} />
+      <Route path="/home-old" component={Home} />
       <Route path="/search" component={SearchResults} />
       <Route path="/homes" component={SearchResults} />
       <Route path="/facility/:id" component={FacilityDetails} />
