@@ -15,7 +15,12 @@
     "seed:multi": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/scripts/seed-multi-facility.ts', {stdio: 'inherit', env: {...process.env}})\"",
     "seed:new": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/seeds/seed.ts', {stdio: 'inherit', env: {...process.env}})\"",
     "seed:clean": "node -e \"require('dotenv').config(); require('child_process').execSync('npx tsx server/seeds/clean.ts', {stdio: 'inherit', env: {...process.env}})\"",
-    "seed:reset": "npm run seed:clean -- --force && npm run seed:new"
+    "seed:reset": "npm run seed:clean -- --force && npm run seed:new",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:debug": "npx playwright test --debug",
+    "test:e2e:report": "npx playwright show-report tests/e2e/reports/html"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -95,6 +100,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@replit/vite-plugin-cartographer": "^0.4.4",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
