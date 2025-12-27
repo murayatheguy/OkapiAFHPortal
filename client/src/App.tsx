@@ -8,6 +8,8 @@ import { StaffAuthProvider, useStaffAuth } from "@/lib/staff-auth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import HomeAFH from "@/pages/home-afh";
+import HomeFamily from "@/pages/home-family";
+import MatchWizard from "@/pages/match-wizard";
 import SearchResults from "@/pages/search-results";
 import FacilityDetails from "@/pages/facility-details";
 import OwnerPortal from "@/pages/owner-portal";
@@ -46,7 +48,9 @@ function ProtectedStaffRoute({ component: Component }: { component: React.Compon
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomeAFH} />
+      <Route path="/" component={HomeFamily} />
+      <Route path="/match" component={MatchWizard} />
+      <Route path="/home-afh" component={HomeAFH} />
       <Route path="/home-old" component={Home} />
       <Route path="/find-care" component={SearchResults} />
       <Route path="/directory" component={SearchResults} />

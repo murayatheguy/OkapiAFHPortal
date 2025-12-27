@@ -4,9 +4,10 @@
  */
 
 export const BRAND = {
-  name: "Okapi Care Network",
-  tagline: "The Operating System for Adult Family Homes",
-  description: "Washington State's platform for finding and running Adult Family Homes",
+  name: "Okapi",
+  fullName: "Okapi Care Network",
+  tagline: "Find the Right Home for Mom or Dad",
+  description: "Because finding care for someone you love shouldn't be so hard.",
   shortDescription: "Find the right AFH for your loved one",
 
   // Focus
@@ -24,12 +25,51 @@ export const BRAND = {
   minBeds: 1,
   defaultBeds: 6,
 
+  // Matching (honest language)
+  matchTime: "3 minutes",
+  matchFactors: "50+",
+
   // Contact
   supportEmail: "support@okapicare.com",
 
   // Legal
   licensePrefix: "AFH-",
 };
+
+// Care need categories for matching (emotional, clear language)
+export const CARE_NEEDS = [
+  { id: "memory", label: "Memory Care", icon: "🧠", description: "Dementia, Alzheimer's" },
+  { id: "medication", label: "Medication Help", icon: "💊", description: "Daily medication management" },
+  { id: "daily-living", label: "Daily Living Help", icon: "🚿", description: "Bathing, dressing, grooming" },
+  { id: "medical", label: "Medical Needs", icon: "🩺", description: "Diabetes, wound care, etc." },
+  { id: "mental-health", label: "Mental Health", icon: "💭", description: "Behavioral support" },
+  { id: "hospice", label: "Hospice Care", icon: "❤️", description: "End of life care" },
+  { id: "general", label: "General Care", icon: "🏠", description: "Companionship, supervision, light help" },
+];
+
+// Mobility levels for matching
+export const MOBILITY_LEVELS = [
+  { id: "independent", label: "Walks on their own", icon: "🚶" },
+  { id: "walker", label: "Uses a walker or cane", icon: "🦯" },
+  { id: "wheelchair", label: "Uses a wheelchair", icon: "🦽" },
+  { id: "bedridden", label: "Mostly in bed", icon: "🛏️" },
+];
+
+// Budget options for matching
+export const BUDGET_OPTIONS = [
+  { id: "medicaid", label: "Medicaid / COPES", description: "State-funded assistance" },
+  { id: "under-5k", label: "Under $5,000/month", description: "Private pay" },
+  { id: "5k-8k", label: "$5,000 - $8,000/month", description: "Private pay" },
+  { id: "over-8k", label: "Over $8,000/month", description: "Private pay" },
+  { id: "unsure", label: "I'm not sure yet", description: "We can help figure it out" },
+];
+
+// Timeline options for matching
+export const TIMELINE_OPTIONS = [
+  { id: "urgent", label: "ASAP", icon: "🚨" },
+  { id: "weeks", label: "Next few weeks", icon: "📅" },
+  { id: "planning", label: "Just planning", icon: "🔮" },
+];
 
 // Care specializations available for AFHs
 export const AFH_SPECIALIZATIONS = [
