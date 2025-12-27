@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { BRAND, WA_CITIES, WA_DSHS, CARE_NEEDS } from "@/lib/constants";
 import { AFHFooter } from "@/components/public/afh-footer";
+import { FeaturedHomes } from "@/components/public/featured-homes";
 
 /**
  * Hero Section - Emotional, clear messaging
@@ -611,6 +612,7 @@ export default function HomeFamily() {
         <HeroSection />
         <WeUnderstand />
         <HowItWorks />
+        <FeaturedHomes />
         <WhatIsAFHSection />
         <TrustSection />
         <BrowseByArea />
