@@ -211,19 +211,17 @@ export default function MatchWizard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/">
-            <a className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">O</span>
-              </div>
-              <span className="font-semibold text-gray-900">{BRAND.name}</span>
-            </a>
-          </Link>
-          <Button variant="ghost" size="sm" onClick={() => setLocation("/find-care")}>
-            Skip to Directory
-          </Button>
+      <header className="bg-white/80 backdrop-blur border-b">
+        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+          <button onClick={() => setLocation("/")} className="flex items-center">
+            <span className="text-lg tracking-wide">
+              <span className="font-light text-gray-800">OKAPI</span>
+              <span className="font-light text-gray-500 ml-1">Care Network</span>
+            </span>
+          </button>
+          <span className="text-sm text-gray-500">
+            Finding the right home
+          </span>
         </div>
       </header>
 

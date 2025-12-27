@@ -46,14 +46,14 @@ export function AFHFooter() {
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-                <span className="text-xl font-bold">O</span>
-              </div>
-              <span className="font-bold text-lg">{BRAND.name}</span>
+            <div className="mb-4">
+              <span className="text-lg tracking-wide">
+                <span className="font-light text-white">OKAPI</span>
+                <span className="font-light text-gray-400 ml-1">Care Network</span>
+              </span>
             </div>
             <p className="text-gray-400 text-sm mb-4">
-              {BRAND.tagline}
+              Helping families find the right Adult Family Home in Washington State.
             </p>
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <MapPin className="h-4 w-4" />
@@ -191,11 +191,12 @@ export function AFHFooterCompact() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-teal-600 rounded flex items-center justify-center">
-              <span className="text-sm font-bold text-white">O</span>
-            </div>
-            <span className="text-sm text-gray-600">
-              &copy; {currentYear} {BRAND.name}
+            <span className="text-sm tracking-wide">
+              <span className="font-light text-gray-800">OKAPI</span>
+              <span className="font-light text-gray-500 ml-1">Care Network</span>
+            </span>
+            <span className="text-sm text-gray-400">
+              &copy; {currentYear}
             </span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-500">

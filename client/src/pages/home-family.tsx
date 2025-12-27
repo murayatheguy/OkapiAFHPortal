@@ -563,39 +563,37 @@ function FinalCTA() {
 }
 
 /**
- * Simple header for family homepage
+ * Header - Clean, matches existing OKAPI Care Network branding
  */
 function SimpleHeader() {
   const [, setLocation] = useLocation();
 
   return (
-    <header className="bg-white border-b sticky top-0 z-50">
+    <header className="border-b bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <a className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">O</span>
-            </div>
-            <span className="font-semibold text-lg text-gray-900">{BRAND.name}</span>
-          </a>
-        </Link>
+        {/* Logo - matches existing OKAPI Care Network branding */}
+        <button onClick={() => setLocation("/")} className="flex items-center">
+          <span className="text-xl tracking-wide">
+            <span className="font-light text-gray-800">OKAPI</span>
+            <span className="font-light text-gray-500 ml-1">Care Network</span>
+          </span>
+        </button>
 
-        <nav className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation("/find-care")}
+        {/* Navigation */}
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => setLocation("/directory")}
+            className="text-sm text-gray-600 hover:text-gray-900"
           >
             Browse Homes
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
             onClick={() => setLocation("/owner/login")}
+            className="text-sm px-4 py-2 border border-teal-600 text-teal-600 rounded-md hover:bg-teal-50"
           >
             For AFH Owners
-          </Button>
-        </nav>
+          </button>
+        </div>
       </div>
     </header>
   );
