@@ -29,6 +29,7 @@ import {
   TIMELINE_OPTIONS,
   WA_CITIES,
 } from "@/lib/constants";
+import { LogoButton } from "@/components/shared/logo";
 
 interface WizardData {
   location: string;
@@ -213,12 +214,7 @@ export default function MatchWizard() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur border-b">
         <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => setLocation("/")} className="flex items-center">
-            <span className="text-lg tracking-wide">
-              <span className="font-light text-gray-800">OKAPI</span>
-              <span className="font-light text-gray-500 ml-1">Care Network</span>
-            </span>
-          </button>
+          <LogoButton variant="dark" size="md" onClick={() => setLocation("/")} />
           <span className="text-sm text-gray-500">
             Finding the right home
           </span>

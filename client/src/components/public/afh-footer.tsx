@@ -12,6 +12,7 @@ import {
   Heart,
 } from "lucide-react";
 import { BRAND, WA_DSHS } from "@/lib/constants";
+import { Logo } from "@/components/shared/logo";
 
 export function AFHFooter() {
   const currentYear = new Date().getFullYear();
@@ -47,10 +48,7 @@ export function AFHFooter() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
-              <span className="text-lg tracking-wide">
-                <span className="font-light text-white">OKAPI</span>
-                <span className="font-light text-gray-400 ml-1">Care Network</span>
-              </span>
+              <Logo variant="light" size="md" linkTo="/" />
             </div>
             <p className="text-gray-400 text-sm mb-4">
               Helping families find the right Adult Family Home in Washington State.
@@ -191,10 +189,7 @@ export function AFHFooterCompact() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm tracking-wide">
-              <span className="font-light text-gray-800">OKAPI</span>
-              <span className="font-light text-gray-500 ml-1">Care Network</span>
-            </span>
+            <Logo variant="dark" size="sm" linkTo="/" />
             <span className="text-sm text-gray-400">
               &copy; {currentYear}
             </span>

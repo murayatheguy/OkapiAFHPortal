@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WA_CITIES } from "@/lib/constants";
+import { LogoButton } from "@/components/shared/logo";
 
 interface Facility {
   id: string;
@@ -58,12 +59,7 @@ function Header() {
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <button onClick={() => setLocation("/")} className="flex items-center">
-          <span className="text-lg tracking-wide">
-            <span className="font-light text-gray-800">OKAPI</span>
-            <span className="font-light text-gray-500 ml-1">Care Network</span>
-          </span>
-        </button>
+        <LogoButton variant="dark" size="md" onClick={() => setLocation("/")} />
 
         <div className="flex items-center gap-4">
           <button
@@ -440,10 +436,7 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <span className="text-lg tracking-wide">
-              <span className="font-light text-white">OKAPI</span>
-              <span className="font-light text-gray-400 ml-1">Care Network</span>
-            </span>
+            <LogoButton variant="light" size="md" onClick={() => setLocation("/")} />
             <p className="text-sm text-gray-400 mt-2">
               Washington's Adult Family Home directory.
             </p>
