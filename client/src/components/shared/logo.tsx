@@ -1,18 +1,16 @@
 /**
  * OKAPI Care Network Logo
  * EXACT copy from production owner login page
- * DO NOT MODIFY THIS LOGO WITHOUT EXPLICIT REQUEST
+ * ALWAYS clickable, ALWAYS goes to homepage
  */
 
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 
 interface LogoProps {
   /** "light" for dark backgrounds, "dark" for light backgrounds */
   variant?: "light" | "dark";
   /** Size: "sm" (1rem), "md" (1.25rem), "lg" (1.5rem) */
   size?: "sm" | "md" | "lg";
-  /** Optional link destination, defaults to "/" */
-  linkTo?: string;
   /** Additional className for the container */
   className?: string;
 }
@@ -27,9 +25,10 @@ interface LogoProps {
 export function Logo({
   variant = "dark",
   size = "md",
-  linkTo = "/",
   className = ""
 }: LogoProps) {
+  const [, setLocation] = useLocation();
+
   const sizeMap = {
     sm: "1rem",
     md: "1.25rem",
@@ -49,8 +48,12 @@ export function Logo({
         network: "#e8e4dc",    // cream
       };
 
-  const content = (
-    <span className={`flex items-center gap-1.5 ${className}`}>
+  return (
+    <button
+      onClick={() => setLocation("/")}
+      className={`flex items-center gap-1.5 hover:opacity-80 transition-opacity ${className}`}
+      aria-label="Go to homepage"
+    >
       <span
         style={{
           fontFamily: "'Cormorant', serif",
@@ -73,18 +76,8 @@ export function Logo({
       >
         Care Network
       </span>
-    </span>
+    </button>
   );
-
-  if (linkTo) {
-    return (
-      <Link href={linkTo} className="flex items-center">
-        {content}
-      </Link>
-    );
-  }
-
-  return content;
 }
 
 /**

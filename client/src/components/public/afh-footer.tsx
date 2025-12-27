@@ -48,7 +48,7 @@ export function AFHFooter() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
-              <Logo variant="light" size="md" linkTo="/" />
+              <Logo variant="light" size="md" />
             </div>
             <p className="text-gray-400 text-sm mb-4">
               Helping families find the right Adult Family Home in Washington State.
@@ -189,7 +189,7 @@ export function AFHFooterCompact() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Logo variant="dark" size="sm" linkTo="/" />
+            <Logo variant="dark" size="sm" />
             <span className="text-sm text-gray-400">
               &copy; {currentYear}
             </span>

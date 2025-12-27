@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
-import { LogoButton } from "@/components/shared/logo";
+import { Logo } from "@/components/shared/logo";
 
 interface Facility {
   id: string;
@@ -54,15 +54,15 @@ export default function HomeFamily() {
 }
 
 /**
- * Header - Clean, minimal
+ * Header - Clean, minimal with glassmorphism
  */
 function Header() {
   const [, setLocation] = useLocation();
 
   return (
-    <header className="bg-white border-b sticky top-0 z-50">
+    <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <LogoButton variant="dark" size="md" onClick={() => setLocation("/")} />
+        <Logo />
 
         <div className="flex items-center gap-4">
           <button
@@ -103,7 +103,7 @@ function HeroCompact() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Find the Right Home <span className="text-teal-600">for Mom or Dad</span>
+            Find the Right Home <span className="text-teal-600">for Your Loved One</span>
           </h1>
           <p className="text-gray-600 mb-6">
             Licensed Adult Family Homes in Washington State
@@ -508,10 +508,7 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <span className="text-lg">
-              <span className="text-white">OKAPI</span>
-              <span className="text-teal-400 ml-1.5">Care Network</span>
-            </span>
+            <Logo variant="light" />
             <p className="text-sm text-gray-400 mt-2">
               Washington's Adult Family Home directory.
             </p>
