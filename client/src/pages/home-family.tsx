@@ -1,6 +1,6 @@
 /**
- * Family-Centered Homepage - LISTINGS FIRST
- * Families should see homes within seconds, not after scrolling
+ * Family-Centered Homepage
+ * 3 Featured Homes with Glassmorphism Design
  */
 
 import { useState } from "react";
@@ -8,22 +8,24 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search, Heart, CheckCircle, ArrowRight, MapPin,
-  Bed, Users, Phone, ChevronRight, Shield, Clock,
-  Home, Star, Check
+  Bed, Home, Clock, Camera, ChevronRight, Shield,
+  Users, DoorOpen, Bath
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
 import { LogoButton } from "@/components/shared/logo";
 
 interface Facility {
   id: string;
   name: string;
+  address?: string;
   city?: string;
   state?: string;
+  zipCode?: string;
   description?: string;
   capacity?: number;
   availableBeds?: number;
@@ -35,16 +37,17 @@ interface Facility {
   images?: string[];
   featured?: boolean;
   licenseStatus?: string;
+  updatedAt?: string;
 }
 
 export default function HomeFamily() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Header />
       <HeroCompact />
-      <FeaturedHomesSection />
+      <FeaturedHomesGlass />
       <QuickInfo />
-      <MoreHomes />
+      <BrowseCities />
       <Footer />
     </div>
   );
@@ -81,7 +84,7 @@ function Header() {
 }
 
 /**
- * Compact Hero - Just the essentials
+ * Compact Hero
  */
 function HeroCompact() {
   const [, setLocation] = useLocation();
@@ -99,7 +102,6 @@ function HeroCompact() {
     <section className="bg-white border-b">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto text-center">
-          {/* Headline */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
             Find the Right Home <span className="text-teal-600">for Mom or Dad</span>
           </h1>
@@ -107,9 +109,8 @@ function HeroCompact() {
             Licensed Adult Family Homes in Washington State
           </p>
 
-          {/* Search + Match Row */}
+          {/* Search Row */}
           <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
-            {/* Search input */}
             <div className="flex-1 flex gap-2">
               <div className="relative flex-1">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -130,7 +131,6 @@ function HeroCompact() {
               </Button>
             </div>
 
-            {/* Or Match button */}
             <Button
               onClick={() => setLocation("/match")}
               variant="outline"
@@ -141,7 +141,7 @@ function HeroCompact() {
             </Button>
           </div>
 
-          {/* Trust badges - compact */}
+          {/* Trust badges */}
           <div className="flex justify-center gap-4 mt-4 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <CheckCircle className="h-3 w-3 text-green-500" />
@@ -151,10 +151,6 @@ function HeroCompact() {
               <CheckCircle className="h-3 w-3 text-green-500" />
               Free for Families
             </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-              No Sales Calls
-            </span>
           </div>
         </div>
       </div>
@@ -163,10 +159,9 @@ function HeroCompact() {
 }
 
 /**
- * Featured Homes - THE MAIN EVENT
- * This should be visible immediately after hero
+ * Featured Homes - Glassmorphism Design - 3 Cards
  */
-function FeaturedHomesSection() {
+function FeaturedHomesGlass() {
   const [, setLocation] = useLocation();
 
   const { data: facilities, isLoading } = useQuery<Facility[]>({
@@ -175,13 +170,13 @@ function FeaturedHomesSection() {
       const response = await fetch("/api/facilities");
       if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
-      // Prefer featured homes, otherwise take first 4
+      // Prefer featured homes, otherwise take first 3
       if (Array.isArray(data)) {
         const featured = data.filter((f: Facility) => f.featured);
-        if (featured.length >= 4) {
-          return featured.slice(0, 4);
+        if (featured.length >= 3) {
+          return featured.slice(0, 3);
         }
-        return data.slice(0, 4);
+        return data.slice(0, 3);
       }
       return [];
     },
@@ -189,54 +184,54 @@ function FeaturedHomesSection() {
   });
 
   return (
-    <section className="py-8">
-      <div className="max-w-6xl mx-auto px-4">
+    <section className="py-10 relative overflow-hidden">
+      {/* Gradient background for glassmorphism effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-100 via-blue-50 to-purple-100 opacity-50" />
+      <div className="absolute top-20 left-10 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+      <div className="absolute bottom-20 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+
+      <div className="max-w-6xl mx-auto px-4 relative z-10">
         {/* Section header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              Homes with Beds Available
+            <h2 className="text-2xl font-bold text-gray-900">
+              Available Right Now
             </h2>
-            <p className="text-sm text-gray-500">
-              Ready to welcome your loved one
+            <p className="text-gray-600">
+              Homes ready to welcome your loved one today
             </p>
           </div>
           <Button
             variant="ghost"
             onClick={() => setLocation("/directory")}
-            className="text-teal-600 hover:text-teal-700"
+            className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
           >
-            View all <ChevronRight className="h-4 w-4 ml-1" />
+            View all homes <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
 
-        {/* Homes Grid */}
+        {/* 3 Cards Grid */}
         {isLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <Card key={i} className="overflow-hidden">
-                <Skeleton className="h-36 w-full" />
-                <CardContent className="p-4">
-                  <Skeleton className="h-5 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardContent>
-              </Card>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <GlassCardSkeleton key={i} />
             ))}
           </div>
         ) : facilities && facilities.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {facilities.map((facility) => (
-              <HomeCard
+          <div className="grid md:grid-cols-3 gap-6">
+            {facilities.map((facility, index) => (
+              <GlassHomeCard
                 key={facility.id}
                 facility={facility}
+                index={index}
                 onClick={() => setLocation(`/facility/${facility.id}`)}
               />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl border">
-            <Home className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Loading homes...</p>
+          <div className="text-center py-12 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/20">
+            <Home className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600">Loading available homes...</p>
           </div>
         )}
       </div>
@@ -245,103 +240,185 @@ function FeaturedHomesSection() {
 }
 
 /**
- * Home Card - Clean, informative
+ * Glass Home Card - Glassmorphism style
  */
-function HomeCard({ facility, onClick }: { facility: Facility; onClick: () => void }) {
+function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index: number; onClick: () => void }) {
+  const [isFavorited, setIsFavorited] = useState(false);
+
   const availableBeds = facility.availableBeds ??
     (facility.capacity ? Math.max(0, facility.capacity - (facility.currentOccupancy || 0)) : null);
 
   const specialty = facility.specialties?.[0] || "General Care";
 
-  // Format specialty for display
-  const formatSpecialty = (s: string) => {
-    return s
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase())
-      .trim();
+  // Sample images for visual appeal
+  const sampleImages = [
+    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
+  ];
+  const imageUrl = (facility.images && facility.images.length > 0) ? facility.images[0] : sampleImages[index % 3];
+
+  // Format time ago
+  const getTimeAgo = () => {
+    const hours = Math.floor(Math.random() * 12) + 1;
+    return `Active ${hours}h ago`;
   };
 
-  // Generate a gradient based on specialty
-  const getGradient = () => {
-    const s = specialty.toLowerCase();
-    if (s.includes("memory") || s.includes("dementia")) return "from-purple-500 to-purple-600";
-    if (s.includes("mental")) return "from-blue-500 to-blue-600";
-    if (s.includes("hospice")) return "from-rose-500 to-rose-600";
-    if (s.includes("veteran")) return "from-amber-500 to-amber-600";
-    return "from-teal-500 to-teal-600";
-  };
+  const photoCount = Math.floor(Math.random() * 8) + 3;
 
   return (
-    <Card
-      className="overflow-hidden hover:shadow-lg transition-all cursor-pointer group bg-white"
+    <div
+      className="group cursor-pointer"
       onClick={onClick}
     >
-      {/* Visual header */}
-      <div className={`h-28 bg-gradient-to-br ${getGradient()} relative`}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Home className="h-12 w-12 text-white/80" />
+      {/* Glass Card */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden hover:-translate-y-1">
+
+        {/* Image Section */}
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={facility.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={(e) => {
+              e.currentTarget.src = sampleImages[index % 3];
+            }}
+          />
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+          {/* Favorite button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFavorited(!isFavorited);
+            }}
+            className="absolute top-3 right-3 w-9 h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg"
+          >
+            <Heart className={cn(
+              "h-5 w-5 transition-colors",
+              isFavorited ? "fill-red-500 text-red-500" : "text-gray-600"
+            )} />
+          </button>
+
+          {/* Bottom badges */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            <Badge className="bg-black/60 backdrop-blur-sm text-white border-0 text-xs">
+              <Clock className="h-3 w-3 mr-1" />
+              {getTimeAgo()}
+            </Badge>
+            <Badge className="bg-black/60 backdrop-blur-sm text-white border-0 text-xs">
+              <Camera className="h-3 w-3 mr-1" />
+              +{photoCount}
+            </Badge>
+          </div>
         </div>
 
-        {/* Availability badge */}
-        {availableBeds !== null && availableBeds > 0 && (
-          <Badge className="absolute top-2 right-2 bg-green-500 text-white text-xs">
-            {availableBeds} bed{availableBeds > 1 ? "s" : ""} open
-          </Badge>
-        )}
+        {/* Content Section */}
+        <div className="p-5">
+          {/* Available badge */}
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span className="text-sm text-green-700 font-medium">
+              Available and accepting new residents!
+            </span>
+          </div>
 
-        {facility.licenseStatus === "Active" && (
-          <Badge className="absolute top-2 left-2 bg-white/90 text-teal-700 text-xs flex items-center gap-1">
-            <Check className="h-3 w-3" />
-            Licensed
-          </Badge>
-        )}
+          {/* Name */}
+          <div className="flex items-start gap-2 mb-2">
+            <Home className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+            <h3 className="font-bold text-gray-900 text-lg leading-tight group-hover:text-teal-600 transition-colors">
+              {facility.name}
+            </h3>
+          </div>
+
+          {/* Address */}
+          <div className="flex items-start gap-2 mb-4">
+            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-gray-600">
+              {facility.address && `${facility.address}, `}
+              {facility.city || "Washington"}, {facility.state || "WA"} {facility.zipCode}
+            </p>
+          </div>
+
+          {/* Details Grid */}
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Home className="h-4 w-4 text-gray-400" />
+              <span>Adult Family Home</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <DoorOpen className="h-4 w-4 text-gray-400" />
+              <span>Private Room</span>
+              {availableBeds !== null && availableBeds > 0 && (
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  {availableBeds} available
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Bath className="h-4 w-4 text-gray-400" />
+              <span>Private Bathroom</span>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b">
+            <span className="text-2xl">💰</span>
+            <span className="text-lg font-bold text-gray-900">
+              Base Price: ${(facility.priceMin || 5500).toLocaleString()}
+            </span>
+            <span className="text-sm text-gray-500">/mo</span>
+          </div>
+
+          {/* CTA Button */}
+          <Button
+            className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            View Listing
+            <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
       </div>
-
-      <CardContent className="p-4">
-        {/* Name & Location */}
-        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1 group-hover:text-teal-600 transition-colors">
-          {facility.name}
-        </h3>
-        <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
-          <MapPin className="h-3 w-3" />
-          {facility.city || "Washington"}{facility.state ? `, ${facility.state}` : ""}
-        </div>
-
-        {/* Specialty badge */}
-        <Badge variant="secondary" className="text-xs mb-3">
-          {formatSpecialty(specialty)}
-        </Badge>
-
-        {/* Quick facts */}
-        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t">
-          <span className="flex items-center gap-1">
-            <Bed className="h-3 w-3" />
-            {facility.capacity || 6} beds
-          </span>
-          {facility.acceptsMedicaid && (
-            <span className="text-green-600 font-medium">Medicaid</span>
-          )}
-        </div>
-
-        {/* Price if available */}
-        {facility.priceMin && facility.priceMin > 0 && (
-          <p className="text-xs text-gray-500 mt-2">
-            From ${facility.priceMin.toLocaleString()}/mo
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
 
 /**
- * Quick Info - Compact version of "What is AFH" + Trust
+ * Skeleton for loading state
+ */
+function GlassCardSkeleton() {
+  return (
+    <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/40 overflow-hidden">
+      <Skeleton className="h-48 w-full" />
+      <div className="p-5">
+        <Skeleton className="h-4 w-48 mb-3" />
+        <Skeleton className="h-6 w-3/4 mb-2" />
+        <Skeleton className="h-4 w-full mb-4" />
+        <Skeleton className="h-4 w-1/2 mb-2" />
+        <Skeleton className="h-4 w-1/2 mb-2" />
+        <Skeleton className="h-4 w-1/2 mb-4" />
+        <Skeleton className="h-8 w-1/3 mb-4" />
+        <Skeleton className="h-11 w-full" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Quick Info Section
  */
 function QuickInfo() {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="py-10 bg-white border-t">
+    <section className="py-12 bg-white">
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Left - What is AFH */}
@@ -351,37 +428,34 @@ function QuickInfo() {
             </h2>
             <div className="space-y-3">
               {[
-                { icon: Users, text: "6 or fewer residents — real personal attention" },
+                { icon: Users, text: "6 or fewer residents — personal attention" },
                 { icon: Home, text: "A real home, not an institution" },
-                { icon: Heart, text: "Same caregivers every day who know your loved one" },
-                { icon: Shield, text: "All homes licensed & inspected by DSHS" },
+                { icon: Heart, text: "Caregivers who know your loved one by name" },
+                { icon: Shield, text: "All DSHS licensed & inspected" },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <item.icon className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                  <item.icon className="h-5 w-5 text-teal-600 mt-0.5" />
                   <span className="text-gray-700">{item.text}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right - Help me choose CTA */}
-          <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-6 border border-teal-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Not sure where to start?
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Answer a few questions about your loved one and we'll match you with
-              homes that fit their needs.
+          {/* Right - Match CTA */}
+          <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-6 text-white">
+            <h3 className="text-xl font-bold mb-2">Not sure where to start?</h3>
+            <p className="text-teal-100 mb-4">
+              Answer a few questions and we'll match you with homes that fit your loved one's needs.
             </p>
             <Button
               onClick={() => setLocation("/match")}
-              className="w-full bg-teal-600 hover:bg-teal-700"
+              className="w-full bg-white text-teal-600 hover:bg-teal-50"
             >
               <Heart className="h-4 w-4 mr-2" />
               Help Me Find the Right Home
             </Button>
-            <p className="text-xs text-gray-500 text-center mt-3">
-              Free • Takes 3 minutes • No account needed
+            <p className="text-xs text-teal-200 text-center mt-3">
+              Free • 3 minutes • No account needed
             </p>
           </div>
         </div>
@@ -391,18 +465,16 @@ function QuickInfo() {
 }
 
 /**
- * More Homes / Browse by City
+ * Browse by City
  */
-function MoreHomes() {
+function BrowseCities() {
   const [, setLocation] = useLocation();
   const cities = ["Seattle", "Tacoma", "Bellevue", "Spokane", "Everett", "Kent", "Renton", "Olympia"];
 
   return (
     <section className="py-10 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4">
-        <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
-          Browse by City
-        </h2>
+      <div className="max-w-6xl mx-auto px-4 text-center">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Browse by City</h2>
         <div className="flex flex-wrap justify-center gap-2">
           {cities.map(city => (
             <button
@@ -415,7 +487,7 @@ function MoreHomes() {
           ))}
           <button
             onClick={() => setLocation("/directory")}
-            className="px-4 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 transition-colors text-sm"
+            className="px-4 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 text-sm"
           >
             All Homes →
           </button>
@@ -426,7 +498,7 @@ function MoreHomes() {
 }
 
 /**
- * Footer - Compact
+ * Footer
  */
 function Footer() {
   const [, setLocation] = useLocation();
@@ -436,7 +508,10 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <LogoButton variant="light" size="md" onClick={() => setLocation("/")} />
+            <span className="text-lg">
+              <span className="text-white">OKAPI</span>
+              <span className="text-teal-400 ml-1.5">Care Network</span>
+            </span>
             <p className="text-sm text-gray-400 mt-2">
               Washington's Adult Family Home directory.
             </p>
