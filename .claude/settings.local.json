@@ -44,7 +44,10 @@
       "Bash(npm run build:*)",
       "Bash(ls:*)",
       "Bash(git stash:*)",
-      "Bash(git stash pop:*)"
+      "Bash(git stash pop:*)",
+      "Bash(DATABASE_URL='postgresql://neondb_owner:npg_M5bm4wkxUdTN@ep-summer-firefly-afgkr24f-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require' npm run db:push:*)",
+      "Bash(DATABASE_URL='postgresql://neondb_owner:npg_M5bm4wkxUdTN@ep-summer-firefly-afgkr24f-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require' npx tsx:*)",
+      "Bash(DATABASE_URL='postgresql://neondb_owner:npg_M5bm4wkxUdTN@ep-summer-firefly-afgkr24f-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require' node:*)"
     ]
   }
 }

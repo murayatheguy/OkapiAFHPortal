@@ -21,6 +21,7 @@ import {
 } from "./middleware/security";
 import { publicRoutes } from "./routes/public";
 import { secureRoutes } from "./routes/secure";
+import { authRoutes } from "./routes/auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -52,6 +53,11 @@ export async function registerRoutes(
     };
     next();
   }, secureRoutes);
+
+  // ============================================
+  // AUTH ROUTES (MFA, Staff PIN)
+  // ============================================
+  app.use("/api/auth", authRoutes);
 
   // ============================================
   // FACILITIES API
