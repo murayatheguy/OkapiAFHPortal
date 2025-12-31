@@ -19,12 +19,40 @@ import {
   createActiveSession,
   getRemainingAttempts,
 } from "./middleware/security";
+import { publicRoutes } from "./routes/public";
+import { secureRoutes } from "./routes/secure";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
+  // ============================================
+  // PUBLIC API ROUTES (no auth required, no PHI)
+  // ============================================
+  app.use("/api/public", publicRoutes);
+
+  // ============================================
+  // SECURE API ROUTES (auth required, PHI access)
+  // ============================================
+  app.use("/api/secure", (req, res, next) => {
+    // Check if user is authenticated via session
+    const session = req.session as any;
+    if (!session?.ownerId && !session?.staffId && !session?.adminId) {
+      return res.status(401).json({
+        success: false,
+        error: { code: "AUTH_REQUIRED", message: "Authentication required" }
+      });
+    }
+    // Attach user info to request
+    (req as any).user = {
+      id: session.ownerId || session.staffId || session.adminId,
+      role: session.adminId ? "admin" : session.ownerId ? "owner" : "staff",
+      facilityId: session.facilityId,
+    };
+    next();
+  }, secureRoutes);
+
   // ============================================
   // FACILITIES API
   // ============================================
