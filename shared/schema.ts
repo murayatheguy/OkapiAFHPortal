@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, date, timestamp, decimal, index, json, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, date, timestamp, decimal, index, json, jsonb, serial } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1740,3 +1740,334 @@ export const facilityCapabilitiesRelations = relations(facilityCapabilities, ({ 
 export const insertFacilityCapabilitiesSchema = createInsertSchema(facilityCapabilities).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertFacilityCapabilities = z.infer<typeof insertFacilityCapabilitiesSchema>;
 export type FacilityCapabilities = typeof facilityCapabilities.$inferSelect;
+
+// ============================================
+// AUDIT LOGS (HIPAA Required)
+// ============================================
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+
+  // Who
+  userId: varchar("user_id").references(() => users.id),
+  staffAuthId: varchar("staff_auth_id"),
+  userRole: text("user_role"),
+  userEmail: text("user_email"),
+
+  // What
+  action: text("action").notNull(), // 'view', 'create', 'update', 'delete', 'login', 'logout'
+  resourceType: text("resource_type").notNull(), // 'resident', 'medication', 'facility', etc.
+  resourceId: varchar("resource_id"),
+  facilityId: varchar("facility_id"),
+
+  // Details
+  description: text("description"),
+  previousValues: jsonb("previous_values"),
+  newValues: jsonb("new_values"),
+
+  // Where
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  sessionId: text("session_id"),
+
+  // Security events
+  isSecurityEvent: boolean("is_security_event").default(false),
+  securityEventType: text("security_event_type"),
+
+  // When (immutable)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("audit_logs_user_idx").on(table.userId),
+  resourceIdx: index("audit_logs_resource_idx").on(table.resourceType, table.resourceId),
+  facilityIdx: index("audit_logs_facility_idx").on(table.facilityId),
+  createdIdx: index("audit_logs_created_idx").on(table.createdAt),
+  securityIdx: index("audit_logs_security_idx").on(table.isSecurityEvent),
+}));
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// ============================================
+// FACILITY COMPLIANCE (DSHS Tracking)
+// ============================================
+export const facilityCompliance = pgTable("facility_compliance", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").notNull().unique().references(() => facilities.id, { onDelete: "cascade" }),
+
+  // DSHS Inspection
+  lastInspectionDate: date("last_inspection_date"),
+  nextInspectionDue: date("next_inspection_due"),
+  inspectionScore: integer("inspection_score"),
+  monthsViolationFree: integer("months_violation_free").default(0),
+
+  // Violations (24-month window)
+  criticalViolations: integer("critical_violations").default(0),
+  seriousViolations: integer("serious_violations").default(0),
+  moderateViolations: integer("moderate_violations").default(0),
+  minorViolations: integer("minor_violations").default(0),
+
+  // Flags
+  hasAbuseFinding: boolean("has_abuse_finding").default(false),
+  abuseFindingDate: date("abuse_finding_date"),
+
+  // DSHS License
+  dshsLicenseNumber: text("dshs_license_number"),
+  dshsInceptionDate: date("dshs_inception_date"),
+  dshsLastSync: timestamp("dshs_last_sync"),
+
+  // 2025 Requirements
+  hasSuccessionPlan: boolean("has_succession_plan").default(false),
+  successionPlanDate: date("succession_plan_date"),
+
+  // Calculated Scores
+  totalScore: integer("total_score"),
+  scoreRating: text("score_rating"),
+  scoreCalculatedAt: timestamp("score_calculated_at"),
+
+  // Verification
+  isVerified: boolean("is_verified").default(false),
+  verifiedBy: varchar("verified_by").references(() => users.id),
+  verifiedAt: timestamp("verified_at"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("facility_compliance_facility_idx").on(table.facilityId),
+}));
+
+export type FacilityCompliance = typeof facilityCompliance.$inferSelect;
+export type InsertFacilityCompliance = typeof facilityCompliance.$inferInsert;
+
+// ============================================
+// STAFF CREDENTIALS (License Tracking)
+// ============================================
+export const staffCredentials = pgTable("staff_credentials", {
+  id: serial("id").primaryKey(),
+  staffAuthId: varchar("staff_auth_id").notNull(),
+  facilityId: varchar("facility_id").notNull().references(() => facilities.id),
+
+  // License
+  licenseType: text("license_type"), // 'NAC', 'CNA', 'HCA', 'RN', 'LPN'
+  licenseNumber: text("license_number"),
+  licenseState: text("license_state").default("WA"),
+  licenseExpiryDate: date("license_expiry_date"),
+  licenseVerified: boolean("license_verified").default(false),
+
+  // Required Trainings
+  cprExpiryDate: date("cpr_expiry_date"),
+  firstAidExpiryDate: date("first_aid_expiry_date"),
+  foodHandlerExpiryDate: date("food_handler_expiry_date"),
+
+  // Specialty Certifications
+  hasDementiaSpecialty: boolean("has_dementia_specialty").default(false),
+  hasMentalHealthSpecialty: boolean("has_mental_health_specialty").default(false),
+  hasNurseDelegation: boolean("has_nurse_delegation").default(false),
+  nurseDelegationExpiry: date("nurse_delegation_expiry"),
+
+  // Background Check
+  backgroundCheckDate: date("background_check_date"),
+  backgroundCheckClear: boolean("background_check_clear"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  staffIdx: index("staff_credentials_staff_idx").on(table.staffAuthId),
+  facilityIdx: index("staff_credentials_facility_idx").on(table.facilityId),
+  licenseExpiryIdx: index("staff_credentials_license_expiry_idx").on(table.licenseExpiryDate),
+}));
+
+export type StaffCredentials = typeof staffCredentials.$inferSelect;
+export type InsertStaffCredentials = typeof staffCredentials.$inferInsert;
+
+// ============================================
+// OWNER CREDENTIALS
+// ============================================
+export const ownerCredentials = pgTable("owner_credentials", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").notNull().unique().references(() => facilities.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+
+  // License
+  licenseType: text("license_type"),
+  licenseNumber: text("license_number"),
+  licenseExpiryDate: date("license_expiry_date"),
+  licenseVerified: boolean("license_verified").default(false),
+
+  // Involvement
+  livesOnSite: boolean("lives_on_site").default(false),
+  hoursPerWeekOnSite: integer("hours_per_week_on_site"),
+
+  // Experience
+  yearsHealthcareExperience: integer("years_healthcare_experience"),
+  yearsAfhExperience: integer("years_afh_experience"),
+
+  // 2025 DSHS Requirement
+  hasSuccessionPlan: boolean("has_succession_plan").default(false),
+  successorName: text("successor_name"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("owner_credentials_facility_idx").on(table.facilityId),
+  userIdx: index("owner_credentials_user_idx").on(table.userId),
+}));
+
+export type OwnerCredentials = typeof ownerCredentials.$inferSelect;
+export type InsertOwnerCredentials = typeof ownerCredentials.$inferInsert;
+
+// ============================================
+// ADL LOGS (Activities of Daily Living)
+// ============================================
+export const adlLogs = pgTable("adl_logs", {
+  id: serial("id").primaryKey(),
+  residentId: varchar("resident_id").notNull(),
+  facilityId: varchar("facility_id").notNull().references(() => facilities.id),
+
+  // Date/Time
+  logDate: date("log_date").notNull(),
+  shiftType: text("shift_type"), // 'day', 'swing', 'night'
+
+  // ADL Categories (values: 'independent', 'setup', 'supervision', 'limited_assist', 'extensive_assist', 'total_care')
+  bathing: text("bathing"),
+  dressing: text("dressing"),
+  grooming: text("grooming"),
+  toileting: text("toileting"),
+  transferring: text("transferring"),
+  mobility: text("mobility"),
+  eating: text("eating"),
+
+  // Additional
+  continence: text("continence"),
+  sleepQuality: text("sleep_quality"),
+  moodBehavior: text("mood_behavior"),
+  painLevel: integer("pain_level"),
+
+  // Vitals
+  bloodPressureSystolic: integer("blood_pressure_systolic"),
+  bloodPressureDiastolic: integer("blood_pressure_diastolic"),
+  pulse: integer("pulse"),
+  temperature: text("temperature"),
+  weight: text("weight"),
+
+  // Notes
+  notes: text("notes"),
+
+  // Staff
+  recordedBy: varchar("recorded_by").notNull(),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+
+  // Soft delete
+  deletedAt: timestamp("deleted_at"),
+}, (table) => ({
+  residentIdx: index("adl_logs_resident_idx").on(table.residentId),
+  facilityIdx: index("adl_logs_facility_idx").on(table.facilityId),
+  dateIdx: index("adl_logs_date_idx").on(table.logDate),
+}));
+
+export type AdlLog = typeof adlLogs.$inferSelect;
+export type InsertAdlLog = typeof adlLogs.$inferInsert;
+
+// ============================================
+// CARE PLAN VERSIONS (NCP Versioning)
+// ============================================
+export const carePlanVersions = pgTable("care_plan_versions", {
+  id: serial("id").primaryKey(),
+  residentId: varchar("resident_id").notNull(),
+  facilityId: varchar("facility_id").notNull().references(() => facilities.id),
+
+  // Version
+  versionNumber: integer("version_number").notNull(),
+  effectiveDate: date("effective_date").notNull(),
+  expirationDate: date("expiration_date"),
+
+  // Plan Data (full NCP as JSON)
+  planData: jsonb("plan_data").notNull(),
+
+  // Change Tracking
+  changeReason: text("change_reason"),
+  changeDescription: text("change_description"),
+
+  // Signatures
+  residentSignedAt: timestamp("resident_signed_at"),
+  representativeSignedAt: timestamp("representative_signed_at"),
+  providerSignedAt: timestamp("provider_signed_at"),
+
+  // PDF
+  pdfUrl: text("pdf_url"),
+
+  // Status
+  status: text("status").default("draft"), // 'draft', 'active', 'superseded'
+
+  // Metadata
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+
+  // Soft delete
+  deletedAt: timestamp("deleted_at"),
+}, (table) => ({
+  residentIdx: index("care_plan_versions_resident_idx").on(table.residentId),
+  facilityIdx: index("care_plan_versions_facility_idx").on(table.facilityId),
+  statusIdx: index("care_plan_versions_status_idx").on(table.status),
+}));
+
+export type CarePlanVersion = typeof carePlanVersions.$inferSelect;
+export type InsertCarePlanVersion = typeof carePlanVersions.$inferInsert;
+
+// ============================================
+// TRUSTED DEVICES (Staff PIN Security)
+// ============================================
+export const trustedDevices = pgTable("trusted_devices", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").notNull().references(() => facilities.id),
+
+  // Device
+  deviceId: text("device_id").notNull(),
+  deviceName: text("device_name"),
+  deviceType: text("device_type"), // "tablet", "phone", "desktop"
+
+  // Authorization
+  authorizedBy: varchar("authorized_by").references(() => users.id),
+  authorizedAt: timestamp("authorized_at").defaultNow(),
+
+  // Status
+  isActive: boolean("is_active").default(true),
+  lastUsedAt: timestamp("last_used_at"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("trusted_devices_facility_idx").on(table.facilityId),
+  deviceIdx: index("trusted_devices_device_idx").on(table.deviceId),
+}));
+
+export type TrustedDevice = typeof trustedDevices.$inferSelect;
+export type InsertTrustedDevice = typeof trustedDevices.$inferInsert;
+
+// ============================================
+// USER MFA (Multi-Factor Authentication)
+// ============================================
+export const userMfa = pgTable("user_mfa", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+
+  // TOTP Secret (encrypted)
+  encryptedSecret: text("encrypted_secret").notNull(),
+
+  // Backup Codes (hashed)
+  backupCodes: jsonb("backup_codes").$type<string[]>().default([]),
+
+  // Status
+  isEnabled: boolean("is_enabled").default(false),
+  isRequired: boolean("is_required").default(true),
+
+  // Tracking
+  lastUsedAt: timestamp("last_used_at"),
+  failedAttempts: integer("failed_attempts").default(0),
+  lockedUntil: timestamp("locked_until"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userIdx: index("user_mfa_user_idx").on(table.userId),
+}));
+
+export type UserMfa = typeof userMfa.$inferSelect;
+export type InsertUserMfa = typeof userMfa.$inferInsert;
