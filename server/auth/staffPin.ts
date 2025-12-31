@@ -56,15 +56,15 @@ export async function authenticateStaffPIN(
     }
   }
 
-  // Find staff by hashed PIN
+  // Find staff by hashed PIN - schema uses 'pin' column and 'status' for active state
   const hashedPin = hashPIN(pin);
   const [staff] = await db
     .select()
     .from(staffAuth)
     .where(and(
       eq(staffAuth.facilityId, facilityId),
-      eq(staffAuth.pinHash, hashedPin),
-      eq(staffAuth.isActive, true)
+      eq(staffAuth.pin, hashedPin),
+      eq(staffAuth.status, "active")
     ));
 
   if (!staff) {
@@ -76,22 +76,9 @@ export async function authenticateStaffPIN(
     return { success: false, error: "Invalid PIN" };
   }
 
-  // Check lockout
-  if (staff.lockedUntil && new Date(staff.lockedUntil) > new Date()) {
-    const minutesRemaining = Math.ceil(
-      (new Date(staff.lockedUntil).getTime() - Date.now()) / 60000
-    );
-    return {
-      success: false,
-      error: `Account locked. Try again in ${minutesRemaining} minutes.`
-    };
-  }
-
-  // Success - reset failures and update last login
+  // Success - update last login
   await db.update(staffAuth)
     .set({
-      failedAttempts: 0,
-      lockedUntil: null,
       lastLoginAt: new Date(),
     })
     .where(eq(staffAuth.id, staff.id));
@@ -124,9 +111,8 @@ export async function authenticateStaffPIN(
 export async function handleFailedPINAttempt(
   facilityId: string,
   ipAddress: string
-): Promise<{ remainingAttempts: number; lockedUntil?: Date }> {
-  // This would be called if we could identify the user
-  // For now, just log the failure
+): Promise<{ remainingAttempts: number }> {
+  // Log the failure for security monitoring
   await logSecurityEvent({
     type: "pin_auth_failed",
     facilityId,
