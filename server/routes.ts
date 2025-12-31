@@ -22,6 +22,7 @@ import {
 import { publicRoutes } from "./routes/public";
 import { secureRoutes } from "./routes/secure";
 import { authRoutes } from "./routes/auth";
+import { adminRoutes } from "./routes/admin";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -58,6 +59,25 @@ export async function registerRoutes(
   // AUTH ROUTES (MFA, Staff PIN)
   // ============================================
   app.use("/api/auth", authRoutes);
+
+  // ============================================
+  // ADMIN ROUTES (require admin role)
+  // ============================================
+  app.use("/api/admin", (req, res, next) => {
+    const session = req.session as any;
+    if (!session?.adminId) {
+      return res.status(401).json({
+        success: false,
+        error: { code: "AUTH_REQUIRED", message: "Admin authentication required" }
+      });
+    }
+    (req as any).user = {
+      id: session.adminId,
+      role: "admin",
+      adminRole: session.adminRole || "admin",
+    };
+    next();
+  }, adminRoutes);
 
   // ============================================
   // FACILITIES API
