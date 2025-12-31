@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/shared/logo";
+import { LogoInline } from "@/components/shared/logo";
 import { WA_CITIES } from "@/lib/constants";
 
 interface MatchData {
@@ -204,7 +204,7 @@ export default function MatchWizardPage() {
       {/* Header */}
       <header className="bg-white/70 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Logo />
+          <LogoInline />
           <span className="text-sm text-gray-500 hidden sm:block">
             Finding the right home
           </span>
@@ -217,11 +217,11 @@ export default function MatchWizardPage() {
           <div className="mb-8">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">Step {currentStep} of {STEPS.length - 1}</span>
-              <span className="text-teal-600 font-medium">{Math.round(progress)}% complete</span>
+              <span className="text-[#4C1D95] font-medium">{Math.round(progress)}% complete</span>
             </div>
             <div className="h-2 bg-white/50 rounded-full overflow-hidden backdrop-blur-sm">
               <div
-                className="h-full bg-gradient-to-r from-teal-500 to-teal-600 transition-all duration-500 rounded-full"
+                className="h-full bg-gradient-to-r from-[#4C1D95] to-[#5B21B6] transition-all duration-500 rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -271,7 +271,7 @@ export default function MatchWizardPage() {
               <Button
                 onClick={handleNext}
                 size="lg"
-                className="bg-teal-600 hover:bg-teal-700 h-14 px-8 text-lg"
+                className="bg-[#4C1D95] hover:bg-[#5B21B6] h-14 px-8 text-lg"
               >
                 <Sparkles className="h-5 w-5 mr-2" />
                 Let's Get Started
@@ -611,7 +611,7 @@ export default function MatchWizardPage() {
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
-              className="h-12 px-8 bg-teal-600 hover:bg-teal-700"
+              className="h-12 px-8 bg-[#4C1D95] hover:bg-[#5B21B6]"
             >
               {currentStep === STEPS.length - 1 ? (
                 <>

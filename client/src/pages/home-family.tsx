@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
-import { Logo } from "@/components/shared/logo";
+import { Logo, LogoInline } from "@/components/shared/logo";
 
 interface Facility {
   id: string;
@@ -61,19 +61,19 @@ function Header() {
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Logo />
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <LogoInline />
 
         <div className="flex items-center gap-4">
           <button
             onClick={() => setLocation("/directory")}
-            className="text-sm text-gray-600 hover:text-gray-900 hidden sm:block"
+            className="text-sm text-gray-600 hover:text-[#4C1D95] hidden sm:block font-medium"
           >
             Browse All
           </button>
           <button
             onClick={() => setLocation("/owner/login")}
-            className="text-sm px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50"
+            className="text-sm px-4 py-2 bg-[#4C1D95] text-white rounded-lg hover:bg-[#5B21B6] font-medium transition-colors"
           >
             AFH Owners
           </button>
@@ -103,7 +103,7 @@ function HeroCompact() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Find the Right Home <span className="text-teal-600">for Your Loved One</span>
+            Find the Right Home <span className="text-[#4C1D95]">for Your Loved One</span>
           </h1>
           <p className="text-gray-600 mb-6">
             Licensed Adult Family Homes in Washington State
@@ -126,7 +126,7 @@ function HeroCompact() {
                   {WA_CITIES.map(city => <option key={city} value={city} />)}
                 </datalist>
               </div>
-              <Button onClick={handleSearch} className="h-11 px-6 bg-teal-600 hover:bg-teal-700">
+              <Button onClick={handleSearch} className="h-11 px-6 bg-[#4C1D95] hover:bg-[#5B21B6]">
                 <Search className="h-4 w-4" />
               </Button>
             </div>
@@ -134,7 +134,7 @@ function HeroCompact() {
             <Button
               onClick={() => setLocation("/match")}
               variant="outline"
-              className="h-11 border-2 border-teal-600 text-teal-600 hover:bg-teal-50"
+              className="h-11 border-2 border-[#4C1D95] text-[#4C1D95] hover:bg-purple-50"
             >
               <Heart className="h-4 w-4 mr-2" />
               Help Me Choose
@@ -204,7 +204,7 @@ function FeaturedHomesGlass() {
           <Button
             variant="ghost"
             onClick={() => setLocation("/directory")}
-            className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+            className="text-[#4C1D95] hover:text-[#5B21B6] hover:bg-purple-50"
           >
             View all homes <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
@@ -327,8 +327,8 @@ function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index
 
           {/* Name */}
           <div className="flex items-start gap-2 mb-2">
-            <Home className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
-            <h3 className="font-bold text-gray-900 text-lg leading-tight group-hover:text-teal-600 transition-colors">
+            <Home className="h-5 w-5 text-[#4C1D95] mt-0.5 flex-shrink-0" />
+            <h3 className="font-bold text-gray-900 text-lg leading-tight group-hover:text-[#4C1D95] transition-colors">
               {facility.name}
             </h3>
           </div>
@@ -434,7 +434,7 @@ function QuickInfo() {
                 { icon: Shield, text: "All DSHS licensed & inspected" },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <item.icon className="h-5 w-5 text-teal-600 mt-0.5" />
+                  <item.icon className="h-5 w-5 text-[#4C1D95] mt-0.5" />
                   <span className="text-gray-700">{item.text}</span>
                 </div>
               ))}
@@ -442,19 +442,19 @@ function QuickInfo() {
           </div>
 
           {/* Right - Match CTA */}
-          <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-6 text-white">
+          <div className="bg-gradient-to-br from-[#4C1D95] to-[#5B21B6] rounded-2xl p-6 text-white">
             <h3 className="text-xl font-bold mb-2">Not sure where to start?</h3>
-            <p className="text-teal-100 mb-4">
+            <p className="text-purple-100 mb-4">
               Answer a few questions and we'll match you with homes that fit your loved one's needs.
             </p>
             <Button
               onClick={() => setLocation("/match")}
-              className="w-full bg-white text-teal-600 hover:bg-teal-50"
+              className="w-full bg-white text-[#4C1D95] hover:bg-purple-50"
             >
               <Heart className="h-4 w-4 mr-2" />
               Help Me Find the Right Home
             </Button>
-            <p className="text-xs text-teal-200 text-center mt-3">
+            <p className="text-xs text-purple-200 text-center mt-3">
               Free • 3 minutes • No account needed
             </p>
           </div>
@@ -480,14 +480,14 @@ function BrowseCities() {
             <button
               key={city}
               onClick={() => setLocation(`/directory?city=${encodeURIComponent(city)}`)}
-              className="px-4 py-2 bg-white rounded-full border hover:border-teal-500 hover:text-teal-600 transition-colors text-sm"
+              className="px-4 py-2 bg-white rounded-full border hover:border-[#4C1D95] hover:text-[#4C1D95] transition-colors text-sm"
             >
               {city}
             </button>
           ))}
           <button
             onClick={() => setLocation("/directory")}
-            className="px-4 py-2 bg-teal-600 text-white rounded-full hover:bg-teal-700 text-sm"
+            className="px-4 py-2 bg-[#4C1D95] text-white rounded-full hover:bg-[#5B21B6] text-sm"
           >
             All Homes →
           </button>
@@ -504,43 +504,41 @@ function Footer() {
   const [, setLocation] = useLocation();
 
   return (
-    <footer className="bg-gray-900 py-10">
+    <footer className="bg-[#1e1b4b] py-12">
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
-            <Logo variant="light" />
-            <p className="text-sm text-gray-400 mt-2">
+            <Logo variant="light" size="md" />
+            <p className="text-sm text-purple-200 mt-3">
               Washington's Adult Family Home directory.
             </p>
           </div>
 
           <div>
-            <h4 className="font-medium text-white mb-3">Find Care</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><button onClick={() => setLocation("/match")} className="hover:text-white">Get Matched</button></li>
-              <li><button onClick={() => setLocation("/directory")} className="hover:text-white">Browse Homes</button></li>
+            <h4 className="font-semibold text-white mb-3">Find Care</h4>
+            <ul className="space-y-2 text-sm text-purple-200">
+              <li><button onClick={() => setLocation("/match")} className="hover:text-white transition-colors">Get Matched</button></li>
+              <li><button onClick={() => setLocation("/directory")} className="hover:text-white transition-colors">Browse Homes</button></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-medium text-white mb-3">For Owners</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><button onClick={() => setLocation("/owner/login")} className="hover:text-white">Owner Login</button></li>
-              <li><button onClick={() => setLocation("/owner/setup")} className="hover:text-white">List Your Home</button></li>
+            <h4 className="font-semibold text-white mb-3">For Owners</h4>
+            <ul className="space-y-2 text-sm text-purple-200">
+              <li><button onClick={() => setLocation("/owner/login")} className="hover:text-white transition-colors">Owner Login</button></li>
+              <li><button onClick={() => setLocation("/register")} className="hover:text-white transition-colors">List Your Home</button></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-medium text-white mb-3">Resources</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="https://www.dshs.wa.gov/altsa" target="_blank" rel="noopener noreferrer" className="hover:text-white">DSHS Info ↗</a></li>
-              <li><button onClick={() => setLocation("/privacy")} className="hover:text-white">Privacy</button></li>
-              <li><button onClick={() => setLocation("/terms")} className="hover:text-white">Terms</button></li>
+            <h4 className="font-semibold text-white mb-3">Resources</h4>
+            <ul className="space-y-2 text-sm text-purple-200">
+              <li><a href="https://www.dshs.wa.gov/altsa" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">DSHS Info ↗</a></li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-6 text-center text-sm text-gray-500">
+        <div className="border-t border-purple-800 mt-8 pt-6 text-center text-sm text-purple-300">
           © {new Date().getFullYear()} Okapi Care Network
         </div>
       </div>

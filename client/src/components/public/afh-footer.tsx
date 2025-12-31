@@ -41,7 +41,7 @@ export function AFHFooter() {
   };
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-[#1e1b4b] text-white">
       {/* Main Footer */}
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
@@ -50,10 +50,10 @@ export function AFHFooter() {
             <div className="mb-4">
               <Logo variant="light" size="md" />
             </div>
-            <p className="text-gray-400 text-sm mb-4">
+            <p className="text-purple-200 text-sm mb-4">
               Helping families find the right Adult Family Home in Washington State.
             </p>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-purple-200">
               <MapPin className="h-4 w-4" />
               <span>{BRAND.state} State</span>
             </div>
@@ -66,7 +66,7 @@ export function AFHFooter() {
               {footerLinks.families.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href}>
-                    <a className="text-gray-400 hover:text-white text-sm transition-colors">
+                    <a className="text-purple-200 hover:text-white text-sm transition-colors">
                       {link.label}
                     </a>
                   </Link>
@@ -82,7 +82,7 @@ export function AFHFooter() {
               {footerLinks.owners.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href}>
-                    <a className="text-gray-400 hover:text-white text-sm transition-colors">
+                    <a className="text-purple-200 hover:text-white text-sm transition-colors">
                       {link.label}
                     </a>
                   </Link>
@@ -102,14 +102,14 @@ export function AFHFooter() {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-white text-sm transition-colors flex items-center gap-1"
+                      className="text-purple-200 hover:text-white text-sm transition-colors flex items-center gap-1"
                     >
                       {link.label}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   ) : (
                     <Link href={link.href}>
-                      <a className="text-gray-400 hover:text-white text-sm transition-colors">
+                      <a className="text-purple-200 hover:text-white text-sm transition-colors">
                         {link.label}
                       </a>
                     </Link>
@@ -126,7 +126,7 @@ export function AFHFooter() {
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href}>
-                    <a className="text-gray-400 hover:text-white text-sm transition-colors">
+                    <a className="text-purple-200 hover:text-white text-sm transition-colors">
                       {link.label}
                     </a>
                   </Link>
@@ -137,10 +137,10 @@ export function AFHFooter() {
         </div>
 
         {/* DSHS Disclaimer */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <p className="text-xs text-gray-400">
-              <strong className="text-gray-300">Important:</strong> {BRAND.name} provides
+        <div className="mt-12 pt-8 border-t border-purple-800">
+          <div className="bg-purple-900/50 rounded-lg p-4">
+            <p className="text-xs text-purple-200">
+              <strong className="text-purple-100">Important:</strong> {BRAND.name} provides
               information about licensed Adult Family Homes in {BRAND.state} State. All homes
               listed are licensed by {WA_DSHS.name} ({WA_DSHS.abbreviation}). Licensing status
               should be verified directly with {WA_DSHS.abbreviation}. This platform does not
@@ -152,21 +152,21 @@ export function AFHFooter() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-purple-800">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-purple-200">
               &copy; {currentYear} {BRAND.name}. All rights reserved.
             </p>
-            <div className="flex items-center gap-1 text-sm text-gray-400">
+            <div className="flex items-center gap-1 text-sm text-purple-200">
               <span>Made with</span>
-              <Heart className="h-4 w-4 text-red-500" />
+              <Heart className="h-4 w-4 text-red-400" />
               <span>for {BRAND.state} families</span>
             </div>
             <div className="flex items-center gap-4">
               <a
                 href={`mailto:${BRAND.supportEmail}`}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-purple-200 hover:text-white transition-colors"
               >
                 <Mail className="h-5 w-5" />
               </a>
@@ -189,7 +189,7 @@ export function AFHFooterCompact() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Logo variant="dark" size="sm" />
+            <Logo variant="default" size="sm" />
             <span className="text-sm text-gray-400">
               &copy; {currentYear}
             </span>

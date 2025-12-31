@@ -1,138 +1,115 @@
 /**
  * OKAPI Care Network Logo
- * EXACT copy from production owner login page
- * ALWAYS clickable, ALWAYS goes to homepage
+ * Bold stacked design with deep purple color
+ * Matches the Copilot-generated brand logo
  */
 
 import { useLocation } from "wouter";
 
 interface LogoProps {
-  /** "light" for dark backgrounds, "dark" for light backgrounds */
-  variant?: "light" | "dark";
-  /** Size: "sm" (1rem), "md" (1.25rem), "lg" (1.5rem) */
-  size?: "sm" | "md" | "lg";
-  /** Additional className for the container */
+  variant?: "default" | "light" | "compact";
   className?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-/**
- * The official OKAPI Care Network logo
- * Uses Cormorant serif font with specific styling
- *
- * Dark variant (for light backgrounds): teal OKAPI, gray Care Network
- * Light variant (for dark backgrounds): gold OKAPI, cream Care Network
- */
-export function Logo({
-  variant = "dark",
-  size = "md",
-  className = ""
-}: LogoProps) {
+export function Logo({ variant = "default", className = "", size = "md" }: LogoProps) {
   const [, setLocation] = useLocation();
 
-  const sizeMap = {
-    sm: "1rem",
-    md: "1.25rem",
-    lg: "1.5rem",
+  // Size configurations
+  const sizes = {
+    sm: { okapi: "text-xl", care: "text-[10px]", gap: "gap-0" },
+    md: { okapi: "text-2xl", care: "text-xs", gap: "gap-0.5" },
+    lg: { okapi: "text-4xl", care: "text-sm", gap: "gap-1" },
   };
 
-  const fontSize = sizeMap[size];
+  const s = sizes[size];
 
-  // Colors based on variant
-  const colors = variant === "dark"
-    ? {
-        okapi: "#0d9488",      // teal-600
-        network: "#374151",    // gray-700
-      }
-    : {
-        okapi: "#c9a962",      // gold
-        network: "#e8e4dc",    // cream
-      };
+  // Color based on variant
+  const color = variant === "light" ? "text-white" : "text-[#4C1D95]";
+
+  if (variant === "compact") {
+    // Single line version for tight spaces
+    return (
+      <button
+        onClick={() => setLocation("/")}
+        className={`flex items-center hover:opacity-80 transition-opacity ${className}`}
+        aria-label="Go to homepage"
+      >
+        <span className="text-[#4C1D95]">
+          <span className="font-black text-xl tracking-tight">OKAPI</span>
+          <span className="font-semibold text-sm ml-2 tracking-wide">CARE NETWORK</span>
+        </span>
+      </button>
+    );
+  }
 
   return (
     <button
       onClick={() => setLocation("/")}
-      className={`flex items-center gap-1.5 hover:opacity-80 transition-opacity ${className}`}
+      className={`flex flex-col ${s.gap} hover:opacity-80 transition-opacity ${className}`}
       aria-label="Go to homepage"
     >
-      <span
-        style={{
-          fontFamily: "'Cormorant', serif",
-          fontWeight: 400,
-          color: colors.okapi,
-          letterSpacing: "0.1em",
-          fontSize
-        }}
-      >
+      {/* OKAPI - Bold */}
+      <span className={`font-black ${s.okapi} tracking-tight ${color}`}>
         OKAPI
       </span>
-      <span
-        style={{
-          fontFamily: "'Cormorant', serif",
-          fontWeight: 300,
-          fontStyle: "italic",
-          color: colors.network,
-          fontSize
-        }}
-      >
-        Care Network
+      {/* CARE NETWORK - Lighter weight, tracked */}
+      <span className={`font-semibold ${s.care} tracking-[0.2em] ${color}`}>
+        CARE NETWORK
       </span>
     </button>
   );
 }
 
 /**
+ * Inline logo for headers (single line)
+ */
+export function LogoInline({ variant = "default", className = "" }: { variant?: "default" | "light"; className?: string }) {
+  const [, setLocation] = useLocation();
+  const color = variant === "light" ? "text-white" : "text-[#4C1D95]";
+
+  return (
+    <button
+      onClick={() => setLocation("/")}
+      className={`flex items-baseline hover:opacity-80 transition-opacity ${className}`}
+      aria-label="Go to homepage"
+    >
+      <span className={`font-black text-xl tracking-tight ${color}`}>OKAPI</span>
+      <span className={`font-semibold text-xs tracking-[0.15em] ml-2 ${color}`}>CARE NETWORK</span>
+    </button>
+  );
+}
+
+/**
  * Logo as a clickable button (for when using wouter's setLocation)
+ * @deprecated Use Logo or LogoInline instead
  */
 export function LogoButton({
-  variant = "dark",
+  variant = "default",
   size = "md",
   onClick,
   className = ""
-}: Omit<LogoProps, "linkTo"> & { onClick: () => void }) {
-  const sizeMap = {
-    sm: "1rem",
-    md: "1.25rem",
-    lg: "1.5rem",
+}: { variant?: "default" | "light"; size?: "sm" | "md" | "lg"; onClick: () => void; className?: string }) {
+  // Size configurations
+  const sizes = {
+    sm: { okapi: "text-xl", care: "text-[10px]", gap: "gap-0" },
+    md: { okapi: "text-2xl", care: "text-xs", gap: "gap-0.5" },
+    lg: { okapi: "text-4xl", care: "text-sm", gap: "gap-1" },
   };
 
-  const fontSize = sizeMap[size];
-
-  const colors = variant === "dark"
-    ? {
-        okapi: "#0d9488",
-        network: "#374151",
-      }
-    : {
-        okapi: "#c9a962",
-        network: "#e8e4dc",
-      };
+  const s = sizes[size];
+  const color = variant === "light" ? "text-white" : "text-[#4C1D95]";
 
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 ${className}`}
+      className={`flex flex-col ${s.gap} hover:opacity-80 transition-opacity ${className}`}
     >
-      <span
-        style={{
-          fontFamily: "'Cormorant', serif",
-          fontWeight: 400,
-          color: colors.okapi,
-          letterSpacing: "0.1em",
-          fontSize
-        }}
-      >
+      <span className={`font-black ${s.okapi} tracking-tight ${color}`}>
         OKAPI
       </span>
-      <span
-        style={{
-          fontFamily: "'Cormorant', serif",
-          fontWeight: 300,
-          fontStyle: "italic",
-          color: colors.network,
-          fontSize
-        }}
-      >
-        Care Network
+      <span className={`font-semibold ${s.care} tracking-[0.2em] ${color}`}>
+        CARE NETWORK
       </span>
     </button>
   );
