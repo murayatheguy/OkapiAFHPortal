@@ -171,6 +171,7 @@ async function seedFacility(
       acceptsPrivatePay: true,
       specialties: config.specialty ? [config.specialty] : ["General Care"],
       amenities: ["Home-cooked meals", "24/7 care", "Private rooms"],
+      images: AFH_TEMPLATE.sampleImages, // 10 sample images for gallery
       description: `${config.description || ""} ${SEED_CONFIG.testDataMarker.descriptionMarker}`.trim(),
       status: AFH_TEMPLATE.facility.status,
       claimStatus: AFH_TEMPLATE.facility.claimStatus,

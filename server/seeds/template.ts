@@ -10,7 +10,7 @@
 export const AFH_TEMPLATE = {
   // ============ META ============
   version: "1.0.0",
-  lastUpdated: "2024-12-25",
+  lastUpdated: "2024-12-30",
 
   // ============ FACILITY DEFAULTS ============
   facility: {
@@ -24,6 +24,21 @@ export const AFH_TEMPLATE = {
     status: "active",
     claimStatus: "claimed",
   },
+
+  // ============ SAMPLE IMAGES ============
+  // 10 high-quality house/home images for facility galleries
+  sampleImages: [
+    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop", // Modern house exterior
+    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop", // Beautiful home front
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop", // Luxury home
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop", // Cozy living room
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop", // Modern interior
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop", // Home with garden
+    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=800&h=600&fit=crop", // Classic house
+    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop", // Pool house
+    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop", // Home entrance
+    "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&h=600&fit=crop", // Modern home night
+  ],
 
   // ============ RESIDENT CONFIGURATION ============
   residents: {
