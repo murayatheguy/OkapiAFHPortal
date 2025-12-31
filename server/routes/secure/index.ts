@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { residentsRouter } from "./residents";
+import { imagesRouter } from "./images";
 import { enforceFacilityScope } from "../../middleware/facilityScope";
 
 export const secureRoutes = Router();
@@ -9,3 +10,6 @@ secureRoutes.use(enforceFacilityScope);
 
 // EHR routes
 secureRoutes.use("/residents", residentsRouter);
+
+// Image management
+secureRoutes.use("/images", imagesRouter);
