@@ -297,6 +297,24 @@ export const insertFacilitySchema = createInsertSchema(facilities).omit({ id: tr
 export type InsertFacility = z.infer<typeof insertFacilitySchema>;
 export type Facility = typeof facilities.$inferSelect;
 
+// Facility Images table - gallery images for facilities
+export const facilityImages = pgTable("facility_images", {
+  id: serial("id").primaryKey(),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+  imageUrl: text("image_url").notNull(),
+  caption: text("caption"),
+  isPrimary: boolean("is_primary").default(false),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("facility_images_facility_idx").on(table.facilityId),
+  sortIdx: index("facility_images_sort_idx").on(table.facilityId, table.sortOrder),
+}));
+
+export const insertFacilityImageSchema = createInsertSchema(facilityImages).omit({ id: true, createdAt: true });
+export type InsertFacilityImage = z.infer<typeof insertFacilityImageSchema>;
+export type FacilityImage = typeof facilityImages.$inferSelect;
+
 // Inquiries table for family inquiries
 export const inquiries = pgTable("inquiries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -663,9 +681,17 @@ export const facilitiesRelations = relations(facilities, ({ many, one }) => ({
   teamMembers: many(teamMembers),
   inquiries: many(inquiries),
   reviews: many(reviews),
+  images: many(facilityImages),
   owner: one(owners, {
     fields: [facilities.ownerId],
     references: [owners.id],
+  }),
+}));
+
+export const facilityImagesRelations = relations(facilityImages, ({ one }) => ({
+  facility: one(facilities, {
+    fields: [facilityImages.facilityId],
+    references: [facilities.id],
   }),
 }));
 

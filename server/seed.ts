@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { facilities, teamMembers, credentials, admins, reviews, inquiries, transportProviders } from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { facilities, teamMembers, credentials, admins, reviews, inquiries, transportProviders, facilityImages } from "@shared/schema";
+import { sql, eq } from "drizzle-orm";
 
 const UNSPLASH_IMAGES = [
   "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80",
@@ -28,6 +28,37 @@ const getImagesForIndex = (index: number, count: number = 4): string[] => {
   }
   return images;
 };
+
+// Sample images for facility gallery (10 images per facility)
+const SAMPLE_FACILITY_IMAGES = [
+  { url: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80", caption: "Front of Home" },
+  { url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", caption: "Side View" },
+  { url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80", caption: "Back Yard" },
+  { url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80", caption: "Living Room" },
+  { url: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80", caption: "Private Bedroom" },
+  { url: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80", caption: "Kitchen" },
+  { url: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80", caption: "Dining Area" },
+  { url: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80", caption: "Bathroom" },
+  { url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80", caption: "Garden Area" },
+  { url: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80", caption: "Outdoor Patio" },
+];
+
+// Function to seed images for a facility
+async function seedFacilityImages(facilityId: string) {
+  // Delete existing images for this facility
+  await db.delete(facilityImages).where(eq(facilityImages.facilityId, facilityId));
+
+  // Insert 10 images
+  const imageData = SAMPLE_FACILITY_IMAGES.map((img, index) => ({
+    facilityId,
+    imageUrl: img.url,
+    caption: img.caption,
+    isPrimary: index === 0,
+    sortOrder: index,
+  }));
+
+  await db.insert(facilityImages).values(imageData);
+}
 
 const slugify = (text: string): string => {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -499,7 +530,7 @@ export async function seedDatabase() {
   console.log("Starting database seed with real King County AFH data...");
 
   // Clear existing data
-  await db.execute(sql`TRUNCATE TABLE credentials, team_members, reviews, inquiries, facilities, admins CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE credentials, team_members, reviews, inquiries, facility_images, facilities, admins CASCADE`);
 
   // Seed admin
   const adminData = {
@@ -573,8 +604,12 @@ export async function seedDatabase() {
 
     const result = await db.insert(facilities).values(facility).returning({ id: facilities.id });
     facilityIds.push(result[0].id);
+
+    // Seed 10 gallery images for this facility
+    await seedFacilityImages(result[0].id);
   }
   console.log(`Created ${facilityIds.length} AFH facilities from real King County data`);
+  console.log(`  📷 Added 10 gallery images per facility`);
 
   // Mock data for other facility types (ALF, SNF, Hospice) - 60 fictional facilities
   const ASSISTED_LIVING_DATA = [
@@ -711,8 +746,12 @@ export async function seedDatabase() {
 
     const result = await db.insert(facilities).values(facility).returning({ id: facilities.id });
     facilityIds.push(result[0].id);
+
+    // Seed 10 gallery images for this facility
+    await seedFacilityImages(result[0].id);
   }
   console.log(`Created ${OTHER_FACILITY_DATA.length} fictional facilities (20 ALF, 20 SNF, 20 Hospice)`);
+  console.log(`  📷 Added 10 gallery images per facility`);
 
   // Seed reviews for facilities
   let reviewsCreated = 0;
