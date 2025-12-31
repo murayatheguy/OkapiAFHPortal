@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -8,11 +9,19 @@ import { startDSHSCronJob } from "./dshs-sync";
 import MemoryStore from "memorystore";
 import { securityHeadersMiddleware } from "./middleware/security-headers";
 import { sessionTimeoutMiddleware } from "./middleware/security";
+import { apiLimiter, authLimiter, pinLimiter } from "./middleware/rateLimit";
+import { healthRouter } from "./routes/health";
 
 const app = express();
 const httpServer = createServer(app);
 
 const MemoryStoreSession = MemoryStore(session);
+
+// Helmet security headers (complements our custom security headers)
+app.use(helmet({
+  contentSecurityPolicy: false, // We handle CSP in security-headers.ts
+  crossOriginEmbedderPolicy: false, // Allow loading external resources
+}));
 
 declare module "http" {
   interface IncomingMessage {
@@ -57,6 +66,15 @@ app.use(securityHeadersMiddleware());
 app.use("/api/owners", sessionTimeoutMiddleware(15));
 app.use("/api/facilities", sessionTimeoutMiddleware(15));
 app.use("/api/ehr", sessionTimeoutMiddleware(15));
+
+// Health check endpoints (no rate limiting)
+app.use("/api/health", healthRouter);
+
+// Rate limiting
+app.use("/api", apiLimiter); // General API rate limit
+app.use("/api/auth/login", authLimiter); // Strict auth limit
+app.use("/api/auth/owner/login", authLimiter);
+app.use("/api/staff/pin-login", pinLimiter); // PIN login limit
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
