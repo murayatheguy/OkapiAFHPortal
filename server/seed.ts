@@ -755,11 +755,17 @@ export async function seedDatabase() {
 
   // Seed reviews for facilities
   let reviewsCreated = 0;
+  const ALL_FACILITY_NAMES = [
+    ...FACILITY_DATA.map(f => f.name),
+    ...ASSISTED_LIVING_DATA.map(f => f.name),
+    ...SKILLED_NURSING_DATA.map(f => f.name),
+    ...HOSPICE_DATA.map(f => f.name),
+  ];
   for (let i = 0; i < facilityIds.length; i++) {
     const facilityId = facilityIds[i];
-    const facilityName = FACILITY_DATA[i].name;
+    const facilityName = ALL_FACILITY_NAMES[i] || `Facility ${i + 1}`;
     const numReviews = 2 + Math.floor(Math.random() * 3); // 2-4 reviews per facility
-    
+
     for (let j = 0; j < numReviews; j++) {
       const template = REVIEW_TEMPLATES[(i + j) % REVIEW_TEMPLATES.length];
       const reviewData = {
@@ -849,53 +855,63 @@ export async function seedDatabase() {
   const credentialData = [
     {
       teamMemberId: teamMemberIds[0],
+      facilityId: firstFacilityId,
+      credentialType: "HCA",
       name: "Administrator License",
       type: "Required",
       status: "Current",
       issuedDate: "2023-01-15",
       expiryDate: "2025-01-15",
       source: "External",
-      issuer: "DSHS",
+      issuingAuthority: "DSHS",
     },
     {
       teamMemberId: teamMemberIds[1],
+      facilityId: firstFacilityId,
+      credentialType: "NAC",
       name: "Certified Nursing Assistant",
       type: "Required",
       status: "Current",
       issuedDate: "2022-06-01",
       expiryDate: "2025-06-01",
       source: "External",
-      issuer: "WA DOH",
+      issuingAuthority: "WA DOH",
     },
     {
       teamMemberId: teamMemberIds[1],
+      facilityId: firstFacilityId,
+      credentialType: "Dementia",
       name: "Dementia Care Training",
       type: "Specialty",
       status: "Current",
       issuedDate: "2024-03-15",
       expiryDate: "2026-03-15",
       source: "Okapi Academy",
-      issuer: "Okapi Academy",
+      issuingAuthority: "Okapi Academy",
     },
     {
       teamMemberId: teamMemberIds[2],
+      facilityId: firstFacilityId,
+      credentialType: "HCA",
       name: "Home Care Aide Certificate",
       type: "Required",
       status: "Expiring Soon",
       issuedDate: "2022-12-01",
       expiryDate: "2024-12-01",
       source: "External",
-      issuer: "DSHS",
+      issuingAuthority: "DSHS",
     },
     {
       teamMemberId: teamMemberIds[2],
+      facilityId: firstFacilityId,
+      credentialType: "MentalHealth",
       name: "Mental Health First Aid",
       type: "Specialty",
       status: "Current",
       issuedDate: "2024-05-20",
       expiryDate: "2027-05-20",
       source: "Okapi Academy",
-      issuer: "Okapi Academy",
+      issuingAuthority: "Okapi Academy",
     },
   ];
 

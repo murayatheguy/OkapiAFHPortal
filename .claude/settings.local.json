@@ -39,27 +39,12 @@
       "Bash(timeout /t 3)",
       "Bash(git revert:*)",
       "Bash(timeout /t 10)",
-      "Bash(node check-fillable.js:*)",
-      "Bash(node check-fillable.cjs:*)",
-      "Bash(node inspect-nurse-delegation.cjs:*)",
+      "Bash(dir /b)",
+      "Bash(dir:*)",
       "Bash(npm run build:*)",
-      "Bash(gh run:*)",
-      "Bash(railway status:*)",
-      "Bash(echo:*)",
-      "Bash(node map-pdf-coordinates.cjs:*)",
-      "Bash(git restore:*)",
-      "Bash(node analyze-ncp-pdf.cjs:*)",
-      "Bash(node analyze-forms.cjs:*)",
-      "Bash(node test-admission-agreement.cjs:*)",
-      "Bash(node test-disclosure-services.cjs:*)",
-      "Bash(node:*)",
-      "Bash(grep:*)",
-      "Bash(start http://localhost:5000)",
-      "Bash(pip install:*)",
-      "Bash(python -m pip install:*)",
-      "Bash(npm run seed:*)",
-      "Bash(npm run seed:multi:*)",
-      "Bash(npm run seed:new:*)"
+      "Bash(ls:*)",
+      "Bash(git stash:*)",
+      "Bash(git stash pop:*)"
     ]
   }
 }
