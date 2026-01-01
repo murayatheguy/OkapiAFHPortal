@@ -1,5 +1,6 @@
 /**
- * FacilityCardSimple - Clean, uncluttered facility card for directory listings
+ * Warm Premium FacilityCardSimple - Clean facility card for directory listings
+ * Larger text and touch targets for 50-65yo demographic
  */
 
 import { useState } from "react";
@@ -8,7 +9,7 @@ import type { Facility } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Phone, Star, Eye } from "lucide-react";
+import { MapPin, Phone, Star, Eye, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getFacilityPhotos } from "@/lib/facility-photos";
 
@@ -38,39 +39,49 @@ export function FacilityCardSimple({ facility, className }: FacilityCardSimplePr
   }
 
   return (
-    <Card className={cn(
-      "overflow-hidden group hover:shadow-lg transition-all duration-300 border-gray-200 bg-white flex flex-col h-full",
-      className
-    )}>
-      {/* Clean photo - no overlay */}
-      <div className="relative h-48 overflow-hidden shrink-0 bg-gray-100">
+    <Card
+      className={cn(
+        "overflow-hidden group hover:shadow-card-hover transition-all duration-300",
+        "border-gray-100 bg-white flex flex-col h-full rounded-2xl",
+        className
+      )}
+    >
+      {/* Photo with subtle overlay */}
+      <div className="relative h-52 overflow-hidden shrink-0 bg-ivory">
         <img
           src={primaryPhoto}
           alt={facility.name}
           className={cn(
             "w-full h-full transition-transform duration-500 group-hover:scale-105",
-            photoData.isPlaceholder ? "object-contain p-4" : "object-cover"
+            photoData.isPlaceholder ? "object-contain p-6" : "object-cover"
           )}
         />
+        {/* Licensed badge */}
+        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 shadow-sm">
+          <Shield className="h-3.5 w-3.5 text-sage-600" />
+          <span className="text-xs font-medium text-foreground/80">Licensed</span>
+        </div>
       </div>
 
-      <CardContent className="p-5 flex flex-col flex-1">
-        {/* Name */}
-        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-[#4C1D95] transition-colors mb-1">
+      <CardContent className="p-6 flex flex-col flex-1">
+        {/* Name - larger for readability */}
+        <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors mb-2">
           {facility.name}
         </h3>
 
         {/* City */}
-        <div className="flex items-center gap-1.5 text-gray-600 text-sm mb-3">
+        <div className="flex items-center gap-2 text-foreground/60 text-base mb-3">
           <MapPin className="h-4 w-4" />
           <span>{facility.city}, WA</span>
         </div>
 
         {/* Reviews count - only if has reviews */}
         {hasReviews && (
-          <div className="flex items-center gap-1.5 mb-3">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="text-gray-600 text-sm">{facility.reviewCount} review{facility.reviewCount !== 1 ? 's' : ''}</span>
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
+            <span className="text-base text-foreground/70">
+              {facility.reviewCount} review{facility.reviewCount !== 1 ? "s" : ""}
+            </span>
           </div>
         )}
 
@@ -82,10 +93,10 @@ export function FacilityCardSimple({ facility, className }: FacilityCardSimplePr
                 key={i}
                 variant="secondary"
                 className={cn(
-                  "text-xs font-medium",
+                  "text-sm font-medium px-3 py-1 rounded-lg",
                   badge.includes("Available")
-                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                    : "bg-purple-100 text-purple-700 hover:bg-purple-100"
+                    ? "bg-sage-50 text-sage-700 hover:bg-sage-50"
+                    : "bg-plum-50 text-plum-700 hover:bg-plum-50"
                 )}
               >
                 {badge}
@@ -97,14 +108,14 @@ export function FacilityCardSimple({ facility, className }: FacilityCardSimplePr
         {/* Spacer to push buttons to bottom */}
         <div className="flex-1" />
 
-        {/* Action buttons */}
-        <div className="flex gap-2 mt-4">
+        {/* Action buttons - larger touch targets */}
+        <div className="flex gap-3 mt-4">
           {showPhone && facility.phone ? (
             <a
               href={`tel:${facility.phone}`}
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "flex-1 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                "flex-1 h-12 text-base rounded-xl text-sage-700 border-sage-200 hover:bg-sage-50"
               )}
             >
               <Phone className="h-4 w-4 mr-2" />
@@ -113,11 +124,11 @@ export function FacilityCardSimple({ facility, className }: FacilityCardSimplePr
           ) : (
             <Button
               variant="outline"
-              className="flex-1 text-gray-700 hover:text-emerald-700 hover:border-emerald-200"
+              className="flex-1 h-12 text-base rounded-xl text-foreground/70 hover:text-sage-700 hover:border-sage-200 hover:bg-sage-50"
               onClick={() => setShowPhone(true)}
             >
               <Phone className="h-4 w-4 mr-2" />
-              Show Phone
+              Call
             </Button>
           )}
 
@@ -125,11 +136,11 @@ export function FacilityCardSimple({ facility, className }: FacilityCardSimplePr
             href={`/facility/${facility.id}`}
             className={cn(
               buttonVariants({ variant: "default" }),
-              "flex-1 bg-[#4C1D95] hover:bg-[#3b1578]"
+              "flex-1 h-12 text-base rounded-xl bg-primary hover:bg-primary/90"
             )}
           >
             <Eye className="h-4 w-4 mr-2" />
-            View
+            View Details
           </Link>
         </div>
       </CardContent>

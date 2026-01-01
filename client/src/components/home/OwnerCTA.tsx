@@ -1,65 +1,100 @@
 /**
- * OwnerCTA - Call to action for AFH owners
+ * Warm Premium OwnerCTA - Call to action for AFH owners
+ * Sage green accent for secondary CTA
  */
 
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Home, Users, Star, DollarSign } from "lucide-react";
 
 const benefits = [
-  "Families contact you directly",
-  "No referral commissions — ever",
-  "Show your photos, services, and availability",
-  "Build your reputation with reviews",
+  {
+    icon: Users,
+    text: "Families contact you directly",
+  },
+  {
+    icon: DollarSign,
+    text: "No referral commissions — ever",
+  },
+  {
+    icon: Home,
+    text: "Showcase your home with photos & details",
+  },
+  {
+    icon: Star,
+    text: "Build your reputation with reviews",
+  },
 ];
 
 export function OwnerCTA() {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="py-16 lg:py-20 bg-gradient-to-r from-emerald-600 to-emerald-700">
-      <div className="max-w-6xl mx-auto px-4">
+    <section className="py-16 lg:py-24 bg-gradient-to-b from-sage-500 to-sage-600">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-card-hover">
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              {/* Content */}
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sage-50 text-sage-700 text-sm font-medium mb-4">
+                  <Home className="h-4 w-4" />
+                  For Home Owners
+                </div>
+
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                   Own an Adult Family Home?
                 </h2>
-                <p className="text-lg text-gray-600 mb-6">
-                  Get discovered by families searching for care in Washington.
-                  Simple monthly listing. No referral commissions.
+                <p className="text-xl text-foreground/70 mb-8">
+                  Get discovered by families searching for care in Washington State.
+                  Simple monthly listing with zero referral fees.
                 </p>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-4 mb-8">
                   {benefits.map((benefit, index) => (
                     <li key={index} className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      <span className="text-gray-700">{benefit}</span>
+                      <div className="w-8 h-8 rounded-lg bg-sage-50 flex items-center justify-center shrink-0">
+                        <benefit.icon className="w-4 h-4 text-sage-600" />
+                      </div>
+                      <span className="text-lg text-foreground/80">{benefit.text}</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    size="lg"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-lg h-12 px-6"
-                    onClick={() => setLocation("/owner/login")}
-                  >
-                    Claim Your Listing
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </div>
+                <Button
+                  size="lg"
+                  className="bg-secondary hover:bg-secondary/90 text-white text-lg h-14 px-8 rounded-xl font-semibold shadow-sm"
+                  onClick={() => setLocation("/owner/login")}
+                >
+                  Claim Your Listing
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
               </div>
 
+              {/* Visual */}
               <div className="hidden md:flex justify-center">
                 <div className="relative">
-                  <div className="w-64 h-64 bg-gradient-to-br from-emerald-100 to-purple-100 rounded-3xl flex items-center justify-center">
-                    <span className="text-8xl">🏡</span>
+                  {/* Main card */}
+                  <div className="w-72 h-72 bg-gradient-to-br from-sage-50 via-ivory to-plum-50 rounded-3xl flex items-center justify-center shadow-soft">
+                    <div className="text-center">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white shadow-card flex items-center justify-center">
+                        <Home className="w-10 h-10 text-sage-600" />
+                      </div>
+                      <p className="text-lg font-medium text-foreground/70">
+                        Your Home Here
+                      </p>
+                    </div>
                   </div>
-                  <div className="absolute -bottom-4 -right-4 bg-amber-100 rounded-xl p-4 shadow-lg">
-                    <div className="text-2xl font-bold text-gray-900">$0</div>
-                    <div className="text-sm text-gray-600">referral fees</div>
+
+                  {/* Floating badge */}
+                  <div className="absolute -bottom-4 -right-4 bg-white rounded-xl p-4 shadow-card border border-gray-100">
+                    <div className="text-2xl font-bold text-sage-600">$0</div>
+                    <div className="text-sm text-foreground/60">referral fees</div>
+                  </div>
+
+                  {/* Top badge */}
+                  <div className="absolute -top-3 -left-3 bg-gold-100 rounded-lg px-3 py-1.5 shadow-sm">
+                    <span className="text-sm font-semibold text-gold-700">Free Trial</span>
                   </div>
                 </div>
               </div>

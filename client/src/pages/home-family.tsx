@@ -1,6 +1,6 @@
 /**
- * Family-Centered Homepage
- * 3 Featured Homes with Glassmorphism Design
+ * Family-Centered Homepage - Warm Premium Theme
+ * Designed for 50-65yo caregivers with larger text and calming colors
  */
 
 import { useState } from "react";
@@ -20,6 +20,7 @@ import { WA_CITIES } from "@/lib/constants";
 import { LogoStacked } from "@/components/brand/Logo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { HeroSection } from "@/components/home/HeroSection";
 import { TrustBar } from "@/components/home/TrustBar";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { WhyTrustUs } from "@/components/home/WhyTrustUs";
@@ -50,11 +51,11 @@ interface Facility {
 
 export default function HomeFamily() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <Header />
-      <HeroCompact />
+      <HeroSection />
       <TrustBar />
-      <FeaturedHomesGlass />
+      <FeaturedHomes />
       <HowItWorks />
       <QuickInfo />
       <WhyTrustUs />
@@ -68,84 +69,9 @@ export default function HomeFamily() {
 }
 
 /**
- * Compact Hero
+ * Featured Homes - Warm Premium Design
  */
-function HeroCompact() {
-  const [, setLocation] = useLocation();
-  const [searchCity, setSearchCity] = useState("");
-
-  const handleSearch = () => {
-    if (searchCity) {
-      setLocation(`/directory?city=${encodeURIComponent(searchCity)}`);
-    } else {
-      setLocation("/directory");
-    }
-  };
-
-  return (
-    <section className="bg-white border-b">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Find the Right Home <span className="text-[#4C1D95]">for Your Loved One</span>
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Licensed Adult Family Homes in Washington State
-          </p>
-
-          {/* Search Row */}
-          <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
-            <div className="flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="City or zip code"
-                  value={searchCity}
-                  onChange={(e) => setSearchCity(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  list="cities"
-                  className="pl-9 h-11"
-                />
-                <datalist id="cities">
-                  {WA_CITIES.map(city => <option key={city} value={city} />)}
-                </datalist>
-              </div>
-              <Button onClick={handleSearch} className="h-11 px-6 bg-[#4C1D95] hover:bg-[#5B21B6]">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button
-              onClick={() => setLocation("/match")}
-              variant="outline"
-              className="h-11 border-2 border-[#4C1D95] text-[#4C1D95] hover:bg-purple-50"
-            >
-              <Heart className="h-4 w-4 mr-2" />
-              Help Me Choose
-            </Button>
-          </div>
-
-          {/* Trust badges */}
-          <div className="flex justify-center gap-4 mt-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-              DSHS Licensed
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-              Free for Families
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Featured Homes - Glassmorphism Design - 3 Cards
- */
-function FeaturedHomesGlass() {
+function FeaturedHomes() {
   const [, setLocation] = useLocation();
 
   const { data: facilities, isLoading } = useQuery<Facility[]>({
@@ -154,7 +80,6 @@ function FeaturedHomesGlass() {
       const response = await fetch("/api/facilities");
       if (!response.ok) throw new Error("Failed to fetch");
       const data = await response.json();
-      // Prefer featured homes, otherwise take first 3
       if (Array.isArray(data)) {
         const featured = data.filter((f: Facility) => f.featured);
         if (featured.length >= 3) {
@@ -168,43 +93,38 @@ function FeaturedHomesGlass() {
   });
 
   return (
-    <section className="py-10 relative overflow-hidden">
-      {/* Gradient background for glassmorphism effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-100 via-blue-50 to-purple-100 opacity-50" />
-      <div className="absolute top-20 left-10 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-      <div className="absolute bottom-20 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-
-      <div className="max-w-6xl mx-auto px-4 relative z-10">
+    <section className="py-14 lg:py-20 bg-ivory">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Section header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
               Available Right Now
             </h2>
-            <p className="text-gray-600">
+            <p className="text-lg text-foreground/60">
               Homes ready to welcome your loved one today
             </p>
           </div>
           <Button
             variant="ghost"
             onClick={() => setLocation("/directory")}
-            className="text-[#4C1D95] hover:text-[#5B21B6] hover:bg-purple-50"
+            className="text-primary hover:text-primary/90 hover:bg-plum-50 text-base"
           >
             View all homes <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
 
-        {/* 3 Cards Grid */}
+        {/* Cards Grid */}
         {isLoading ? (
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[1, 2, 3].map(i => (
-              <GlassCardSkeleton key={i} />
+              <CardSkeleton key={i} />
             ))}
           </div>
         ) : facilities && facilities.length > 0 ? (
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {facilities.map((facility, index) => (
-              <GlassHomeCard
+              <HomeCard
                 key={facility.id}
                 facility={facility}
                 index={index}
@@ -213,9 +133,9 @@ function FeaturedHomesGlass() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/20">
-            <Home className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">Loading available homes...</p>
+          <div className="text-center py-16 bg-white rounded-2xl shadow-card">
+            <Home className="h-12 w-12 text-foreground/30 mx-auto mb-4" />
+            <p className="text-lg text-foreground/60">Loading available homes...</p>
           </div>
         )}
       </div>
@@ -224,30 +144,20 @@ function FeaturedHomesGlass() {
 }
 
 /**
- * Glass Home Card - Glassmorphism style
+ * Home Card - Warm Premium style
  */
-function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index: number; onClick: () => void }) {
+function HomeCard({ facility, index, onClick }: { facility: Facility; index: number; onClick: () => void }) {
   const [isFavorited, setIsFavorited] = useState(false);
 
   const availableBeds = facility.availableBeds ??
     (facility.capacity ? Math.max(0, facility.capacity - (facility.currentOccupancy || 0)) : null);
 
-  const specialty = facility.specialties?.[0] || "General Care";
-
-  // Sample images for visual appeal
   const sampleImages = [
     "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop",
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
   ];
   const imageUrl = (facility.images && facility.images.length > 0) ? facility.images[0] : sampleImages[index % 3];
-
-  // Format time ago
-  const getTimeAgo = () => {
-    const hours = Math.floor(Math.random() * 12) + 1;
-    return `Active ${hours}h ago`;
-  };
-
   const photoCount = Math.floor(Math.random() * 8) + 3;
 
   return (
@@ -255,11 +165,9 @@ function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index
       className="group cursor-pointer"
       onClick={onClick}
     >
-      {/* Glass Card */}
-      <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden hover:-translate-y-1">
-
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden hover:-translate-y-1">
         {/* Image Section */}
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative h-52 overflow-hidden bg-ivory">
           <img
             src={imageUrl}
             alt={facility.name}
@@ -270,7 +178,13 @@ function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index
           />
 
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+          {/* Licensed badge */}
+          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 shadow-sm">
+            <Shield className="h-3.5 w-3.5 text-sage-600" />
+            <span className="text-xs font-medium text-foreground/80">Licensed</span>
+          </div>
 
           {/* Favorite button */}
           <button
@@ -278,94 +192,73 @@ function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index
               e.stopPropagation();
               setIsFavorited(!isFavorited);
             }}
-            className="absolute top-3 right-3 w-9 h-9 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg"
+            className="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-sm"
           >
             <Heart className={cn(
               "h-5 w-5 transition-colors",
-              isFavorited ? "fill-red-500 text-red-500" : "text-gray-600"
+              isFavorited ? "fill-red-500 text-red-500" : "text-foreground/60"
             )} />
           </button>
 
           {/* Bottom badges */}
           <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-            <Badge className="bg-black/60 backdrop-blur-sm text-white border-0 text-xs">
-              <Clock className="h-3 w-3 mr-1" />
-              {getTimeAgo()}
-            </Badge>
-            <Badge className="bg-black/60 backdrop-blur-sm text-white border-0 text-xs">
-              <Camera className="h-3 w-3 mr-1" />
-              +{photoCount}
+            {availableBeds !== null && availableBeds > 0 && (
+              <Badge className="bg-sage-600/90 backdrop-blur-sm text-white border-0 text-sm px-3">
+                {availableBeds} {availableBeds === 1 ? 'Bed' : 'Beds'} Available
+              </Badge>
+            )}
+            <Badge className="bg-black/50 backdrop-blur-sm text-white border-0 text-sm ml-auto">
+              <Camera className="h-3.5 w-3.5 mr-1" />
+              {photoCount}
             </Badge>
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-5">
-          {/* Available badge */}
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span className="text-sm text-green-700 font-medium">
-              Available and accepting new residents!
-            </span>
-          </div>
-
+        <div className="p-6">
           {/* Name */}
-          <div className="flex items-start gap-2 mb-2">
-            <Home className="h-5 w-5 text-[#4C1D95] mt-0.5 flex-shrink-0" />
-            <h3 className="font-bold text-gray-900 text-lg leading-tight group-hover:text-[#4C1D95] transition-colors">
-              {facility.name}
-            </h3>
-          </div>
+          <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors mb-2">
+            {facility.name}
+          </h3>
 
           {/* Address */}
           <div className="flex items-start gap-2 mb-4">
-            <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-gray-600">
-              {facility.address && `${facility.address}, `}
-              {facility.city || "Washington"}, {facility.state || "WA"} {facility.zipCode}
+            <MapPin className="h-4 w-4 text-foreground/40 mt-1 flex-shrink-0" />
+            <p className="text-base text-foreground/60">
+              {facility.city || "Washington"}, WA
             </p>
           </div>
 
-          {/* Details Grid */}
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Home className="h-4 w-4 text-gray-400" />
-              <span>Adult Family Home</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <DoorOpen className="h-4 w-4 text-gray-400" />
-              <span>Private Room</span>
-              {availableBeds !== null && availableBeds > 0 && (
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {availableBeds} available
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Bath className="h-4 w-4 text-gray-400" />
-              <span>Private Bathroom</span>
-            </div>
+          {/* Features */}
+          <div className="flex flex-wrap gap-2 mb-5">
+            <Badge variant="secondary" className="bg-plum-50 text-plum-700 text-sm px-3 py-1">
+              <Home className="h-3.5 w-3.5 mr-1.5" />
+              Adult Family Home
+            </Badge>
+            {facility.acceptsMedicaid && (
+              <Badge variant="secondary" className="bg-sage-50 text-sage-700 text-sm px-3 py-1">
+                Medicaid
+              </Badge>
+            )}
           </div>
 
           {/* Price */}
-          <div className="flex items-center gap-2 mb-4 pb-4 border-b">
-            <span className="text-2xl">💰</span>
-            <span className="text-lg font-bold text-gray-900">
-              Base Price: ${(facility.priceMin || 5500).toLocaleString()}
+          <div className="flex items-baseline gap-1 mb-5 pb-5 border-b border-gray-100">
+            <span className="text-2xl font-bold text-foreground">
+              ${(facility.priceMin || 5500).toLocaleString()}
             </span>
-            <span className="text-sm text-gray-500">/mo</span>
+            <span className="text-base text-foreground/50">/month</span>
           </div>
 
           {/* CTA Button */}
           <Button
-            className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"
+            className="w-full h-12 text-base bg-primary hover:bg-primary/90 rounded-xl font-semibold"
             onClick={(e) => {
               e.stopPropagation();
               onClick();
             }}
           >
-            <Home className="h-4 w-4 mr-2" />
-            View Listing
+            View Details
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
@@ -377,69 +270,72 @@ function GlassHomeCard({ facility, index, onClick }: { facility: Facility; index
 /**
  * Skeleton for loading state
  */
-function GlassCardSkeleton() {
+function CardSkeleton() {
   return (
-    <div className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/40 overflow-hidden">
-      <Skeleton className="h-48 w-full" />
-      <div className="p-5">
-        <Skeleton className="h-4 w-48 mb-3" />
-        <Skeleton className="h-6 w-3/4 mb-2" />
-        <Skeleton className="h-4 w-full mb-4" />
-        <Skeleton className="h-4 w-1/2 mb-2" />
-        <Skeleton className="h-4 w-1/2 mb-2" />
-        <Skeleton className="h-4 w-1/2 mb-4" />
-        <Skeleton className="h-8 w-1/3 mb-4" />
-        <Skeleton className="h-11 w-full" />
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+      <Skeleton className="h-52 w-full" />
+      <div className="p-6">
+        <Skeleton className="h-7 w-3/4 mb-3" />
+        <Skeleton className="h-5 w-1/2 mb-5" />
+        <div className="flex gap-2 mb-5">
+          <Skeleton className="h-7 w-32 rounded-lg" />
+          <Skeleton className="h-7 w-20 rounded-lg" />
+        </div>
+        <Skeleton className="h-8 w-1/3 mb-5" />
+        <Skeleton className="h-12 w-full rounded-xl" />
       </div>
     </div>
   );
 }
 
 /**
- * Quick Info Section
+ * Quick Info Section - Warm Premium
  */
 function QuickInfo() {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="py-12 bg-white">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
+    <section className="py-14 lg:py-20 bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left - What is AFH */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-6">
               Why Choose an Adult Family Home?
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[
                 { icon: Users, text: "6 or fewer residents — personal attention" },
                 { icon: Home, text: "A real home, not an institution" },
                 { icon: Heart, text: "Caregivers who know your loved one by name" },
                 { icon: Shield, text: "All DSHS licensed & inspected" },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <item.icon className="h-5 w-5 text-[#4C1D95] mt-0.5" />
-                  <span className="text-gray-700">{item.text}</span>
+                <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-ivory hover:bg-plum-50/50 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-plum-100 flex items-center justify-center shrink-0">
+                    <item.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <span className="text-lg text-foreground/80 pt-2">{item.text}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Right - Match CTA */}
-          <div className="bg-gradient-to-br from-[#4C1D95] to-[#5B21B6] rounded-2xl p-6 text-white">
-            <h3 className="text-xl font-bold mb-2">Not sure where to start?</h3>
-            <p className="text-purple-100 mb-4">
+          <div className="bg-gradient-to-br from-primary to-plum-700 rounded-3xl p-8 text-white shadow-card-hover">
+            <h3 className="text-2xl font-bold mb-4">Not sure where to start?</h3>
+            <p className="text-xl text-white/80 mb-6 leading-relaxed">
               Answer a few questions and we'll match you with homes that fit your loved one's needs.
             </p>
             <Button
               onClick={() => setLocation("/match")}
-              className="w-full bg-white text-[#4C1D95] hover:bg-purple-50"
+              size="lg"
+              className="w-full bg-white text-primary hover:bg-ivory h-14 text-lg font-semibold rounded-xl"
             >
-              <Heart className="h-4 w-4 mr-2" />
+              <Heart className="h-5 w-5 mr-2" />
               Help Me Find the Right Home
             </Button>
-            <p className="text-xs text-purple-200 text-center mt-3">
-              Free • 3 minutes • No account needed
+            <p className="text-base text-white/60 text-center mt-4">
+              Free · 3 minutes · No account needed
             </p>
           </div>
         </div>
@@ -449,35 +345,35 @@ function QuickInfo() {
 }
 
 /**
- * Browse by City
+ * Browse by City - Warm Premium
  */
 function BrowseCities() {
   const [, setLocation] = useLocation();
   const cities = ["Seattle", "Tacoma", "Bellevue", "Spokane", "Everett", "Kent", "Renton", "Olympia"];
 
   return (
-    <section className="py-10 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 text-center">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Browse by City</h2>
-        <div className="flex flex-wrap justify-center gap-2">
+    <section className="py-14 bg-ivory">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <h2 className="text-2xl font-bold text-foreground mb-6">Browse by City</h2>
+        <div className="flex flex-wrap justify-center gap-3">
           {cities.map(city => (
             <button
               key={city}
               onClick={() => setLocation(`/directory?city=${encodeURIComponent(city)}`)}
-              className="px-4 py-2 bg-white rounded-full border hover:border-[#4C1D95] hover:text-[#4C1D95] transition-colors text-sm"
+              className="px-5 py-2.5 bg-white rounded-xl border border-gray-200 hover:border-primary hover:text-primary transition-all text-base font-medium shadow-sm hover:shadow"
             >
               {city}
             </button>
           ))}
           <button
             onClick={() => setLocation("/directory")}
-            className="px-4 py-2 bg-[#4C1D95] text-white rounded-full hover:bg-[#5B21B6] text-sm"
+            className="px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 text-base font-medium shadow-sm"
           >
-            All Homes →
+            All Homes
+            <ArrowRight className="inline h-4 w-4 ml-2" />
           </button>
         </div>
       </div>
     </section>
   );
 }
-

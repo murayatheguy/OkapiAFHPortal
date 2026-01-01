@@ -1,53 +1,54 @@
 /**
- * TrustBar - Statistics and trust indicators
+ * Warm Premium TrustBar - Statistics and trust indicators
+ * Larger text and icons for 50-65yo demographic
  */
 
-import { Home, Shield, Phone, Star } from "lucide-react";
+import { Home, Shield, Clock, Heart } from "lucide-react";
 
 const stats = [
   {
     icon: Home,
-    value: "150+",
+    value: "500+",
     label: "Licensed Homes",
-    color: "text-[#4C1D95]",
-    bg: "bg-purple-50",
+    sublabel: "Across Washington",
   },
   {
     icon: Shield,
     value: "100%",
-    label: "DSHS Verified",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    label: "State Verified",
+    sublabel: "DSHS Inspected",
   },
   {
-    icon: Phone,
-    value: "Direct",
-    label: "Contact Homes",
-    color: "text-[#4C1D95]",
-    bg: "bg-purple-50",
+    icon: Clock,
+    value: "Daily",
+    label: "Updates",
+    sublabel: "Current Info",
   },
   {
-    icon: Star,
-    value: "4.8",
-    label: "Avg Rating",
-    color: "text-amber-500",
-    bg: "bg-amber-50",
+    icon: Heart,
+    value: "Free",
+    label: "Matching",
+    sublabel: "No Fees Ever",
   },
 ];
 
 export function TrustBar() {
   return (
-    <section className="py-8 bg-white border-y border-gray-100">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+    <section className="py-10 bg-white border-b border-gray-100">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
-            <div key={index} className="flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                <stat.icon className={`w-7 h-7 ${stat.color}`} />
+            <div
+              key={index}
+              className="flex items-center gap-4 p-4 rounded-xl bg-ivory/50 hover:bg-ivory transition-colors"
+            >
+              <div className="w-14 h-14 rounded-xl bg-plum-50 flex items-center justify-center shrink-0">
+                <stat.icon className="w-7 h-7 text-primary" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
+                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-base font-medium text-foreground/80">{stat.label}</div>
+                <div className="text-sm text-foreground/50">{stat.sublabel}</div>
               </div>
             </div>
           ))}
