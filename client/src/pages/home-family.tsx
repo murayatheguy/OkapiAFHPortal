@@ -18,6 +18,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
 import { Logo, LogoInline } from "@/components/shared/logo";
+import { TrustBar } from "@/components/home/TrustBar";
+import { HowItWorks } from "@/components/home/HowItWorks";
+import { WhyTrustUs } from "@/components/home/WhyTrustUs";
+import { Testimonials } from "@/components/home/Testimonials";
+import { OwnerCTA } from "@/components/home/OwnerCTA";
+import { ResourcesSection } from "@/components/home/ResourcesSection";
 
 interface Facility {
   id: string;
@@ -45,9 +51,15 @@ export default function HomeFamily() {
     <div className="min-h-screen bg-slate-50">
       <Header />
       <HeroCompact />
+      <TrustBar />
       <FeaturedHomesGlass />
+      <HowItWorks />
       <QuickInfo />
+      <WhyTrustUs />
+      <Testimonials />
       <BrowseCities />
+      <OwnerCTA />
+      <ResourcesSection />
       <Footer />
     </div>
   );
