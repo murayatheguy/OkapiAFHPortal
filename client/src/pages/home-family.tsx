@@ -17,7 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
-import { Logo, LogoInline } from "@/components/shared/logo";
+import { Logo } from "@/components/shared/logo";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { TrustBar } from "@/components/home/TrustBar";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { WhyTrustUs } from "@/components/home/WhyTrustUs";
@@ -62,36 +64,6 @@ export default function HomeFamily() {
       <ResourcesSection />
       <Footer />
     </div>
-  );
-}
-
-/**
- * Header - Clean, minimal with glassmorphism
- */
-function Header() {
-  const [, setLocation] = useLocation();
-
-  return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <LogoInline />
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setLocation("/directory")}
-            className="text-sm text-gray-600 hover:text-[#4C1D95] hidden sm:block font-medium"
-          >
-            Browse All
-          </button>
-          <button
-            onClick={() => setLocation("/owner/login")}
-            className="text-sm px-4 py-2 bg-[#4C1D95] text-white rounded-lg hover:bg-[#5B21B6] font-medium transition-colors"
-          >
-            AFH Owners
-          </button>
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -509,51 +481,3 @@ function BrowseCities() {
   );
 }
 
-/**
- * Footer
- */
-function Footer() {
-  const [, setLocation] = useLocation();
-
-  return (
-    <footer className="bg-[#1e1b4b] py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div>
-            <Logo variant="light" size="md" />
-            <p className="text-sm text-purple-200 mt-3">
-              Washington's Adult Family Home directory.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-white mb-3">Find Care</h4>
-            <ul className="space-y-2 text-sm text-purple-200">
-              <li><button onClick={() => setLocation("/match")} className="hover:text-white transition-colors">Get Matched</button></li>
-              <li><button onClick={() => setLocation("/directory")} className="hover:text-white transition-colors">Browse Homes</button></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-white mb-3">For Owners</h4>
-            <ul className="space-y-2 text-sm text-purple-200">
-              <li><button onClick={() => setLocation("/owner/login")} className="hover:text-white transition-colors">Owner Login</button></li>
-              <li><button onClick={() => setLocation("/register")} className="hover:text-white transition-colors">List Your Home</button></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-white mb-3">Resources</h4>
-            <ul className="space-y-2 text-sm text-purple-200">
-              <li><a href="https://www.dshs.wa.gov/altsa" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">DSHS Info ↗</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-purple-800 mt-8 pt-6 text-center text-sm text-purple-300">
-          © {new Date().getFullYear()} Okapi Care Network
-        </div>
-      </div>
-    </footer>
-  );
-}

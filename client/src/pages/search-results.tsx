@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { searchFacilities } from "@/lib/api";
-import { FacilityCard } from "@/components/facility-card";
+import { FacilityCardSimple } from "@/components/FacilityCardSimple";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -131,8 +132,8 @@ export default function SearchResults() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/10 font-sans">
-      <Navbar />
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
+      <Header />
       
       <div className="bg-background border-b sticky top-16 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-3">
@@ -365,16 +366,16 @@ export default function SearchResults() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredFacilities.map((facility) => (
-                <FacilityCard key={facility.id} facility={facility} />
+                <FacilityCardSimple key={facility.id} facility={facility} />
               ))}
             </div>
 
             {filteredFacilities.length === 0 && (
-              <div className="text-center py-20 bg-muted/30 rounded-xl border border-dashed">
+              <div className="text-center py-20 bg-white rounded-xl border border-dashed">
                 <h3 className="text-lg font-semibold mb-2">No homes found</h3>
-                <p className="text-muted-foreground mb-4">Try adjusting your filters or search area.</p>
+                <p className="text-gray-600 mb-4">Try adjusting your filters or search area.</p>
                 <Button variant="outline" onClick={clearFilters}>
                   Clear all filters
                 </Button>
@@ -383,6 +384,8 @@ export default function SearchResults() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
