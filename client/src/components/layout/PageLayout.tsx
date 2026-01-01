@@ -5,7 +5,7 @@
 
 import { ReactNode } from "react";
 import { Header } from "./Header";
-import { Footer } from "./Footer";
+import { Footer, FooterCompact } from "./Footer";
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -17,14 +17,20 @@ interface PageLayoutProps {
   hideFooter?: boolean;
   /** Hide header completely */
   hideHeader?: boolean;
+  /** Header variant */
+  headerVariant?: "default" | "transparent";
+  /** Additional class name for the container */
+  className?: string;
 }
 
 export function PageLayout({
   children,
   compactFooter = false,
-  bgColor = "slate",
+  bgColor = "white",
   hideFooter = false,
   hideHeader = false,
+  headerVariant = "default",
+  className = "",
 }: PageLayoutProps) {
   const bgClasses = {
     white: "bg-white",
@@ -33,13 +39,10 @@ export function PageLayout({
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${bgClasses[bgColor]}`}>
-      {!hideHeader && <Header />}
+    <div className={`min-h-screen flex flex-col ${bgClasses[bgColor]} ${className}`}>
+      {!hideHeader && <Header variant={headerVariant} />}
       <main className="flex-1">{children}</main>
       {!hideFooter && (compactFooter ? <FooterCompact /> : <Footer />)}
     </div>
   );
 }
-
-// Re-export for convenience
-import { FooterCompact } from "./Footer";

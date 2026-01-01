@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { getFacilityWithTeam, submitClaimRequest, getFacilityInspections, type DshsInspection } from "@/lib/api";
 import { format, addDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -169,27 +169,25 @@ export default function FacilityDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <PageLayout>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[#4C1D95]" />
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (!facility || error) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
+      <PageLayout>
+        <div className="flex-1 flex items-center justify-center py-20">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Facility Not Found</h1>
             <p className="text-muted-foreground mb-4">The facility you're looking for doesn't exist or has been removed.</p>
-            <Link href="/search" className={cn(buttonVariants(), "mt-4")}>Back to Search</Link>
+            <Link href="/search" className={cn(buttonVariants(), "mt-4 bg-[#4C1D95] hover:bg-[#5B21B6]")}>Back to Search</Link>
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -204,10 +202,8 @@ export default function FacilityDetails() {
 
 
   return (
-    <div className="min-h-screen bg-background font-sans pb-24 lg:pb-0">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-6">
+    <PageLayout bgColor="white">
+      <div className="container mx-auto px-4 py-6 pb-24 lg:pb-8">
         <Link href="/search" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6" data-testid="link-back-search">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Search Results
@@ -1364,6 +1360,6 @@ export default function FacilityDetails() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   );
 }

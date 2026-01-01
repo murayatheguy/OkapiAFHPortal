@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
-import { Logo } from "@/components/shared/logo";
+import { LogoStacked } from "@/components/brand/Logo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { TrustBar } from "@/components/home/TrustBar";
