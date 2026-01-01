@@ -22,8 +22,10 @@ import {
   Loader2, Clock, CheckCircle2, AlertCircle, ChevronRight, Mail, Phone,
   Car, Heart, MapPin, DollarSign, Calendar, ArrowRight, ExternalLink,
   Bookmark, BookmarkCheck, Globe, Shield, GraduationCap, ClipboardList, Pencil, UserPlus,
-  FileText, Stethoscope, Activity
+  FileText, Stethoscope, Activity, Sparkles
 } from "lucide-react";
+import { ComingSoon, ComingSoonBadge } from "@/components/ComingSoon";
+import { FEATURES, PHASE_2_TARGET } from "@shared/featureFlags";
 import { CareManagement } from "@/pages/owner/care-management";
 import { EditFacilityDialog } from "@/components/owner/edit-facility-dialog";
 import { NCPWizard } from "@/components/owner/forms/ncp-wizard";
@@ -303,7 +305,7 @@ export default function OwnerDashboardPage() {
             {[
               { id: "overview", label: "Overview", icon: Home },
               { id: "transport", label: "Transport", icon: Car },
-              { id: "care", label: "Care Management", icon: ClipboardList },
+              { id: "care", label: "Care Management", icon: ClipboardList, comingSoon: !FEATURES.RESIDENTS },
               { id: "team", label: "Team", icon: Users },
               { id: "inquiries", label: "Inquiries", icon: MessageSquare, badge: newInquiries },
               { id: "reviews", label: "Reviews", icon: Star },
@@ -330,7 +332,9 @@ export default function OwnerDashboardPage() {
                   <item.icon className="h-4 w-4" />
                   {item.label}
                 </span>
-                {item.badge ? (
+                {item.comingSoon ? (
+                  <ComingSoonBadge />
+                ) : item.badge ? (
                   <Badge className="bg-teal-600 text-white text-xs">{item.badge}</Badge>
                 ) : null}
               </button>
@@ -359,6 +363,21 @@ export default function OwnerDashboardPage() {
                   <Clock className="h-4 w-4" />
                   <span>{pendingClaims} pending claim{pendingClaims > 1 ? 's' : ''}</span>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Coming Soon Notice */}
+          {!FEATURES.RESIDENTS && (
+            <Card className="mt-4 border-purple-200 bg-purple-50">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 text-purple-700 text-sm font-medium mb-1">
+                  <Sparkles className="h-4 w-4" />
+                  Coming {PHASE_2_TARGET}
+                </div>
+                <p className="text-xs text-purple-600">
+                  Resident management, care documentation, and EHR features.
+                </p>
               </CardContent>
             </Card>
           )}
@@ -993,12 +1012,28 @@ export default function OwnerDashboardPage() {
               )}
 
               {activeSection === "care" && selectedFacilityId && (
-                <CareManagement
-                  facilityId={selectedFacilityId}
-                  facilityName={selectedFacility?.name}
-                  facility={selectedFacility}
-                  initialTab={activeCareTab}
-                />
+                FEATURES.RESIDENTS ? (
+                  <CareManagement
+                    facilityId={selectedFacilityId}
+                    facilityName={selectedFacility?.name}
+                    facility={selectedFacility}
+                    initialTab={activeCareTab}
+                  />
+                ) : (
+                  <ComingSoon
+                    title="Care Management"
+                    description="Comprehensive resident care documentation and EHR features are coming soon."
+                    features={[
+                      "Resident profiles and demographics",
+                      "Medication administration records (eMAR)",
+                      "ADL documentation and tracking",
+                      "Incident reports and follow-ups",
+                      "Vitals and health monitoring",
+                      "Care plans (NCP) with e-signatures",
+                    ]}
+                    targetDate={PHASE_2_TARGET}
+                  />
+                )
               )}
 
               {activeSection === "resources" && selectedFacilityId && (
