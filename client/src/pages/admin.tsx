@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Building2, Users, MessageSquare, Star, LayoutDashboard, LogOut,
   CheckCircle, XCircle, Mail, Phone, MapPin, Calendar,
   Home, TrendingUp, Shield, Search, Trash2, ExternalLink, UserCheck, Clock,
-  RefreshCw, Database, AlertCircle, Play, Loader2, Car, Plus, Edit, Globe
+  RefreshCw, Database, AlertCircle, Play, Loader2, Car, Plus, Edit, Globe,
+  Eye, EyeOff, Lock, UserCog, Activity, ChevronLeft, ChevronRight
 } from "lucide-react";
+import { useAdminAuth } from "@/lib/admin-auth";
+import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -36,16 +39,38 @@ interface AdminStats {
   newInquiries: number;
 }
 
-function AdminLogin({ onLogin }: { onLogin: (admin: AdminData) => void }) {
-  const handleSignIn = () => {
-    const adminData: AdminData = {
-      id: "dev-admin",
-      email: "admin@okapicare.com",
-      name: "Admin User",
-      role: "super_admin"
-    };
-    localStorage.setItem("adminData", JSON.stringify(adminData));
-    onLogin(adminData);
+function AdminLogin() {
+  const { login } = useAdminAuth();
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter your email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await login(email, password);
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,19 +85,67 @@ function AdminLogin({ onLogin }: { onLogin: (admin: AdminData) => void }) {
             <div className="flex justify-center mb-4">
               <Shield className="h-12 w-12 text-[#c9a962]" />
             </div>
-            <CardTitle className="text-2xl font-serif text-white">Admin Portal</CardTitle>
+            <CardTitle className="text-2xl font-serif text-white flex items-center justify-center gap-2">
+              <Lock className="h-5 w-5" />
+              Admin Portal
+            </CardTitle>
             <CardDescription className="text-gray-400">
-              Manage Okapi Care Network
+              Enter your administrator credentials
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button
-              onClick={handleSignIn}
-              className="w-full bg-[#c9a962] hover:bg-[#b89952] text-black font-medium"
-              data-testid="button-admin-login"
-            >
-              Sign In
-            </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@okapicarenetwork.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
+                  className="bg-[#0d1a14] border-[#2a3f35] text-white placeholder:text-gray-500 focus:border-[#c9a962]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-300">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isSubmitting}
+                    className="bg-[#0d1a14] border-[#2a3f35] text-white placeholder:text-gray-500 pr-10 focus:border-[#c9a962]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-[#c9a962] hover:bg-[#b89952] text-black font-medium"
+                disabled={isSubmitting}
+                data-testid="button-admin-login"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
         <div className="text-center mt-4">
@@ -83,6 +156,9 @@ function AdminLogin({ onLogin }: { onLogin: (admin: AdminData) => void }) {
             </span>
           </Link>
         </div>
+        <p className="text-center text-gray-500 text-sm mt-4">
+          This is a restricted area. Unauthorized access is prohibited.
+        </p>
       </motion.div>
     </div>
   );
@@ -112,7 +188,56 @@ function StatCard({ title, value, icon: Icon, trend }: { title: string; value: n
   );
 }
 
+interface ActivityLogEntry {
+  id: string;
+  action: string;
+  targetType: string | null;
+  targetId: string | null;
+  metadata: Record<string, any> | null;
+  createdAt: string;
+}
+
+function formatAction(action: string): string {
+  const actionMap: Record<string, string> = {
+    login: "Admin logged in",
+    logout: "Admin logged out",
+    impersonate_start: "Started impersonation",
+    impersonate_stop: "Stopped impersonation",
+    edit_facility: "Edited facility",
+    create_default: "Created default",
+    update_default: "Updated default",
+    propagate_defaults: "Propagated defaults",
+    approve_claim: "Approved claim",
+    reject_claim: "Rejected claim",
+    approve_review: "Approved review",
+    reject_review: "Rejected review",
+  };
+  return actionMap[action] || action;
+}
+
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (seconds < 60) return "Just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+  return `${Math.floor(seconds / 86400)} days ago`;
+}
+
 function Dashboard({ stats }: { stats: AdminStats }) {
+  const { data: activityData } = useQuery<{ recentActivity: ActivityLogEntry[] }>({
+    queryKey: ["admin-activity"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/stats", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch activity");
+      return response.json();
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -122,6 +247,54 @@ function Dashboard({ stats }: { stats: AdminStats }) {
         <StatCard title="Pending Reviews" value={stats.pendingReviews} icon={Star} />
         <StatCard title="New Inquiries" value={stats.newInquiries} icon={MessageSquare} />
       </div>
+
+      {/* Recent Activity */}
+      <Card className="bg-[#1a2f25] border-[#2a3f35]">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Activity className="h-5 w-5 text-[#c9a962]" />
+            Recent Admin Activity
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Latest actions by administrators
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {activityData?.recentActivity && activityData.recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {activityData.recentActivity.slice(0, 5).map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-[#0d1a14]"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#c9a962]/10 flex items-center justify-center flex-shrink-0">
+                    <Activity className="h-4 w-4 text-[#c9a962]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white font-medium">
+                      {formatAction(activity.action)}
+                    </p>
+                    {activity.metadata && (
+                      <p className="text-xs text-gray-400 truncate">
+                        {activity.metadata.facilityName ||
+                         (activity.metadata.fields ? `Fields: ${activity.metadata.fields.join(", ")}` : "")}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formatTimeAgo(activity.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No recent activity</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -129,9 +302,12 @@ function Dashboard({ stats }: { stats: AdminStats }) {
 function FacilitiesTab() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const { impersonate } = useAdminAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [claimFilter, setClaimFilter] = useState<string>("all");
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
   const { data: facilities = [], isLoading } = useQuery<Facility[]>({
     queryKey: ["/api/facilities"],
@@ -152,6 +328,26 @@ function FacilitiesTab() {
       toast({ title: "Facility updated" });
     },
   });
+
+  const handleImpersonate = async (facility: Facility) => {
+    setImpersonatingId(facility.id);
+    try {
+      await impersonate(facility.id);
+      toast({
+        title: "Admin Mode Started",
+        description: `Now viewing as "${facility.name}"`,
+      });
+      setLocation("/owner/dashboard");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to impersonate",
+        variant: "destructive",
+      });
+    } finally {
+      setImpersonatingId(null);
+    }
+  };
 
   const getOwnerName = (ownerId: string | null) => {
     if (!ownerId) return null;
@@ -278,6 +474,23 @@ function FacilitiesTab() {
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#c9a962] text-[#c9a962] hover:bg-[#c9a962]/10"
+                    onClick={() => handleImpersonate(facility)}
+                    disabled={impersonatingId === facility.id}
+                    data-testid={`button-impersonate-${facility.id}`}
+                  >
+                    {impersonatingId === facility.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <UserCog className="h-4 w-4 mr-1" />
+                        Manage
+                      </>
+                    )}
+                  </Button>
                   <Select
                     value={facility.status}
                     onValueChange={(value) => updateFacilityMutation.mutate({ id: facility.id, data: { status: value } })}
@@ -1972,15 +2185,23 @@ function ProviderForm({
   );
 }
 
-function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () => void }) {
+function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { admin, logout, isImpersonating } = useAdminAuth();
 
   const { data: stats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
   });
 
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <div className="min-h-screen bg-[#0d1a14]">
+      {/* Impersonation Banner - shown at very top when impersonating */}
+      {isImpersonating && <ImpersonationBanner />}
+
       <header className="bg-[#1a2f25] border-b border-[#2a3f35] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
@@ -1988,7 +2209,7 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
               <Shield className="h-8 w-8 text-[#c9a962]" />
               <div>
                 <h1 className="text-xl font-serif text-white">Admin Portal</h1>
-                <p className="text-gray-400 text-sm">{admin.email}</p>
+                <p className="text-gray-400 text-sm">{admin?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -2001,7 +2222,7 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
               <Button
                 variant="ghost"
                 className="text-gray-400 hover:text-white"
-                onClick={onLogout}
+                onClick={handleLogout}
                 data-testid="button-admin-logout"
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -2119,19 +2340,19 @@ function AdminDashboard({ admin, onLogout }: { admin: AdminData; onLogout: () =>
 }
 
 export default function AdminPage() {
-  const [admin, setAdmin] = useState<AdminData | null>(() => {
-    const stored = localStorage.getItem("adminData");
-    return stored ? JSON.parse(stored) : null;
-  });
+  const { isAuthenticated, isLoading } = useAdminAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminData");
-    setAdmin(null);
-  };
-
-  if (!admin) {
-    return <AdminLogin onLogin={setAdmin} />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0d1a14] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#c9a962]" />
+      </div>
+    );
   }
 
-  return <AdminDashboard admin={admin} onLogout={handleLogout} />;
+  if (!isAuthenticated) {
+    return <AdminLogin />;
+  }
+
+  return <AdminDashboard />;
 }
