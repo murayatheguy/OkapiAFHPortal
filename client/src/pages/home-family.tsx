@@ -224,8 +224,8 @@ function HomeCard({ facility, index, onClick }: { facility: Facility; index: num
           {/* Address */}
           <div className="flex items-start gap-2 mb-4">
             <MapPin className="h-4 w-4 text-foreground/40 mt-1 flex-shrink-0" />
-            <p className="text-base text-foreground/60">
-              {facility.city || "Washington"}, WA
+            <p className="text-base text-foreground/60 line-clamp-2">
+              {facility.address && `${facility.address}, `}{facility.city || "Washington"}, WA{facility.zipCode ? ` ${facility.zipCode}` : ""}
             </p>
           </div>
 
