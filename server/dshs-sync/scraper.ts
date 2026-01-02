@@ -5,6 +5,12 @@ import crypto from 'crypto';
 const DSHS_SEARCH_URL = 'https://fortress.wa.gov/dshs/adsaapps/lookup/AFHAdvLookup.aspx';
 const DSHS_RESULTS_URL = 'https://fortress.wa.gov/dshs/adsaapps/lookup/AFHAdvResults.aspx';
 
+// Browserless.io configuration
+const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
+const BROWSERLESS_URL = BROWSERLESS_API_KEY
+  ? `wss://chrome.browserless.io?token=${BROWSERLESS_API_KEY}`
+  : null;
+
 export interface ScrapedHome {
   licenseNumber: string;
   name: string;
@@ -82,25 +88,48 @@ const COUNTY_IDS: Record<string, string> = {
 
 export class DSHSScraper {
   private browser: Browser | null = null;
+  private isRemoteBrowser: boolean = false;
 
   async init(): Promise<void> {
-    this.browser = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.CHROMIUM_PATH || '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--single-process'
-      ]
-    });
+    // Use Browserless.io in production (Railway) or when API key is set
+    if (BROWSERLESS_URL) {
+      console.log('[DSHS Scraper] Connecting to Browserless.io...');
+      this.browser = await puppeteer.connect({
+        browserWSEndpoint: BROWSERLESS_URL,
+      });
+      this.isRemoteBrowser = true;
+      console.log('[DSHS Scraper] Connected to Browserless.io successfully');
+    } else {
+      // Fall back to local Puppeteer for development
+      console.log('[DSHS Scraper] Launching local Chromium...');
+      this.browser = await puppeteer.launch({
+        headless: true,
+        executablePath: process.env.CHROMIUM_PATH,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--single-process'
+        ]
+      });
+      this.isRemoteBrowser = false;
+      console.log('[DSHS Scraper] Local Chromium launched successfully');
+    }
   }
 
   async close(): Promise<void> {
     if (this.browser) {
-      await this.browser.close();
+      if (this.isRemoteBrowser) {
+        // Disconnect from remote browser (don't close it)
+        await this.browser.disconnect();
+        console.log('[DSHS Scraper] Disconnected from Browserless.io');
+      } else {
+        // Close local browser
+        await this.browser.close();
+        console.log('[DSHS Scraper] Local Chromium closed');
+      }
       this.browser = null;
     }
   }

@@ -1934,17 +1934,28 @@ export async function registerRoutes(
   // Trigger manual sync
   app.post("/api/admin/dshs-sync", async (req, res) => {
     try {
+      // Check if scraping is available
+      const hasBrowserless = !!process.env.BROWSERLESS_API_KEY;
+      const hasLocalChrome = !!process.env.CHROMIUM_PATH || process.env.NODE_ENV === 'development';
+
+      if (!hasBrowserless && !hasLocalChrome) {
+        return res.status(503).json({
+          error: "DSHS sync unavailable - no browser configured",
+          message: "Set BROWSERLESS_API_KEY environment variable to enable. Get a free key at browserless.io"
+        });
+      }
+
       const { type = 'full', county } = req.body;
-      
+
       const { getSyncService } = await import('./dshs-sync');
       const syncService = getSyncService();
 
       if (type === 'single' && county) {
         syncService.syncSingleCounty(county).catch(console.error);
-        res.json({ message: 'Single county sync started', county });
+        res.json({ message: 'Single county sync started', county, browser: hasBrowserless ? 'browserless.io' : 'local' });
       } else {
         syncService.fullSync().catch(console.error);
-        res.json({ message: 'Full sync started', type: 'full' });
+        res.json({ message: 'Full sync started', type: 'full', browser: hasBrowserless ? 'browserless.io' : 'local' });
       }
     } catch (error) {
       console.error("Error starting DSHS sync:", error);
