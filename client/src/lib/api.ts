@@ -31,7 +31,7 @@ export type FacilitySortOption = 'recommended' | 'rating' | 'price_low' | 'price
 // Facility with ranking score (returned from search API)
 export type FacilityWithRanking = Facility & { rankingScore?: number };
 
-// Facilities API with sorting/ranking support
+// Facilities API with sorting/ranking and pagination support
 export async function searchFacilities(params?: {
   city?: string;
   county?: string;
@@ -40,6 +40,8 @@ export async function searchFacilities(params?: {
   availableBeds?: boolean;
   facilityType?: string;
   sort?: FacilitySortOption;
+  limit?: number;
+  offset?: number;
 }): Promise<FacilityWithRanking[]> {
   const searchParams = new URLSearchParams();
 
@@ -57,6 +59,12 @@ export async function searchFacilities(params?: {
   }
   if (params?.sort) {
     searchParams.append("sort", params.sort);
+  }
+  if (params?.limit !== undefined) {
+    searchParams.append("limit", String(params.limit));
+  }
+  if (params?.offset !== undefined) {
+    searchParams.append("offset", String(params.offset));
   }
 
   const response = await fetch(`${API_BASE}/facilities?${searchParams}`, fetchWithCredentials());

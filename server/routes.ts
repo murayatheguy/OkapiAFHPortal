@@ -94,21 +94,8 @@ export async function registerRoutes(
     try {
       const limit = req.query.limit ? parseInt(String(req.query.limit)) : 6;
       const featuredFacilities = await storage.getFeaturedFacilities(limit);
-
-      // Calculate availableBeds dynamically for each facility
-      const facilitiesWithCalculatedBeds = await Promise.all(
-        featuredFacilities.map(async (facility) => {
-          const activeResidentCount = await storage.getActiveResidentCount(facility.id);
-          const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
-          return {
-            ...facility,
-            availableBeds: calculatedAvailableBeds,
-            currentOccupancy: activeResidentCount
-          };
-        })
-      );
-
-      res.json(facilitiesWithCalculatedBeds);
+      // Return directly - availableBeds stored in DB, dynamic calc only on detail page
+      res.json(featuredFacilities);
     } catch (error) {
       console.error("Error getting featured facilities:", error);
       res.status(500).json({ error: "Failed to get featured facilities" });
@@ -195,11 +182,12 @@ export async function registerRoutes(
     }
   });
   
-  // Get all facilities (for search page) with ranking/sorting
+  // Get all facilities (for search page) with ranking/sorting and pagination
   // Supports: sort=recommended|rating|price_low|price_high|distance|newest
+  // Pagination: limit (default 50), offset (default 0)
   app.get("/api/facilities", async (req, res) => {
     try {
-      const { city, county, specialties, acceptsMedicaid, availableBeds, facilityType, sort } = req.query;
+      const { city, county, specialties, acceptsMedicaid, availableBeds, facilityType, sort, limit, offset } = req.query;
 
       const searchParams: {
         city?: string;
@@ -209,6 +197,8 @@ export async function registerRoutes(
         availableBeds?: boolean;
         facilityType?: string;
         sort?: 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+        limit?: number;
+        offset?: number;
       } = {};
 
       if (city) searchParams.city = String(city);
@@ -222,6 +212,9 @@ export async function registerRoutes(
       if (acceptsMedicaid !== undefined) {
         searchParams.acceptsMedicaid = acceptsMedicaid === 'true';
       }
+      if (availableBeds !== undefined) {
+        searchParams.availableBeds = availableBeds === 'true';
+      }
 
       // Validate and set sort parameter
       const validSorts = ['recommended', 'rating', 'price_low', 'price_high', 'distance', 'newest'];
@@ -231,30 +224,15 @@ export async function registerRoutes(
         searchParams.sort = 'recommended'; // Default to recommended
       }
 
-      // Note: availableBeds filter will be applied after dynamic calculation
-      const filterByAvailableBeds = availableBeds === 'true';
+      // Pagination - default 50 per page for fast loading
+      searchParams.limit = limit ? Math.min(parseInt(String(limit)), 100) : 50;
+      searchParams.offset = offset ? parseInt(String(offset)) : 0;
 
       const facilities = await storage.searchFacilities(searchParams);
 
-      // Calculate availableBeds dynamically for each facility
-      const facilitiesWithCalculatedBeds = await Promise.all(
-        facilities.map(async (facility) => {
-          const activeResidentCount = await storage.getActiveResidentCount(facility.id);
-          const calculatedAvailableBeds = Math.max(0, (facility.capacity || 0) - activeResidentCount);
-          return {
-            ...facility,
-            availableBeds: calculatedAvailableBeds,
-            currentOccupancy: activeResidentCount
-          };
-        })
-      );
-
-      // Apply availableBeds filter if requested
-      const filteredFacilities = filterByAvailableBeds
-        ? facilitiesWithCalculatedBeds.filter(f => f.availableBeds > 0)
-        : facilitiesWithCalculatedBeds;
-
-      res.json(filteredFacilities);
+      // Return facilities directly - availableBeds already stored in DB
+      // Dynamic calculation only done on facility detail page
+      res.json(facilities);
     } catch (error) {
       console.error("Error searching facilities:", error);
       res.status(500).json({ error: "Failed to search facilities" });

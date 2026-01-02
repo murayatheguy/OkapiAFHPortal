@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { searchFacilities, type FacilitySortOption } from "@/lib/api";
@@ -137,11 +137,34 @@ export default function SearchResults() {
     availableBeds: showOnlyAvailable ? true : undefined,
   }), [selectedSort, selectedFacilityTypes, selectedSpecialties, showOnlyAvailable]);
 
-  // Fetch facilities with server-side sorting and partial filtering
-  const { data: facilities = [], isLoading } = useQuery({
+  const ITEMS_PER_PAGE = 50;
+
+  // Fetch facilities with infinite scroll pagination
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
     queryKey: ["facilities", serverSearchParams],
-    queryFn: () => searchFacilities(serverSearchParams),
+    queryFn: ({ pageParam = 0 }) => searchFacilities({
+      ...serverSearchParams,
+      limit: ITEMS_PER_PAGE,
+      offset: pageParam,
+    }),
+    getNextPageParam: (lastPage, allPages) => {
+      // If we got fewer items than requested, we've reached the end
+      if (lastPage.length < ITEMS_PER_PAGE) return undefined;
+      return allPages.length * ITEMS_PER_PAGE;
+    },
+    initialPageParam: 0,
   });
+
+  // Flatten all pages into single array
+  const facilities = useMemo(() => {
+    return data?.pages.flat() ?? [];
+  }, [data]);
 
   // Client-side filtering for search query and multi-type filter
   // (Server handles single type, sort, specialties, availability)
@@ -161,6 +184,13 @@ export default function SearchResults() {
       return matchesSearch && matchesFacilityType;
     });
   }, [facilities, searchQuery, selectedFacilityTypes]);
+
+  // Load more handler
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const quickFilters = [
     { label: "Memory Care", action: () => toggleSpecialty("Memory Care"), active: selectedSpecialties.includes("Memory Care") },
@@ -427,7 +457,29 @@ export default function SearchResults() {
               ))}
             </div>
 
-            {filteredFacilities.length === 0 && (
+            {/* Load More Button */}
+            {hasNextPage && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleLoadMore}
+                  disabled={isFetchingNextPage}
+                  className="min-w-[200px]"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (${facilities.length} shown)`
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {filteredFacilities.length === 0 && !isLoading && (
               <div className="text-center py-20 bg-white rounded-xl border border-dashed">
                 <h3 className="text-lg font-semibold mb-2">No homes found</h3>
                 <p className="text-gray-600 mb-4">Try adjusting your filters or search area.</p>

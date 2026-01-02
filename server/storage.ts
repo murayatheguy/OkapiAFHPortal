@@ -109,6 +109,8 @@ export interface IStorage {
     availableBeds?: boolean;
     facilityType?: string;
     sort?: 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+    limit?: number;
+    offset?: number;
   }): Promise<(Facility & { rankingScore?: number })[]>;
   getAllFacilities(): Promise<Facility[]>;
   createFacility(facility: InsertFacility): Promise<Facility>;
@@ -479,6 +481,8 @@ export class DatabaseStorage implements IStorage {
     availableBeds?: boolean;
     facilityType?: string;
     sort?: 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+    limit?: number;
+    offset?: number;
   }): Promise<(Facility & { rankingScore?: number })[]> {
     const conditions = [];
 
@@ -609,6 +613,14 @@ export class DatabaseStorage implements IStorage {
         .from(facilities)
         .where(and(...conditions))
         .orderBy(sql`ranking_score DESC`, desc(facilities.createdAt));
+    }
+
+    // Apply pagination if specified
+    if (params.limit) {
+      query = query.limit(params.limit);
+    }
+    if (params.offset) {
+      query = query.offset(params.offset);
     }
 
     return await query;
