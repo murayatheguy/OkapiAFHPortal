@@ -3,19 +3,15 @@
  * Designed for 50-65yo caregivers with larger text and calming colors
  */
 
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, Heart, CheckCircle, ArrowRight, MapPin,
-  Bed, Home, Clock, Camera, ChevronRight, Shield,
-  Users, DoorOpen, Bath
+  ArrowRight, MapPin, Bed, Home, ChevronRight, Shield,
+  Users, Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { WA_CITIES } from "@/lib/constants";
 import { LogoStacked } from "@/components/brand/Logo";
 import { Header } from "@/components/layout/Header";
@@ -147,8 +143,6 @@ function FeaturedHomes() {
  * Home Card - Warm Premium style
  */
 function HomeCard({ facility, index, onClick }: { facility: Facility; index: number; onClick: () => void }) {
-  const [isFavorited, setIsFavorited] = useState(false);
-
   const availableBeds = facility.availableBeds ??
     (facility.capacity ? Math.max(0, facility.capacity - (facility.currentOccupancy || 0)) : null);
 
@@ -158,7 +152,6 @@ function HomeCard({ facility, index, onClick }: { facility: Facility; index: num
     "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
   ];
   const imageUrl = (facility.images && facility.images.length > 0) ? facility.images[0] : sampleImages[index % 3];
-  const photoCount = Math.floor(Math.random() * 8) + 3;
 
   return (
     <div
@@ -186,73 +179,40 @@ function HomeCard({ facility, index, onClick }: { facility: Facility; index: num
             <span className="text-xs font-medium text-foreground/80">Licensed</span>
           </div>
 
-          {/* Favorite button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFavorited(!isFavorited);
-            }}
-            className="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-sm"
-          >
-            <Heart className={cn(
-              "h-5 w-5 transition-colors",
-              isFavorited ? "fill-red-500 text-red-500" : "text-foreground/60"
-            )} />
-          </button>
-
-          {/* Bottom badges */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-            {availableBeds !== null && availableBeds > 0 && (
-              <Badge className="bg-sage-600/90 backdrop-blur-sm text-white border-0 text-sm px-3">
+          {/* Beds Available badge */}
+          <div className="absolute bottom-3 left-3">
+            {availableBeds !== null && availableBeds > 0 ? (
+              <Badge className="bg-sage-600/90 backdrop-blur-sm text-white border-0 text-sm px-3 py-1.5">
+                <Bed className="h-3.5 w-3.5 mr-1.5" />
                 {availableBeds} {availableBeds === 1 ? 'Bed' : 'Beds'} Available
               </Badge>
+            ) : (
+              <Badge className="bg-amber-600/90 backdrop-blur-sm text-white border-0 text-sm px-3 py-1.5">
+                <Bed className="h-3.5 w-3.5 mr-1.5" />
+                Waitlist Only
+              </Badge>
             )}
-            <Badge className="bg-black/50 backdrop-blur-sm text-white border-0 text-sm ml-auto">
-              <Camera className="h-3.5 w-3.5 mr-1" />
-              {photoCount}
-            </Badge>
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-6">
+        <div className="p-5">
           {/* Name */}
           <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors mb-2">
             {facility.name}
           </h3>
 
           {/* Address */}
-          <div className="flex items-start gap-2 mb-4">
+          <div className="flex items-start gap-2 mb-5">
             <MapPin className="h-4 w-4 text-foreground/40 mt-1 flex-shrink-0" />
             <p className="text-base text-foreground/60 line-clamp-2">
               {facility.address && `${facility.address}, `}{facility.city || "Washington"}, WA{facility.zipCode ? ` ${facility.zipCode}` : ""}
             </p>
           </div>
 
-          {/* Features */}
-          <div className="flex flex-wrap gap-2 mb-5">
-            <Badge variant="secondary" className="bg-plum-50 text-plum-700 text-sm px-3 py-1">
-              <Home className="h-3.5 w-3.5 mr-1.5" />
-              Adult Family Home
-            </Badge>
-            {facility.acceptsMedicaid && (
-              <Badge variant="secondary" className="bg-sage-50 text-sage-700 text-sm px-3 py-1">
-                Medicaid
-              </Badge>
-            )}
-          </div>
-
-          {/* Price */}
-          <div className="flex items-baseline gap-1 mb-5 pb-5 border-b border-gray-100">
-            <span className="text-2xl font-bold text-foreground">
-              ${(facility.priceMin || 5500).toLocaleString()}
-            </span>
-            <span className="text-base text-foreground/50">/month</span>
-          </div>
-
           {/* CTA Button */}
           <Button
-            className="w-full h-12 text-base bg-primary hover:bg-primary/90 rounded-xl font-semibold"
+            className="w-full h-11 text-base bg-primary hover:bg-primary/90 rounded-xl font-semibold"
             onClick={(e) => {
               e.stopPropagation();
               onClick();
