@@ -67,8 +67,8 @@ export default function OwnerLogin() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -107,13 +107,13 @@ export default function OwnerLogin() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="relative z-50 px-6 py-4 flex items-center justify-between border-b border-gray-200 bg-white">
+      <header className="relative z-50 px-6 py-4 flex items-center justify-between border-b border-border bg-white shadow-soft">
         <Logo size="md" />
 
         <Link href="/">
-          <Button variant="ghost" className="text-gray-600 hover:text-teal-700">
+          <Button variant="ghost" className="text-foreground/70 hover:text-primary">
             <Home className="h-4 w-4 mr-2" />
             Home
           </Button>
@@ -123,37 +123,37 @@ export default function OwnerLogin() {
       {/* Main Content - Two Column Layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* LEFT SIDE - Value Proposition */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-teal-600 to-teal-700 p-12 xl:p-16 flex-col">
+        <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-primary to-plum-700 p-12 xl:p-16 flex-col">
           <div className="flex-1 flex flex-col justify-center max-w-xl">
             {/* Hero Section */}
             <div className="space-y-6 mb-10">
-              <p className="text-teal-200 text-sm font-medium tracking-wide uppercase">
+              <p className="text-plum-200 text-sm font-medium tracking-wide uppercase">
                 Washington State's Premier Platform
               </p>
-              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight" style={{ fontFamily: "'Cormorant', serif" }}>
+              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
                 Grow Your Adult Family Home Business
               </h1>
-              <p className="text-teal-100 text-lg leading-relaxed">
+              <p className="text-plum-100 text-lg leading-relaxed">
                 Join hundreds of AFH providers using Okapi to streamline operations,
                 stay compliant, and connect with families seeking quality care.
               </p>
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex items-center gap-8 mb-10 pb-10 border-b border-teal-500/30">
+            <div className="flex items-center gap-8 mb-10 pb-10 border-b border-plum-400/30">
               <div className="text-center">
                 <div className="text-3xl font-bold text-white">500+</div>
-                <div className="text-teal-200 text-sm">Active Facilities</div>
+                <div className="text-plum-200 text-sm">Active Facilities</div>
               </div>
-              <div className="w-px h-12 bg-teal-400/30" />
+              <div className="w-px h-12 bg-plum-300/30" />
               <div className="text-center">
                 <div className="text-3xl font-bold text-white">98%</div>
-                <div className="text-teal-200 text-sm">Satisfaction Rate</div>
+                <div className="text-plum-200 text-sm">Satisfaction Rate</div>
               </div>
-              <div className="w-px h-12 bg-teal-400/30" />
+              <div className="w-px h-12 bg-plum-300/30" />
               <div className="text-center">
                 <div className="text-3xl font-bold text-white">24/7</div>
-                <div className="text-teal-200 text-sm">Support Available</div>
+                <div className="text-plum-200 text-sm">Support Available</div>
               </div>
             </div>
 
@@ -166,7 +166,7 @@ export default function OwnerLogin() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">{feature.title}</h3>
-                    <p className="text-teal-100 text-sm">{feature.description}</p>
+                    <p className="text-plum-100 text-sm">{feature.description}</p>
                   </div>
                 </div>
               ))}
@@ -174,24 +174,24 @@ export default function OwnerLogin() {
           </div>
 
           {/* Contact Section - Bottom of left panel */}
-          <div className="mt-auto pt-10 border-t border-teal-500/30">
-            <p className="text-teal-200 text-sm font-medium mb-4">Questions? We're here to help.</p>
+          <div className="mt-auto pt-10 border-t border-plum-400/30">
+            <p className="text-plum-200 text-sm font-medium mb-4">Questions? We're here to help.</p>
             <div className="space-y-3">
               <a
                 href="tel:1-800-225-5652"
-                className="flex items-center gap-3 text-white hover:text-teal-200 transition-colors group"
+                className="flex items-center gap-3 text-white hover:text-plum-200 transition-colors group"
               >
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="font-semibold">1-800-CALL-OKAPI</span>
-                  <span className="text-teal-300 text-sm ml-2">(1-800-225-5652)</span>
+                  <span className="text-plum-300 text-sm ml-2">(1-800-225-5652)</span>
                 </div>
               </a>
               <a
                 href="mailto:info@okapihealthcare.com"
-                className="flex items-center gap-3 text-white hover:text-teal-200 transition-colors group"
+                className="flex items-center gap-3 text-white hover:text-plum-200 transition-colors group"
               >
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                   <Mail className="w-4 h-4" />
@@ -203,22 +203,22 @@ export default function OwnerLogin() {
         </div>
 
         {/* RIGHT SIDE - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-gray-50">
+        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-ivory">
           <div className="w-full max-w-md">
             {/* Welcome Header */}
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Cormorant', serif" }}>
+              <h2 className="text-2xl font-bold text-foreground">
                 Welcome Back
               </h2>
-              <p className="text-gray-500 mt-2">Sign in to manage your facilities</p>
+              <p className="text-foreground/60 mt-2">Sign in to manage your facilities</p>
             </div>
 
             {/* Login Card */}
-            <Card className="shadow-xl border-0 bg-white">
+            <Card className="shadow-card border-0 bg-white">
               <CardContent className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="email" className="text-sm font-medium text-foreground/80">
                       Email Address
                     </Label>
                     <Input
@@ -228,13 +228,13 @@ export default function OwnerLogin() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isSubmitting}
-                      className="h-12 px-4 bg-white border-gray-200 text-gray-900 focus:border-teal-500 focus:ring-teal-500"
+                      className="h-12 px-4 bg-white border-gray-200 text-foreground focus:border-primary focus:ring-primary"
                       data-testid="input-login-email"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="password" className="text-sm font-medium text-foreground/80">
                       Password
                     </Label>
                     <div className="relative">
@@ -245,13 +245,13 @@ export default function OwnerLogin() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isSubmitting}
-                        className="h-12 px-4 bg-white border-gray-200 text-gray-900 pr-12 focus:border-teal-500 focus:ring-teal-500"
+                        className="h-12 px-4 bg-white border-gray-200 text-foreground pr-12 focus:border-primary focus:ring-primary"
                         data-testid="input-login-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/60 transition-colors"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
@@ -260,7 +260,7 @@ export default function OwnerLogin() {
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-medium text-base transition-colors"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold text-base rounded-xl transition-colors"
                     disabled={isSubmitting}
                     data-testid="button-login-submit"
                   >
@@ -276,12 +276,12 @@ export default function OwnerLogin() {
                 </form>
 
                 <div className="mt-6 text-center space-y-3">
-                  <Link href="/owner/forgot-password" className="text-teal-600 hover:text-teal-700 text-sm font-medium block transition-colors">
+                  <Link href="/owner/forgot-password" className="text-primary hover:text-primary/80 text-sm font-medium block transition-colors">
                     Forgot password?
                   </Link>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-foreground/60 text-sm">
                     Need help?{" "}
-                    <a href="mailto:info@okapihealthcare.com" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">
+                    <a href="mailto:info@okapihealthcare.com" className="text-primary hover:text-primary/80 font-medium transition-colors">
                       Contact support
                     </a>
                   </p>
@@ -291,11 +291,11 @@ export default function OwnerLogin() {
 
             {/* CTA for new users */}
             <div className="mt-8 text-center">
-              <p className="text-gray-600 mb-4">Don't have a facility listed yet?</p>
+              <p className="text-foreground/60 mb-4">Don't have a facility listed yet?</p>
               <Link href="/">
                 <Button
                   variant="outline"
-                  className="border-teal-600 text-teal-600 hover:bg-teal-50 transition-colors"
+                  className="border-primary text-primary hover:bg-plum-50 rounded-xl transition-colors"
                 >
                   Claim Your Facility
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -305,18 +305,18 @@ export default function OwnerLogin() {
 
             {/* Mobile Contact Info */}
             <div className="lg:hidden mt-10 pt-8 border-t border-gray-200 text-center">
-              <p className="text-gray-500 text-sm mb-4">Questions? We're here to help.</p>
+              <p className="text-foreground/60 text-sm mb-4">Questions? We're here to help.</p>
               <div className="space-y-2">
                 <a
                   href="tel:1-800-225-5652"
-                  className="flex items-center justify-center gap-2 text-teal-600 hover:text-teal-700 font-medium"
+                  className="flex items-center justify-center gap-2 text-primary hover:text-primary/80 font-medium"
                 >
                   <Phone className="w-4 h-4" />
                   1-800-CALL-OKAPI
                 </a>
                 <a
                   href="mailto:info@okapihealthcare.com"
-                  className="flex items-center justify-center gap-2 text-teal-600 hover:text-teal-700"
+                  className="flex items-center justify-center gap-2 text-primary hover:text-primary/80"
                 >
                   <Mail className="w-4 h-4" />
                   info@okapihealthcare.com
