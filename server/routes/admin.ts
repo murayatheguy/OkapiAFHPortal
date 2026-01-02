@@ -738,6 +738,273 @@ router.get("/facility/:facilityId/overrides", requireAdminAuth, async (req: Requ
 });
 
 // ============================================================================
+// TEMPLATE FACILITY MANAGEMENT
+// ============================================================================
+
+/**
+ * Template-managed fields - these can be applied from the template facility
+ * to other facilities when their values are NULL/empty
+ */
+const TEMPLATE_MANAGED_FIELDS = [
+  "ownerBio",
+  "carePhilosophy",
+  "dailyRoutine",
+  "uniqueFeatures",
+  "amenities",
+  "careTypes",
+  "specialties",
+  "acceptsMedicaid",
+  "acceptsPrivatePay",
+  "acceptsLTCInsurance",
+  "acceptsVABenefits",
+  "acceptingInquiries",
+  "description",
+] as const;
+
+/**
+ * Identity fields - NEVER overwritten by template
+ */
+const IDENTITY_FIELDS = [
+  "id", "name", "slug", "address", "city", "state", "zipCode", "county",
+  "licenseNumber", "licenseStatus", "phone", "email", "website",
+  "ownerId", "claimStatus", "latitude", "longitude", "capacity",
+  "availableBeds", "facilityPin", "googlePlaceId", "isDemo", "isTemplate",
+] as const;
+
+/**
+ * GET /api/admin/template
+ * Get the template facility and its values
+ */
+router.get("/template", requireAdminAuth, async (req: Request, res: Response) => {
+  try {
+    const template = await db.query.facilities.findFirst({
+      where: eq(facilities.isTemplate, true),
+    });
+
+    if (!template) {
+      return res.status(404).json({ error: "No template facility exists" });
+    }
+
+    // Extract only template-managed fields
+    const templateValues: Record<string, any> = {};
+    for (const field of TEMPLATE_MANAGED_FIELDS) {
+      templateValues[field] = (template as any)[field];
+    }
+
+    res.json({
+      templateId: template.id,
+      templateName: template.name,
+      templateValues,
+      managedFields: TEMPLATE_MANAGED_FIELDS,
+      identityFields: IDENTITY_FIELDS,
+    });
+  } catch (error) {
+    console.error("Get template error:", error);
+    res.status(500).json({ error: "Failed to get template" });
+  }
+});
+
+/**
+ * POST /api/admin/template/apply
+ * Apply template values to facilities ONLY for fields that are NULL/empty
+ *
+ * Body options:
+ * - facilityIds: string[] - specific facilities to update (optional, defaults to all non-template facilities)
+ * - dryRun: boolean - if true, returns what would be updated without making changes
+ * - fields: string[] - specific fields to apply (optional, defaults to all template-managed fields)
+ */
+router.post("/template/apply", requireAdminAuth, async (req: Request, res: Response) => {
+  try {
+    const adminId = req.session.adminId!;
+    const { facilityIds, dryRun = false, fields } = req.body;
+
+    // Get template facility
+    const template = await db.query.facilities.findFirst({
+      where: eq(facilities.isTemplate, true),
+    });
+
+    if (!template) {
+      return res.status(404).json({ error: "No template facility exists" });
+    }
+
+    // Determine which fields to apply
+    const fieldsToApply = fields
+      ? TEMPLATE_MANAGED_FIELDS.filter(f => fields.includes(f))
+      : [...TEMPLATE_MANAGED_FIELDS];
+
+    // Get target facilities
+    let targetFacilities;
+    if (facilityIds && Array.isArray(facilityIds) && facilityIds.length > 0) {
+      targetFacilities = await db
+        .select()
+        .from(facilities)
+        .where(
+          and(
+            inArray(facilities.id, facilityIds),
+            eq(facilities.isTemplate, false)
+          )
+        );
+    } else {
+      // All non-template facilities
+      targetFacilities = await db
+        .select()
+        .from(facilities)
+        .where(eq(facilities.isTemplate, false));
+    }
+
+    const results: Array<{
+      facilityId: string;
+      facilityName: string;
+      fieldsUpdated: string[];
+    }> = [];
+
+    for (const facility of targetFacilities) {
+      const updates: Record<string, any> = {};
+      const fieldsUpdated: string[] = [];
+
+      for (const field of fieldsToApply) {
+        const currentValue = (facility as any)[field];
+        const templateValue = (template as any)[field];
+
+        // Only apply if current value is null/undefined/empty and template has a value
+        const isEmpty = currentValue === null ||
+                       currentValue === undefined ||
+                       currentValue === "" ||
+                       (Array.isArray(currentValue) && currentValue.length === 0);
+
+        const templateHasValue = templateValue !== null &&
+                                 templateValue !== undefined &&
+                                 templateValue !== "" &&
+                                 !(Array.isArray(templateValue) && templateValue.length === 0);
+
+        if (isEmpty && templateHasValue) {
+          updates[field] = templateValue;
+          fieldsUpdated.push(field);
+        }
+      }
+
+      if (fieldsUpdated.length > 0) {
+        if (!dryRun) {
+          // Apply updates
+          await db
+            .update(facilities)
+            .set({ ...updates, updatedAt: new Date() })
+            .where(eq(facilities.id, facility.id));
+        }
+
+        results.push({
+          facilityId: facility.id,
+          facilityName: facility.name,
+          fieldsUpdated,
+        });
+      }
+    }
+
+    // Log the action
+    if (!dryRun && results.length > 0) {
+      await db.insert(adminAuditLog).values({
+        adminId,
+        action: "apply_template",
+        targetType: "facilities",
+        metadata: {
+          templateId: template.id,
+          facilitiesUpdated: results.length,
+          fieldsApplied: fieldsToApply,
+          dryRun,
+        },
+        ipAddress: req.ip || null,
+        userAgent: req.headers["user-agent"] || null,
+      });
+    }
+
+    res.json({
+      success: true,
+      dryRun,
+      templateId: template.id,
+      templateName: template.name,
+      totalFacilitiesScanned: targetFacilities.length,
+      facilitiesUpdated: results.length,
+      fieldsApplied: fieldsToApply,
+      results,
+    });
+  } catch (error) {
+    console.error("Apply template error:", error);
+    res.status(500).json({ error: "Failed to apply template" });
+  }
+});
+
+/**
+ * PATCH /api/admin/template
+ * Update template facility values
+ */
+router.patch("/template", requireAdminAuth, async (req: Request, res: Response) => {
+  try {
+    const adminId = req.session.adminId!;
+    const updates = req.body;
+
+    // Get template facility
+    const template = await db.query.facilities.findFirst({
+      where: eq(facilities.isTemplate, true),
+    });
+
+    if (!template) {
+      return res.status(404).json({ error: "No template facility exists" });
+    }
+
+    // Only allow updating template-managed fields
+    const allowedUpdates: Record<string, any> = {};
+    const rejectedFields: string[] = [];
+
+    for (const [field, value] of Object.entries(updates)) {
+      if (TEMPLATE_MANAGED_FIELDS.includes(field as any)) {
+        allowedUpdates[field] = value;
+      } else if (!["id", "isTemplate"].includes(field)) {
+        rejectedFields.push(field);
+      }
+    }
+
+    if (Object.keys(allowedUpdates).length === 0) {
+      return res.status(400).json({
+        error: "No valid template fields to update",
+        rejectedFields,
+        allowedFields: TEMPLATE_MANAGED_FIELDS,
+      });
+    }
+
+    // Update template
+    const [updated] = await db
+      .update(facilities)
+      .set({ ...allowedUpdates, updatedAt: new Date() })
+      .where(eq(facilities.id, template.id))
+      .returning();
+
+    // Log the action
+    await db.insert(adminAuditLog).values({
+      adminId,
+      action: "update_template",
+      targetType: "facility",
+      targetId: template.id,
+      metadata: {
+        fieldsUpdated: Object.keys(allowedUpdates),
+        rejectedFields,
+      },
+      ipAddress: req.ip || null,
+      userAgent: req.headers["user-agent"] || null,
+    });
+
+    res.json({
+      success: true,
+      templateId: updated.id,
+      fieldsUpdated: Object.keys(allowedUpdates),
+      rejectedFields: rejectedFields.length > 0 ? rejectedFields : undefined,
+    });
+  } catch (error) {
+    console.error("Update template error:", error);
+    res.status(500).json({ error: "Failed to update template" });
+  }
+});
+
+// ============================================================================
 // ADMIN MANAGEMENT (Super Admin Only)
 // ============================================================================
 
