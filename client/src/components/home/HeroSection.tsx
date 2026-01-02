@@ -86,16 +86,6 @@ export function HeroSection() {
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
-
-            {/* Floating stat cards */}
-            <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-card p-4 border border-gray-100">
-              <div className="text-2xl font-bold text-primary">500+</div>
-              <div className="text-sm text-foreground/60">Verified Homes</div>
-            </div>
-            <div className="absolute -top-6 -right-6 bg-white rounded-xl shadow-card p-4 border border-gray-100">
-              <div className="text-2xl font-bold text-sage-600">98%</div>
-              <div className="text-sm text-foreground/60">Family Satisfaction</div>
-            </div>
           </div>
         </div>
       </div>
