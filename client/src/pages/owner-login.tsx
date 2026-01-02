@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/brand/Logo";
 import {
   Loader2,
   Home,
@@ -109,14 +110,7 @@ export default function OwnerLogin() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <header className="relative z-50 px-6 py-4 flex items-center justify-between border-b border-gray-200 bg-white">
-        <Link href="/" className="flex items-center gap-1.5">
-          <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, color: '#0d9488', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
-            OKAPI
-          </span>
-          <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 300, fontStyle: 'italic', color: '#374151', fontSize: '1.25rem' }}>
-            Care Network
-          </span>
-        </Link>
+        <Logo size="md" />
 
         <Link href="/">
           <Button variant="ghost" className="text-gray-600 hover:text-teal-700">
