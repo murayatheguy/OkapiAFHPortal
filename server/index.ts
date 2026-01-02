@@ -17,7 +17,6 @@ const httpServer = createServer(app);
 
 // Session store configuration
 const MemoryStoreSession = MemoryStore(session);
-const PgSession = pgSession(session);
 
 // Helmet security headers (complements our custom security headers)
 app.use(helmet({
