@@ -80,17 +80,11 @@ export function HeroSection() {
           {/* Image/Visual */}
           <div className="relative hidden lg:block">
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-card-hover">
-              {/* Placeholder - could be replaced with actual image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-plum-100 via-sage-50 to-gold-50 flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/80 shadow-soft flex items-center justify-center">
-                    <Heart className="h-12 w-12 text-primary" />
-                  </div>
-                  <p className="text-lg font-medium text-foreground/60">
-                    Caring homes for your family
-                  </p>
-                </div>
-              </div>
+              <img
+                src="/caring-home-family.png"
+                alt="Caring homes for your family"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             </div>
 
             {/* Floating stat cards */}
