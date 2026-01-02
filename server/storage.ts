@@ -17,6 +17,7 @@ import {
   transportBookings,
   providerReviews,
   ownerSavedProviders,
+  listingDefaults,
   // EHR tables
   staffAuth,
   residents,
@@ -82,6 +83,7 @@ import {
   type InsertFacilityEvent,
   type FacilityActivity,
   type InsertFacilityActivity,
+  type ListingDefault,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ilike, or, sql, inArray, desc, count, gte, lt, lte } from "drizzle-orm";
@@ -337,6 +339,57 @@ export interface IStorage {
     recentIncidents: IncidentReport[];
     recentMar: MedicationLog[];
   } | undefined>;
+
+  // Listing Defaults (applied at render time)
+  getListingDefaults(): Promise<ListingDefault[]>;
+  getListingDefault(fieldName: string): Promise<ListingDefault | undefined>;
+  setListingDefault(fieldName: string, defaultValue: any, description?: string, updatedBy?: string): Promise<ListingDefault>;
+  deleteListingDefault(fieldName: string): Promise<void>;
+}
+
+// Fields that can have listing defaults applied
+const DEFAULTABLE_FIELDS = [
+  'acceptsMedicaid',
+  'acceptsPrivatePay',
+  'acceptsMedicare',
+  'amenities',
+  'careTypes',
+  'specialties',
+  'acceptingInquiries',
+] as const;
+
+/**
+ * Apply listing defaults to a facility at render time
+ * Logic: effectiveValue = facility.fieldValue ?? listingDefaults.defaultFieldValue
+ */
+export function applyListingDefaults(
+  facility: Facility,
+  defaults: Map<string, any>
+): Facility {
+  const result = { ...facility };
+
+  for (const field of DEFAULTABLE_FIELDS) {
+    const currentValue = result[field as keyof Facility];
+    // Only apply default if current value is null/undefined
+    if (currentValue === null || currentValue === undefined) {
+      const defaultValue = defaults.get(field);
+      if (defaultValue !== undefined) {
+        (result as any)[field] = defaultValue;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Apply listing defaults to multiple facilities
+ */
+export function applyListingDefaultsToMany(
+  facilitiesArr: Facility[],
+  defaults: Map<string, any>
+): Facility[] {
+  return facilitiesArr.map(f => applyListingDefaults(f, defaults));
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1990,6 +2043,66 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(facilityActivity.createdAt))
       .limit(limit);
+  }
+
+  // Listing Defaults (applied at render time, not written to facilities)
+  async getListingDefaults(): Promise<ListingDefault[]> {
+    return db.select().from(listingDefaults);
+  }
+
+  async getListingDefault(fieldName: string): Promise<ListingDefault | undefined> {
+    const [result] = await db
+      .select()
+      .from(listingDefaults)
+      .where(eq(listingDefaults.fieldName, fieldName));
+    return result || undefined;
+  }
+
+  async setListingDefault(
+    fieldName: string,
+    defaultValue: any,
+    description?: string,
+    updatedBy?: string
+  ): Promise<ListingDefault> {
+    // Upsert - insert or update if exists
+    const existing = await this.getListingDefault(fieldName);
+
+    if (existing) {
+      const [updated] = await db
+        .update(listingDefaults)
+        .set({
+          defaultValue,
+          description: description ?? existing.description,
+          updatedBy: updatedBy ?? existing.updatedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(listingDefaults.fieldName, fieldName))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(listingDefaults)
+      .values({
+        fieldName,
+        defaultValue,
+        description,
+        updatedBy,
+      })
+      .returning();
+    return created;
+  }
+
+  async deleteListingDefault(fieldName: string): Promise<void> {
+    await db.delete(listingDefaults).where(eq(listingDefaults.fieldName, fieldName));
+  }
+
+  /**
+   * Get listing defaults as a Map for efficient lookup
+   */
+  async getListingDefaultsMap(): Promise<Map<string, any>> {
+    const defaults = await this.getListingDefaults();
+    return new Map(defaults.map(d => [d.fieldName, d.defaultValue]));
   }
 }
 

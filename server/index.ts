@@ -74,7 +74,11 @@ app.use("/api/health", healthRouter);
 app.use("/api", apiLimiter); // General API rate limit
 app.use("/api/auth/login", authLimiter); // Strict auth limit
 app.use("/api/auth/owner/login", authLimiter);
+app.use("/api/admin/login", authLimiter); // Admin login limit
 app.use("/api/staff/pin-login", pinLimiter); // PIN login limit
+
+// Session timeout for admin routes
+app.use("/api/admin", sessionTimeoutMiddleware(30)); // 30 minute timeout for admins
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

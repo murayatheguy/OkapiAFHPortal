@@ -11,5 +11,10 @@ declare module "express-session" {
     staffRole?: string | null;
     staffName?: string | null;
     isTempStaff?: boolean;
+
+    // Admin authentication (separate from owners)
+    adminId?: string | null;
+    adminRole?: "admin" | "super_admin" | null;
+    impersonatedFacilityId?: string | null; // Set when admin is impersonating a facility
   }
 }

@@ -17,22 +17,45 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Admins table for admin dashboard
+// Admins table for admin dashboard (separate from owners)
 export const admins = pgTable("admins", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
-  role: text("role").notNull().default("admin"), // super_admin, admin, moderator
+  role: text("role").notNull().default("admin"), // "admin" or "super_admin"
+  canImpersonate: boolean("can_impersonate").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  lastLoginAt: timestamp("last_login_at"),
 }, (table) => ({
   emailIdx: index("admins_email_idx").on(table.email),
 }));
 
-export const insertAdminSchema = createInsertSchema(admins).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAdminSchema = createInsertSchema(admins).omit({ id: true, createdAt: true, updatedAt: true, lastLoginAt: true });
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Admin = typeof admins.$inferSelect;
+
+// Admin Audit Log for tracking admin actions (impersonation, edits, etc.)
+export const adminAuditLog = pgTable("admin_audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull(), // FK to admins
+  action: text("action").notNull(), // "impersonate_start", "impersonate_stop", "edit_facility", "propagate_defaults", etc.
+  targetType: text("target_type"), // "facility", "owner", "defaults"
+  targetId: varchar("target_id"), // the facility or owner ID acted upon
+  metadata: json("metadata").$type<Record<string, any>>(), // any extra context
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  adminIdx: index("admin_audit_log_admin_idx").on(table.adminId),
+  actionIdx: index("admin_audit_log_action_idx").on(table.action),
+  createdIdx: index("admin_audit_log_created_idx").on(table.createdAt),
+}));
+
+export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLog).omit({ id: true, createdAt: true });
+export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
+export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
 
 // Owners table for facility management
 export const owners = pgTable("owners", {
@@ -41,6 +64,7 @@ export const owners = pgTable("owners", {
   passwordHash: text("password_hash"),
   name: text("name").notNull(),
   phone: text("phone"),
+  role: text("role").notNull().default("owner"), // "owner" | "admin"
   status: text("status").notNull().default("pending_verification"), // pending_verification, active, suspended
   emailVerified: boolean("email_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -272,6 +296,7 @@ export const facilities = pgTable("facilities", {
   featured: boolean("featured").default(false),
   acceptingInquiries: text("accepting_inquiries").default("accepting"), // accepting, waitlist, not_accepting
   isDemo: boolean("is_demo").default(false), // Mark fictional/demo facilities
+  isTemplate: boolean("is_template").default(false), // Template facility for defaults propagation
   
   // Google Places Data
   googlePlaceId: text("google_place_id"),
@@ -296,6 +321,47 @@ export const facilities = pgTable("facilities", {
 export const insertFacilitySchema = createInsertSchema(facilities).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertFacility = z.infer<typeof insertFacilitySchema>;
 export type Facility = typeof facilities.$inferSelect;
+
+// Facility Field Overrides - tracks which fields have been customized by owners
+export const facilityFieldOverrides = pgTable("facility_field_overrides", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").notNull().references(() => facilities.id, { onDelete: "cascade" }),
+  fieldName: text("field_name").notNull(), // e.g., "description", "amenities", "careTypes"
+  customizedAt: timestamp("customized_at").defaultNow(),
+  customizedBy: varchar("customized_by"), // owner or admin ID who customized it
+}, (table) => ({
+  facilityIdx: index("facility_field_overrides_facility_idx").on(table.facilityId),
+  fieldIdx: index("facility_field_overrides_field_idx").on(table.fieldName),
+  uniqueFacilityField: index("facility_field_overrides_unique").on(table.facilityId, table.fieldName),
+}));
+
+export const insertFacilityFieldOverrideSchema = createInsertSchema(facilityFieldOverrides).omit({ id: true, customizedAt: true });
+export type InsertFacilityFieldOverride = z.infer<typeof insertFacilityFieldOverrideSchema>;
+export type FacilityFieldOverride = typeof facilityFieldOverrides.$inferSelect;
+
+// Listing Defaults - template values applied AT RENDER TIME (not written to facility records)
+// Logic: effectiveValue = facility.fieldValue ?? listingDefaults.defaultFieldValue
+// Note: Table is named "facility_defaults" in DB for backwards compatibility
+export const listingDefaults = pgTable("facility_defaults", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fieldName: text("field_name").notNull().unique(),
+  defaultValue: json("default_value"), // the template value (any JSON type)
+  description: text("description"), // human-readable description of this default
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by"), // admin ID who last updated
+}, (table) => ({
+  fieldNameIdx: index("facility_defaults_field_name_idx").on(table.fieldName),
+}));
+
+export const insertListingDefaultSchema = createInsertSchema(listingDefaults).omit({ id: true, updatedAt: true });
+export type InsertListingDefault = z.infer<typeof insertListingDefaultSchema>;
+export type ListingDefault = typeof listingDefaults.$inferSelect;
+
+// Backwards compatible aliases
+export const facilityDefaults = listingDefaults;
+export const insertFacilityDefaultSchema = insertListingDefaultSchema;
+export type InsertFacilityDefault = InsertListingDefault;
+export type FacilityDefault = ListingDefault;
 
 // Facility Images table - gallery images for facilities
 export const facilityImages = pgTable("facility_images", {

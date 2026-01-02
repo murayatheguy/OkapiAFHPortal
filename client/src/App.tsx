@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { OwnerAuthProvider } from "@/lib/owner-auth";
 import { StaffAuthProvider, useStaffAuth } from "@/lib/staff-auth";
+import { AdminAuthProvider } from "@/lib/admin-auth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import HomeAFH from "@/pages/home-afh";
@@ -17,6 +18,9 @@ import OwnerLogin from "@/pages/owner-login";
 import OwnerSetup from "@/pages/owner-setup";
 import OwnerDashboard from "@/pages/owner-dashboard";
 import AdminPage from "@/pages/admin";
+import AdminLogin from "@/pages/admin/admin-login";
+import AdminDashboard from "@/pages/admin/admin-dashboard";
+import AdminFacilities from "@/pages/admin/admin-facilities";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
 import StaffLogin from "@/pages/staff/staff-login";
@@ -63,6 +67,10 @@ function Router() {
       <Route path="/owner/setup" component={OwnerSetup} />
       <Route path="/owner/dashboard" component={OwnerDashboard} />
       <Route path="/admin" component={AdminPage} />
+      {/* New Admin Portal Routes */}
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/facilities" component={AdminFacilities} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
       {/* Staff EHR Routes */}
@@ -90,14 +98,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <OwnerAuthProvider>
-        <StaffAuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </StaffAuthProvider>
-      </OwnerAuthProvider>
+      <AdminAuthProvider>
+        <OwnerAuthProvider>
+          <StaffAuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </StaffAuthProvider>
+        </OwnerAuthProvider>
+      </AdminAuthProvider>
     </QueryClientProvider>
   );
 }

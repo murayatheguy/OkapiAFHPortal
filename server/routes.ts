@@ -23,6 +23,7 @@ import { publicRoutes } from "./routes/public";
 import { secureRoutes } from "./routes/secure";
 import { authRoutes } from "./routes/auth";
 import { adminRoutes } from "./routes/admin";
+import { resolveActiveFacilityId, canAccessFacility } from "./middleware/facility-scope";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -805,21 +806,25 @@ export async function registerRoutes(
   // Update owner's facility
   app.patch("/api/owners/facilities/:facilityId", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
 
-      // Verify the facility belongs to this owner
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        // Check if authenticated at all
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
+        return res.status(403).json({ error: "Not authorized to update this facility" });
+      }
+
       const facility = await storage.getFacility(facilityId);
       if (!facility) {
         return res.status(404).json({ error: "Facility not found" });
       }
-      if (facility.ownerId !== ownerId) {
-        return res.status(403).json({ error: "Not authorized to update this facility" });
-      }
+
+      const ownerId = (req.session as any).ownerId;
 
       // Only allow updating specific fields
       // Note: availableBeds and currentOccupancy are calculated dynamically from resident count
@@ -863,20 +868,21 @@ export async function registerRoutes(
   // Generate staff PIN for facility
   app.post("/api/owners/facilities/:facilityId/generate-pin", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
 
-      // Verify the facility belongs to this owner
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
       const facility = await storage.getFacility(facilityId);
       if (!facility) {
         return res.status(404).json({ error: "Facility not found" });
-      }
-      if (facility.ownerId !== ownerId) {
-        return res.status(403).json({ error: "Not authorized" });
       }
 
       // Generate a random 4-digit PIN
@@ -893,19 +899,21 @@ export async function registerRoutes(
   // Get facility PIN (for owner only)
   app.get("/api/owners/facilities/:facilityId/pin", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
+
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
+        return res.status(403).json({ error: "Not authorized" });
+      }
 
       const facility = await storage.getFacility(facilityId);
       if (!facility) {
         return res.status(404).json({ error: "Facility not found" });
-      }
-      if (facility.ownerId !== ownerId) {
-        return res.status(403).json({ error: "Not authorized" });
       }
 
       res.json({ pin: facility.facilityPin || null });
@@ -922,14 +930,15 @@ export async function registerRoutes(
   // Get all residents for owner's facility
   app.get("/api/owners/facilities/:facilityId/residents", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
-      const facility = await storage.getFacility(facilityId);
-      if (!facility || facility.ownerId !== ownerId) {
+
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Not authorized" });
       }
 
@@ -944,15 +953,21 @@ export async function registerRoutes(
   // Create a new resident (client)
   app.post("/api/owners/facilities/:facilityId/residents", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
+      const { facilityId } = req.params;
+
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
+        return res.status(403).json({ error: "Not authorized" });
       }
 
-      const { facilityId } = req.params;
       const facility = await storage.getFacility(facilityId);
-      if (!facility || facility.ownerId !== ownerId) {
-        return res.status(403).json({ error: "Not authorized" });
+      if (!facility) {
+        return res.status(404).json({ error: "Facility not found" });
       }
 
       // Check capacity (max 6 for AFH)
@@ -966,11 +981,14 @@ export async function registerRoutes(
         ...req.body,
       });
 
-      // Log activity
-      const owner = await storage.getOwner(ownerId);
-      if (owner) {
-        const residentName = `${req.body.firstName} ${req.body.lastName}`;
-        await ActivityLogger.residentCreated(req, ownerId, owner.name, facilityId, resident.id, residentName);
+      // Log activity (only if owner session, not admin impersonation)
+      const ownerId = (req.session as any).ownerId;
+      if (ownerId) {
+        const owner = await storage.getOwner(ownerId);
+        if (owner) {
+          const residentName = `${req.body.firstName} ${req.body.lastName}`;
+          await ActivityLogger.residentCreated(req, ownerId, owner.name, facilityId, resident.id, residentName);
+        }
       }
 
       res.status(201).json(resident);
@@ -983,14 +1001,15 @@ export async function registerRoutes(
   // Update a resident
   app.put("/api/owners/facilities/:facilityId/residents/:residentId", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId, residentId } = req.params;
-      const facility = await storage.getFacility(facilityId);
-      if (!facility || facility.ownerId !== ownerId) {
+
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Not authorized" });
       }
 
@@ -1002,10 +1021,13 @@ export async function registerRoutes(
       const updated = await storage.updateResident(residentId, req.body);
 
       // Log activity
-      const owner = await storage.getOwner(ownerId);
-      if (owner && updated) {
-        const residentName = `${updated.firstName} ${updated.lastName}`;
-        await ActivityLogger.residentUpdated(req, ownerId, owner.name, facilityId, residentId, residentName, req.body);
+      const ownerId = (req.session as any).ownerId;
+      if (ownerId) {
+        const owner = await storage.getOwner(ownerId);
+        if (owner && updated) {
+          const residentName = `${updated.firstName} ${updated.lastName}`;
+          await ActivityLogger.residentUpdated(req, ownerId, owner.name, facilityId, residentId, residentName, req.body);
+        }
       }
 
       res.json(updated);
@@ -1018,14 +1040,15 @@ export async function registerRoutes(
   // Discharge a resident
   app.post("/api/owners/facilities/:facilityId/residents/:residentId/discharge", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId, residentId } = req.params;
-      const facility = await storage.getFacility(facilityId);
-      if (!facility || facility.ownerId !== ownerId) {
+
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Not authorized" });
       }
 
@@ -1033,6 +1056,8 @@ export async function registerRoutes(
       if (!resident || resident.facilityId !== facilityId) {
         return res.status(404).json({ error: "Resident not found" });
       }
+
+      const facility = await storage.getFacility(facilityId);
 
       const { dischargeReason } = req.body;
       const updated = await storage.updateResident(residentId, {
@@ -1043,15 +1068,20 @@ export async function registerRoutes(
       });
 
       // Update available beds
-      await storage.updateFacility(facilityId, {
-        availableBeds: (facility.availableBeds || 0) + 1,
-      });
+      if (facility) {
+        await storage.updateFacility(facilityId, {
+          availableBeds: (facility.availableBeds || 0) + 1,
+        });
+      }
 
-      // Log activity
-      const owner = await storage.getOwner(ownerId);
-      if (owner) {
-        const residentName = `${resident.firstName} ${resident.lastName}`;
-        await ActivityLogger.residentDischarged(req, ownerId, owner.name, facilityId, residentId, residentName);
+      // Log activity (only if owner session, not admin impersonation)
+      const ownerId = (req.session as any).ownerId;
+      if (ownerId) {
+        const owner = await storage.getOwner(ownerId);
+        if (owner) {
+          const residentName = `${resident.firstName} ${resident.lastName}`;
+          await ActivityLogger.residentDischarged(req, ownerId, owner.name, facilityId, residentId, residentName);
+        }
       }
 
       res.json(updated);
@@ -1064,15 +1094,15 @@ export async function registerRoutes(
   // Get notes for a resident (owner access)
   app.get("/api/owners/facilities/:facilityId/residents/:residentId/notes", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId, residentId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1093,15 +1123,15 @@ export async function registerRoutes(
   // Get medications for a resident (owner access)
   app.get("/api/owners/facilities/:facilityId/residents/:residentId/medications", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId, residentId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1121,15 +1151,15 @@ export async function registerRoutes(
   // Get vitals for a resident (owner access)
   app.get("/api/owners/facilities/:facilityId/residents/:residentId/vitals", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId, residentId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1149,15 +1179,15 @@ export async function registerRoutes(
   // Get incidents for a resident (owner access)
   app.get("/api/owners/facilities/:facilityId/residents/:residentId/incidents", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId, residentId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1177,15 +1207,15 @@ export async function registerRoutes(
   // Get all incidents for a facility (owner access - for reports)
   app.get("/api/owners/facilities/:facilityId/ehr/incidents", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1214,15 +1244,15 @@ export async function registerRoutes(
   // Get medication logs for a facility (owner access - for reports)
   app.get("/api/owners/facilities/:facilityId/ehr/medication-logs", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1253,15 +1283,15 @@ export async function registerRoutes(
   // Get activity log for a facility with filters
   app.get("/api/owners/facilities/:facilityId/activity-log", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
@@ -1285,15 +1315,15 @@ export async function registerRoutes(
   // Get activity log summary for dashboard widget
   app.get("/api/owners/facilities/:facilityId/activity-log/summary", async (req, res) => {
     try {
-      const ownerId = (req.session as any).ownerId;
-      if (!ownerId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { facilityId } = req.params;
-      const facility = await storage.getFacility(facilityId);
 
-      if (!facility || facility.ownerId !== ownerId) {
+      // Verify access using scope middleware (supports admin impersonation)
+      const hasAccess = await canAccessFacility(req.session, facilityId);
+      if (!hasAccess) {
+        const session = req.session as any;
+        if (!session.ownerId && !session.adminId) {
+          return res.status(401).json({ error: "Not authenticated" });
+        }
         return res.status(403).json({ error: "Access denied" });
       }
 
