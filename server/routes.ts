@@ -62,9 +62,14 @@ export async function registerRoutes(
   app.use("/api/auth", authRoutes);
 
   // ============================================
-  // ADMIN ROUTES (require admin role)
+  // ADMIN ROUTES (require admin role, except login)
   // ============================================
   app.use("/api/admin", (req, res, next) => {
+    // Skip auth check for login endpoint
+    if (req.path === "/login") {
+      return next();
+    }
+
     const session = req.session as any;
     if (!session?.adminId) {
       return res.status(401).json({

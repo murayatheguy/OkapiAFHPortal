@@ -105,6 +105,9 @@ export async function createTeamMember(data: {
   facilityId: string;
   name: string;
   email?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  hireDate?: string;
   role: string;
   status: string;
   isManualEntry: boolean;

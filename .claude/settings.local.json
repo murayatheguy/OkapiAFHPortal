@@ -65,7 +65,8 @@
       "Bash(dir:*)",
       "Bash(dir /B:*)",
       "Bash(start http://localhost:5000/)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(del \"C:\\\\Users\\\\HP\\\\Documents\\\\okapiafhportal\\\\server\\\\middleware\\\\facilityScope.ts\")"
     ]
   }
 }

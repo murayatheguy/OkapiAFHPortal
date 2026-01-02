@@ -69,12 +69,12 @@ import { Textarea } from "@/components/ui/textarea";
 interface FacilityData {
   id: string;
   name: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  phone?: string;
-  capacity?: number;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  phone?: string | null;
+  capacity?: number | null;
 }
 
 interface CareManagementProps {

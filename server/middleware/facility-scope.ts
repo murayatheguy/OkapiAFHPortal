@@ -98,6 +98,17 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
 }
 
 /**
+ * Middleware: Require either owner OR admin authentication
+ * Use this for routes that admins can access when impersonating
+ */
+export function requireOwnerOrAdminAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.session?.ownerId && !req.session?.adminId) {
+    return res.status(401).json({ error: "Unauthorized - Login required" });
+  }
+  next();
+}
+
+/**
  * Middleware: Require super_admin role
  */
 export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {

@@ -311,6 +311,8 @@ export const facilities = pgTable("facilities", {
 }, (table) => ({
   slugIdx: index("facilities_slug_idx").on(table.slug),
   cityIdx: index("facilities_city_idx").on(table.city),
+  countyIdx: index("facilities_county_idx").on(table.county),
+  licenseNumberIdx: index("facilities_license_number_idx").on(table.licenseNumber),
   statusIdx: index("facilities_status_idx").on(table.status),
   featuredIdx: index("facilities_featured_idx").on(table.featured),
   ownerIdx: index("facilities_owner_idx").on(table.ownerId),

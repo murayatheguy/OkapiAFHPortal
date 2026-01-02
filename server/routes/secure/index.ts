@@ -4,12 +4,12 @@ import { imagesRouter } from "./images";
 import { adlRouter } from "./adl";
 import { medicationsRouter } from "./medications";
 import { notesRouter } from "./notes";
-import { enforceFacilityScope } from "../../middleware/facilityScope";
+import { requireFacilityAccess } from "../../middleware/facility-scope";
 
 export const secureRoutes = Router();
 
-// All secure routes require facility scoping
-secureRoutes.use(enforceFacilityScope);
+// All secure routes require facility scoping (owner or admin)
+secureRoutes.use(requireFacilityAccess);
 
 // EHR routes
 secureRoutes.use("/residents", residentsRouter);

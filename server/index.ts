@@ -7,6 +7,8 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { startDSHSCronJob } from "./dshs-sync";
 import MemoryStore from "memorystore";
+import pgSession from "connect-pg-simple";
+import pg from "pg";
 import { securityHeadersMiddleware } from "./middleware/security-headers";
 import { sessionTimeoutMiddleware } from "./middleware/security";
 import { apiLimiter, authLimiter, pinLimiter } from "./middleware/rateLimit";
@@ -15,7 +17,9 @@ import { healthRouter } from "./routes/health";
 const app = express();
 const httpServer = createServer(app);
 
+// Session store configuration
 const MemoryStoreSession = MemoryStore(session);
+const PgSession = pgSession(session);
 
 // Helmet security headers (complements our custom security headers)
 app.use(helmet({
@@ -42,18 +46,36 @@ app.use(express.urlencoded({ extended: false }));
 // Trust proxy for Railway/production (needed for secure cookies behind load balancer)
 app.set('trust proxy', 1);
 
+// Session store: PostgreSQL in production, memory in development
+function createSessionStore() {
+  if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL) {
+    // Use PostgreSQL session store in production
+    const pgPool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    });
+    return new PgSession({
+      pool: pgPool,
+      tableName: "session", // Table name for sessions
+      createTableIfMissing: true, // Auto-create session table
+    });
+  }
+  // Use in-memory store for development
+  return new MemoryStoreSession({
+    checkPeriod: 86400000, // Prune expired entries every 24 hours
+  });
+}
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "okapi-care-network-secret-key-2024",
     resave: false,
     saveUninitialized: false,
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000,
-    }),
+    store: createSessionStore(),
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax',
     },
   })
