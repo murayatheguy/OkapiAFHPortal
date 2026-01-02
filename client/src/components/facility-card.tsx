@@ -52,11 +52,9 @@ export function FacilityCard({ facility }: FacilityCardProps) {
           )}
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
-          <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
-            <MapPin className="h-3.5 w-3.5" />
-            <span>{facility.city}, WA</span>
-            <span className="mx-1">•</span>
-            <span>{facility.zipCode}</span>
+          <div className="flex items-start gap-2 text-white/90 text-sm font-medium">
+            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>{facility.address}, {facility.city}, WA {facility.zipCode}</span>
           </div>
         </div>
       </div>

@@ -213,10 +213,10 @@ function FacilityCard({ facility, onClick }: { facility: Facility; onClick: () =
         </h3>
 
         {/* Location */}
-        <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
-          <MapPin className="h-3 w-3" />
-          <span className="line-clamp-1">
-            {facility.city}{facility.state ? `, ${facility.state}` : ""}
+        <div className="flex items-start gap-1 text-sm text-gray-500 mb-3">
+          <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+          <span className="line-clamp-2">
+            {facility.address && `${facility.address}, `}{facility.city}{facility.state ? `, ${facility.state}` : ""}{facility.zipCode ? ` ${facility.zipCode}` : ""}
           </span>
         </div>
 
