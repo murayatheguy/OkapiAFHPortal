@@ -7,12 +7,22 @@ import { db } from "../db";
 import { securitySettings, facilityCapabilities } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { DEFAULT_SECURITY_SETTINGS } from "../middleware/security";
+import { canAccessFacility } from "../middleware/facility-scope";
 
 /**
- * Middleware to require owner authentication
+ * Middleware to require owner OR admin authentication
+ * Supports admin impersonation for support scenarios
  */
 async function requireOwnerAuth(req: Request, res: Response, next: NextFunction) {
   const ownerId = req.session.ownerId;
+  const adminId = req.session.adminId;
+
+  // Allow admin access (for impersonation)
+  if (adminId) {
+    (req as any).isAdminAccess = true;
+    return next();
+  }
+
   if (!ownerId) {
     return res.status(401).json({ error: "Not authenticated" });
   }
@@ -29,18 +39,24 @@ async function requireOwnerAuth(req: Request, res: Response, next: NextFunction)
 
   // Attach owner to request
   (req as any).owner = owner;
+  (req as any).isAdminAccess = false;
   next();
 }
 
 /**
- * Middleware to verify owner has access to facility
+ * Middleware to verify owner/admin has access to facility
+ * Uses canAccessFacility which supports admin impersonation
  */
 async function requireFacilityOwnership(req: Request, res: Response, next: NextFunction) {
-  const ownerId = req.session.ownerId;
   const facilityId = req.params.facilityId;
 
   if (!facilityId) {
     return res.status(400).json({ error: "Facility ID required" });
+  }
+
+  const hasAccess = await canAccessFacility(req.session, facilityId);
+  if (!hasAccess) {
+    return res.status(403).json({ error: "Access denied to this facility" });
   }
 
   const facility = await storage.getFacility(facilityId);
@@ -48,12 +64,9 @@ async function requireFacilityOwnership(req: Request, res: Response, next: NextF
     return res.status(404).json({ error: "Facility not found" });
   }
 
-  if (facility.ownerId !== ownerId) {
-    return res.status(403).json({ error: "Access denied to this facility" });
-  }
-
   // Attach facility to request
   (req as any).facility = facility;
+  (req as any).isImpersonating = !!(req.session.adminId && req.session.impersonatedFacilityId);
   next();
 }
 
