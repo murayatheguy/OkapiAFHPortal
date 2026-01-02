@@ -372,9 +372,9 @@ export default function FacilityDetails() {
                 {facility.name}
               </h1>
               
-              <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                <MapPin className="h-4 w-4" />
-                <span>{facility.city}, WA {facility.zipCode}</span>
+              <div className="flex items-start gap-2 text-muted-foreground mb-4">
+                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{facility.address}, {facility.city}, WA {facility.zipCode}</span>
               </div>
 
               {/* Trust Badges */}

@@ -69,10 +69,10 @@ export function FacilityCardSimple({ facility, className }: FacilityCardSimplePr
           {facility.name}
         </h3>
 
-        {/* City */}
-        <div className="flex items-center gap-2 text-foreground/60 text-base mb-3">
-          <MapPin className="h-4 w-4" />
-          <span>{facility.city}, WA</span>
+        {/* Full Address */}
+        <div className="flex items-start gap-2 text-foreground/60 text-sm mb-3">
+          <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{facility.address}, {facility.city}, WA {facility.zipCode}</span>
         </div>
 
         {/* Reviews count - only if has reviews */}
