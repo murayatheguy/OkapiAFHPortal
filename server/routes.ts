@@ -748,7 +748,7 @@ export async function registerRoutes(
           console.error("Session save error:", err);
           return res.status(500).json({ error: "Login failed - session error" });
         }
-        res.json({ owner: ownerData });
+        res.json({ owner: ownerData, facilities });
       });
     } catch (error) {
       console.error("Error during owner login:", error);
