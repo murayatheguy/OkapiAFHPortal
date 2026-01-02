@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { searchFacilities } from "@/lib/api";
+import { searchFacilities, type FacilitySortOption } from "@/lib/api";
 import { FacilityCardSimple } from "@/components/FacilityCardSimple";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,16 +12,31 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetDescription, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
 } from "@/components/ui/sheet";
 import { Search, SlidersHorizontal, Map, X, Loader2, Home, Building2, Hospital, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const SORT_OPTIONS: { value: FacilitySortOption; label: string }[] = [
+  { value: 'recommended', label: 'Recommended' },
+  { value: 'rating', label: 'Highest Rated' },
+  { value: 'price_low', label: 'Price: Low to High' },
+  { value: 'price_high', label: 'Price: High to Low' },
+  { value: 'newest', label: 'Newest Listed' },
+];
 
 const FACILITY_TYPES = [
   { id: 'afh', label: 'Adult Family Home', short: 'AFH', icon: Home },
@@ -38,20 +53,31 @@ export default function SearchResults() {
     return searchParams.get(param) || "";
   };
 
-  const updateUrlParams = (newTypes: string[], newQuery?: string) => {
+  const updateUrlParams = (updates: { types?: string[]; query?: string; sort?: FacilitySortOption }) => {
     const params = new URLSearchParams(window.location.search);
-    if (newTypes.length > 0) {
-      params.set('type', newTypes.join(','));
-    } else {
-      params.delete('type');
+
+    if (updates.types !== undefined) {
+      if (updates.types.length > 0) {
+        params.set('type', updates.types.join(','));
+      } else {
+        params.delete('type');
+      }
     }
-    if (newQuery !== undefined) {
-      if (newQuery) {
-        params.set('q', newQuery);
+    if (updates.query !== undefined) {
+      if (updates.query) {
+        params.set('q', updates.query);
       } else {
         params.delete('q');
       }
     }
+    if (updates.sort !== undefined) {
+      if (updates.sort !== 'recommended') {
+        params.set('sort', updates.sort);
+      } else {
+        params.delete('sort'); // Don't clutter URL with default
+      }
+    }
+
     const newUrl = params.toString() ? `/search?${params.toString()}` : '/search';
     window.history.replaceState({}, '', newUrl);
   };
@@ -60,6 +86,10 @@ export default function SearchResults() {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [priceRange, setPriceRange] = useState([3000, 10000]);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
+  const [selectedSort, setSelectedSort] = useState<FacilitySortOption>(() => {
+    const sortParam = getQueryParam('sort');
+    return (sortParam && SORT_OPTIONS.some(s => s.value === sortParam) ? sortParam : 'recommended') as FacilitySortOption;
+  });
   const [selectedFacilityTypes, setSelectedFacilityTypes] = useState<string[]>(() => {
     const typeParam = getQueryParam('type');
     return typeParam ? typeParam.split(',').filter(t => FACILITY_TYPES.some(ft => ft.id === t)) : [];
@@ -69,14 +99,23 @@ export default function SearchResults() {
     setSearchQuery(getQueryParam('q'));
     const typeParam = getQueryParam('type');
     setSelectedFacilityTypes(typeParam ? typeParam.split(',').filter(t => FACILITY_TYPES.some(ft => ft.id === t)) : []);
+    const sortParam = getQueryParam('sort');
+    if (sortParam && SORT_OPTIONS.some(s => s.value === sortParam)) {
+      setSelectedSort(sortParam as FacilitySortOption);
+    }
   }, [location]);
 
   const toggleFacilityType = (typeId: string) => {
-    const newTypes = selectedFacilityTypes.includes(typeId) 
+    const newTypes = selectedFacilityTypes.includes(typeId)
       ? selectedFacilityTypes.filter(id => id !== typeId)
       : [...selectedFacilityTypes, typeId];
     setSelectedFacilityTypes(newTypes);
-    updateUrlParams(newTypes);
+    updateUrlParams({ types: newTypes });
+  };
+
+  const handleSortChange = (value: FacilitySortOption) => {
+    setSelectedSort(value);
+    updateUrlParams({ sort: value });
   };
 
   const specialties = ["Memory Care", "Hospice", "Mental Health", "Developmental Disabilities", "Respite", "High Acuity"];
@@ -90,30 +129,38 @@ export default function SearchResults() {
     );
   };
 
+  // Build server-side search params
+  const serverSearchParams = useMemo(() => ({
+    sort: selectedSort,
+    facilityType: selectedFacilityTypes.length === 1 ? selectedFacilityTypes[0] : undefined,
+    specialties: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
+    availableBeds: showOnlyAvailable ? true : undefined,
+  }), [selectedSort, selectedFacilityTypes, selectedSpecialties, showOnlyAvailable]);
+
+  // Fetch facilities with server-side sorting and partial filtering
   const { data: facilities = [], isLoading } = useQuery({
-    queryKey: ["facilities"],
-    queryFn: () => searchFacilities(),
+    queryKey: ["facilities", serverSearchParams],
+    queryFn: () => searchFacilities(serverSearchParams),
   });
 
+  // Client-side filtering for search query and multi-type filter
+  // (Server handles single type, sort, specialties, availability)
   const filteredFacilities = useMemo(() => {
     return facilities.filter(facility => {
+      // Text search (client-side for instant feedback)
       const query = searchQuery.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch = !query ||
         facility.name.toLowerCase().includes(query) ||
         facility.city.toLowerCase().includes(query) ||
         facility.zipCode.includes(query);
 
-      const matchesAvailability = showOnlyAvailable ? facility.availableBeds > 0 : true;
-
-      const matchesSpecialties = selectedSpecialties.length === 0 || 
-        (facility.specialties && selectedSpecialties.some(s => facility.specialties!.includes(s)));
-
-      const matchesFacilityType = selectedFacilityTypes.length === 0 || 
+      // Multi-type filter (when more than one type selected)
+      const matchesFacilityType = selectedFacilityTypes.length <= 1 ||
         (facility.facilityType && selectedFacilityTypes.includes(facility.facilityType.toLowerCase()));
 
-      return matchesSearch && matchesAvailability && matchesSpecialties && matchesFacilityType;
+      return matchesSearch && matchesFacilityType;
     });
-  }, [facilities, searchQuery, showOnlyAvailable, selectedSpecialties, selectedFacilityTypes]);
+  }, [facilities, searchQuery, selectedFacilityTypes]);
 
   const quickFilters = [
     { label: "Memory Care", action: () => toggleSpecialty("Memory Care"), active: selectedSpecialties.includes("Memory Care") },
@@ -128,7 +175,8 @@ export default function SearchResults() {
     setSelectedSpecialties([]);
     setSelectedFacilityTypes([]);
     setPriceRange([3000, 10000]);
-    updateUrlParams([], "");
+    setSelectedSort('recommended');
+    updateUrlParams({ types: [], query: "", sort: 'recommended' });
   };
 
   return (
@@ -358,11 +406,18 @@ export default function SearchResults() {
               
               <div className="hidden md:flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Sort by:</span>
-                <select className="text-sm border-none bg-transparent font-medium focus:ring-0 cursor-pointer">
-                  <option>Recommended</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                </select>
+                <Select value={selectedSort} onValueChange={(v) => handleSortChange(v as FacilitySortOption)}>
+                  <SelectTrigger className="w-[180px] h-9 text-sm border-none bg-transparent font-medium focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -25,18 +25,27 @@ export async function autocompleteFacilities(query: string, limit: number = 10):
   return response.json();
 }
 
-// Facilities API
+// Sort options for facility search
+export type FacilitySortOption = 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+
+// Facility with ranking score (returned from search API)
+export type FacilityWithRanking = Facility & { rankingScore?: number };
+
+// Facilities API with sorting/ranking support
 export async function searchFacilities(params?: {
   city?: string;
   county?: string;
   specialties?: string[];
   acceptsMedicaid?: boolean;
   availableBeds?: boolean;
-}): Promise<Facility[]> {
+  facilityType?: string;
+  sort?: FacilitySortOption;
+}): Promise<FacilityWithRanking[]> {
   const searchParams = new URLSearchParams();
-  
+
   if (params?.city) searchParams.append("city", params.city);
   if (params?.county) searchParams.append("county", params.county);
+  if (params?.facilityType) searchParams.append("facilityType", params.facilityType);
   if (params?.specialties) {
     params.specialties.forEach(s => searchParams.append("specialties", s));
   }
@@ -45,6 +54,9 @@ export async function searchFacilities(params?: {
   }
   if (params?.availableBeds !== undefined) {
     searchParams.append("availableBeds", String(params.availableBeds));
+  }
+  if (params?.sort) {
+    searchParams.append("sort", params.sort);
   }
 
   const response = await fetch(`${API_BASE}/facilities?${searchParams}`, fetchWithCredentials());

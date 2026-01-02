@@ -195,23 +195,42 @@ export async function registerRoutes(
     }
   });
   
-  // Get all facilities (for search page)
+  // Get all facilities (for search page) with ranking/sorting
+  // Supports: sort=recommended|rating|price_low|price_high|distance|newest
   app.get("/api/facilities", async (req, res) => {
     try {
-      const { city, county, specialties, acceptsMedicaid, availableBeds } = req.query;
+      const { city, county, specialties, acceptsMedicaid, availableBeds, facilityType, sort } = req.query;
 
-      const searchParams: any = {};
+      const searchParams: {
+        city?: string;
+        county?: string;
+        specialties?: string[];
+        acceptsMedicaid?: boolean;
+        availableBeds?: boolean;
+        facilityType?: string;
+        sort?: 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+      } = {};
 
       if (city) searchParams.city = String(city);
       if (county) searchParams.county = String(county);
+      if (facilityType) searchParams.facilityType = String(facilityType);
       if (specialties) {
         searchParams.specialties = typeof specialties === 'string'
           ? [specialties]
-          : specialties;
+          : specialties as string[];
       }
       if (acceptsMedicaid !== undefined) {
         searchParams.acceptsMedicaid = acceptsMedicaid === 'true';
       }
+
+      // Validate and set sort parameter
+      const validSorts = ['recommended', 'rating', 'price_low', 'price_high', 'distance', 'newest'];
+      if (sort && validSorts.includes(String(sort))) {
+        searchParams.sort = String(sort) as typeof searchParams.sort;
+      } else {
+        searchParams.sort = 'recommended'; // Default to recommended
+      }
+
       // Note: availableBeds filter will be applied after dynamic calculation
       const filterByAvailableBeds = availableBeds === 'true';
 

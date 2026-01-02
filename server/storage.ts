@@ -107,7 +107,9 @@ export interface IStorage {
     specialties?: string[];
     acceptsMedicaid?: boolean;
     availableBeds?: boolean;
-  }): Promise<Facility[]>;
+    facilityType?: string;
+    sort?: 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+  }): Promise<(Facility & { rankingScore?: number })[]>;
   getAllFacilities(): Promise<Facility[]>;
   createFacility(facility: InsertFacility): Promise<Facility>;
   updateFacility(id: string, facility: Partial<InsertFacility> & { claimedAt?: Date | null; googlePlaceId?: string; googleRating?: string; googleReviewCount?: number; googlePhotos?: string[]; googleSyncedAt?: Date }): Promise<Facility | undefined>;
@@ -457,14 +459,32 @@ export class DatabaseStorage implements IStorage {
     return { facility, team: teamWithCredentials };
   }
 
+  /**
+   * Search facilities with SQL-based ranking and sorting
+   *
+   * Ranking score for 'recommended' sort (0-100 scale):
+   * - Claimed facility: +30 points
+   * - Completeness (photos, description, amenities, etc.): up to +25 points
+   * - Rating boost: up to +25 points (rating * 5)
+   * - Review count boost: up to +10 points
+   * - Compliance boost (active license, no violations): +10 points
+   *
+   * Excludes: is_demo=true, is_template=true facilities from public results
+   */
   async searchFacilities(params: {
     city?: string;
     county?: string;
     specialties?: string[];
     acceptsMedicaid?: boolean;
     availableBeds?: boolean;
-  }): Promise<Facility[]> {
+    facilityType?: string;
+    sort?: 'recommended' | 'rating' | 'price_low' | 'price_high' | 'distance' | 'newest';
+  }): Promise<(Facility & { rankingScore?: number })[]> {
     const conditions = [];
+
+    // ALWAYS exclude demo and template facilities from public search
+    conditions.push(sql`(${facilities.isDemo} = false OR ${facilities.isDemo} IS NULL)`);
+    conditions.push(sql`(${facilities.isTemplate} = false OR ${facilities.isTemplate} IS NULL)`);
 
     if (params.city) {
       conditions.push(ilike(facilities.city, `%${params.city}%`));
@@ -482,15 +502,116 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${facilities.availableBeds} > 0`);
     }
 
+    if (params.facilityType) {
+      conditions.push(eq(facilities.facilityType, params.facilityType));
+    }
+
     if (params.specialties && params.specialties.length > 0) {
       conditions.push(sql`${facilities.specialties} && ARRAY[${sql.join(params.specialties.map(s => sql`${s}`), sql`, `)}]::text[]`);
     }
 
-    if (conditions.length === 0) {
-      return await db.select().from(facilities);
+    const sort = params.sort || 'recommended';
+
+    // Build the ranking score SQL for 'recommended' sort
+    // This is computed in SQL for scalability
+    const rankingScoreSql = sql<number>`(
+      -- Claimed facility boost: +30 points
+      CASE WHEN ${facilities.claimStatus} = 'claimed' THEN 30 ELSE 0 END
+
+      -- Completeness boost: up to +25 points
+      + CASE WHEN ${facilities.description} IS NOT NULL AND LENGTH(${facilities.description}) > 50 THEN 5 ELSE 0 END
+      + CASE WHEN ${facilities.images} IS NOT NULL AND array_length(${facilities.images}, 1) > 0 THEN 5 ELSE 0 END
+      + CASE WHEN ${facilities.amenities} IS NOT NULL AND array_length(${facilities.amenities}, 1) >= 3 THEN 5 ELSE 0 END
+      + CASE WHEN ${facilities.carePhilosophy} IS NOT NULL AND LENGTH(${facilities.carePhilosophy}) > 20 THEN 3 ELSE 0 END
+      + CASE WHEN ${facilities.ownerBio} IS NOT NULL AND LENGTH(${facilities.ownerBio}) > 20 THEN 3 ELSE 0 END
+      + CASE WHEN ${facilities.phone} IS NOT NULL THEN 2 ELSE 0 END
+      + CASE WHEN ${facilities.email} IS NOT NULL THEN 2 ELSE 0 END
+
+      -- Rating boost: up to +25 points (rating * 5, capped)
+      + LEAST(COALESCE(CAST(${facilities.rating} AS DECIMAL) * 5, 0), 25)
+
+      -- Review count boost: up to +10 points (log scale)
+      + LEAST(COALESCE(LOG(${facilities.reviewCount} + 1) * 3, 0), 10)
+
+      -- Compliance boost: +10 points for active license with no violations
+      + CASE
+          WHEN ${facilities.licenseStatus} = 'Active' AND COALESCE(${facilities.violationsCount}, 0) = 0 THEN 10
+          WHEN ${facilities.licenseStatus} = 'Active' THEN 5
+          ELSE 0
+        END
+    )`.as('ranking_score');
+
+    // Build query with ranking score
+    let query;
+
+    if (sort === 'recommended') {
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(sql`ranking_score DESC`, desc(facilities.createdAt));
+    } else if (sort === 'rating') {
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(sql`COALESCE(CAST(${facilities.rating} AS DECIMAL), 0) DESC`, desc(facilities.reviewCount));
+    } else if (sort === 'price_low') {
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(sql`COALESCE(${facilities.priceMin}, 999999) ASC`);
+    } else if (sort === 'price_high') {
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(sql`COALESCE(${facilities.priceMax}, 0) DESC`);
+    } else if (sort === 'newest') {
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(desc(facilities.createdAt));
+    } else if (sort === 'distance') {
+      // Distance sorting requires lat/lng - stub for now, falls back to recommended
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(sql`ranking_score DESC`, desc(facilities.createdAt));
+    } else {
+      // Default: recommended
+      query = db
+        .select({
+          ...facilities,
+          rankingScore: rankingScoreSql,
+        })
+        .from(facilities)
+        .where(and(...conditions))
+        .orderBy(sql`ranking_score DESC`, desc(facilities.createdAt));
     }
 
-    return await db.select().from(facilities).where(and(...conditions));
+    return await query;
   }
 
   async getAllFacilities(): Promise<Facility[]> {
@@ -614,23 +735,27 @@ export class DatabaseStorage implements IStorage {
     return inquiry || undefined;
   }
 
-  // Featured Facilities
+  // Featured Facilities - excludes demo/template, uses rating-based ordering
   async getFeaturedFacilities(limit: number = 6): Promise<Facility[]> {
     return await db
       .select()
       .from(facilities)
       .where(and(
         eq(facilities.featured, true),
-        eq(facilities.status, "active")
+        eq(facilities.status, "active"),
+        // Exclude demo and template facilities from public featured section
+        sql`(${facilities.isDemo} = false OR ${facilities.isDemo} IS NULL)`,
+        sql`(${facilities.isTemplate} = false OR ${facilities.isTemplate} IS NULL)`
       ))
       .orderBy(desc(facilities.rating))
       .limit(limit);
   }
 
   // Autocomplete search - returns facilities matching query prefix
+  // Excludes demo/template facilities from public autocomplete
   async autocompleteFacilities(query: string, limit: number = 10): Promise<Pick<Facility, 'id' | 'name' | 'city' | 'zipCode'>[]> {
     if (!query || query.length < 2) return [];
-    
+
     const searchPattern = `%${query}%`;
     return await db
       .select({
@@ -640,7 +765,11 @@ export class DatabaseStorage implements IStorage {
         zipCode: facilities.zipCode,
       })
       .from(facilities)
-      .where(ilike(facilities.name, searchPattern))
+      .where(and(
+        ilike(facilities.name, searchPattern),
+        sql`(${facilities.isDemo} = false OR ${facilities.isDemo} IS NULL)`,
+        sql`(${facilities.isTemplate} = false OR ${facilities.isTemplate} IS NULL)`
+      ))
       .orderBy(facilities.name)
       .limit(limit);
   }
