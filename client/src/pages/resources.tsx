@@ -1,29 +1,23 @@
 /**
- * Resources Page - Helpful guides for families and AFH owners
+ * Resources Page - Helpful guides for families searching for care
  */
 
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   FileText,
   ExternalLink,
   Users,
-  Home,
   Phone,
   BookOpen,
   Shield,
   Heart,
   DollarSign,
-  ClipboardList,
-  GraduationCap
+  ClipboardList
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
 export default function ResourcesPage() {
-  const [activeTab, setActiveTab] = useState("families");
-
   // Resources for Families
   const familyResources = [
     {
@@ -124,106 +118,6 @@ export default function ResourcesPage() {
     }
   ];
 
-  // Resources for Owners
-  const ownerResources = [
-    {
-      category: "Getting Listed",
-      icon: Home,
-      items: [
-        {
-          title: "How to Claim Your Listing",
-          description: "Step-by-step guide to claiming and managing your AFH profile",
-          type: "guide",
-          link: "#"
-        },
-        {
-          title: "Optimizing Your Profile",
-          description: "Tips for creating an attractive listing that families trust",
-          type: "guide",
-          link: "#"
-        },
-        {
-          title: "Photo Guidelines",
-          description: "Best practices for showcasing your home with photos",
-          type: "guide",
-          link: "#"
-        }
-      ]
-    },
-    {
-      category: "Compliance & Licensing",
-      icon: ClipboardList,
-      items: [
-        {
-          title: "DSHS Licensing Requirements",
-          description: "Official requirements for operating an AFH in Washington",
-          type: "external",
-          link: "https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-home-licensing"
-        },
-        {
-          title: "Inspection Preparation Checklist",
-          description: "Prepare your home for DSHS inspections",
-          type: "checklist",
-          link: "#"
-        },
-        {
-          title: "Required Training Hours",
-          description: "Annual training requirements for AFH providers",
-          type: "external",
-          link: "https://www.dshs.wa.gov/altsa/training/adult-family-home-training-requirements"
-        }
-      ]
-    },
-    {
-      category: "Training & Education",
-      icon: GraduationCap,
-      items: [
-        {
-          title: "Okapi Academy",
-          description: "Complete your required training through our certified program",
-          type: "internal",
-          link: "/academy"
-        },
-        {
-          title: "Continuing Education Courses",
-          description: "Browse CE courses for caregivers and administrators",
-          type: "internal",
-          link: "/academy/courses"
-        },
-        {
-          title: "Specialty Certifications",
-          description: "Dementia care, mental health, and other specialty training",
-          type: "internal",
-          link: "/academy/certifications"
-        }
-      ]
-    },
-    {
-      category: "Business Resources",
-      icon: FileText,
-      items: [
-        {
-          title: "AFH Association of Washington",
-          description: "Join the statewide association for AFH providers",
-          type: "external",
-          link: "https://www.wa-afh.org/"
-        },
-        {
-          title: "Insurance Requirements",
-          description: "Liability insurance requirements for AFH operators",
-          type: "guide",
-          link: "#"
-        },
-        {
-          title: "Medicaid Provider Enrollment",
-          description: "How to become a Medicaid-approved provider",
-          type: "external",
-          link: "https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-enrollment"
-        }
-      ]
-    }
-  ];
-
   interface ResourceItem {
     title: string;
     description: string;
@@ -262,8 +156,7 @@ export default function ResourcesPage() {
                 : "bg-gray-100 text-gray-700"
             }`}>
               {resource.type === "external" ? "External Link" :
-               resource.type === "checklist" ? "Checklist" :
-               resource.type === "internal" ? "Okapi Resource" : "Guide"}
+               resource.type === "checklist" ? "Checklist" : "Guide"}
             </span>
           </div>
         </CardContent>
@@ -278,12 +171,14 @@ export default function ResourcesPage() {
   }
 
   const ResourceSectionComponent = ({ resources }: { resources: ResourceSection[] }) => (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {resources.map((section, idx) => (
         <div key={idx}>
-          <div className="flex items-center gap-2 mb-4">
-            <section.icon className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">{section.category}</h2>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <section.icon className="h-5 w-5 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground">{section.category}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {section.items.map((item, itemIdx) => (
@@ -299,54 +194,35 @@ export default function ResourcesPage() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Resources</h1>
+      {/* Hero Header */}
+      <div className="bg-gradient-to-b from-plum-50 to-background border-b">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">Resources for Families</h1>
+          </div>
           <p className="text-lg text-foreground/70 max-w-2xl">
-            Helpful guides, checklists, and links for families searching for care
-            and Adult Family Home owners managing their homes.
+            Helpful guides, checklists, and links to help you find the right care
+            for your loved one in Washington State.
           </p>
         </div>
       </div>
 
-      {/* Prominent Section Tabs */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-10 h-auto p-2 bg-muted/50 rounded-2xl">
-            <TabsTrigger
-              value="families"
-              className="flex items-center justify-center gap-3 py-5 px-6 text-lg font-semibold rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
-            >
-              <Users className="h-6 w-6" />
-              For Families
-            </TabsTrigger>
-            <TabsTrigger
-              value="owners"
-              className="flex items-center justify-center gap-3 py-5 px-6 text-lg font-semibold rounded-xl data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
-            >
-              <Home className="h-6 w-6" />
-              For Owners
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="families">
-            <ResourceSectionComponent resources={familyResources} />
-          </TabsContent>
-
-          <TabsContent value="owners">
-            <ResourceSectionComponent resources={ownerResources} />
-          </TabsContent>
-        </Tabs>
+      {/* Resources Content */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+        <ResourceSectionComponent resources={familyResources} />
       </div>
 
       {/* Contact Section */}
-      <div className="bg-white border-t mt-12">
+      <div className="bg-white border-t mt-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold mb-4">Need Help?</h2>
-            <p className="text-foreground/70 mb-6">
+            <h2 className="text-2xl font-semibold mb-4">Need Help Finding Care?</h2>
+            <p className="text-foreground/70 mb-6 max-w-xl mx-auto">
               Our team is here to help you navigate care options in Washington State.
+              Call us or use our care matching tool to find the right home.
             </p>
             <div className="flex items-center justify-center gap-2 text-primary">
               <Phone className="h-5 w-5" />

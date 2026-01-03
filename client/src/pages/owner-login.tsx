@@ -12,12 +12,10 @@ import {
   Home,
   Eye,
   EyeOff,
-  Globe,
   ClipboardList,
-  CheckCircle,
-  Users,
-  BarChart3,
   GraduationCap,
+  FileText,
+  ExternalLink,
   ArrowRight,
   Phone,
   Mail,
@@ -73,36 +71,43 @@ export default function OwnerLogin() {
     );
   }
 
-  const features = [
+  // Owner Resources
+  const ownerResources = [
     {
-      icon: Globe,
-      title: "Public Directory Listing",
-      description: "Get discovered by families searching for quality care in your area"
+      category: "Getting Listed",
+      icon: Home,
+      items: [
+        { title: "How to Claim Your Listing", link: "#", external: false },
+        { title: "Optimizing Your Profile", link: "#", external: false },
+        { title: "Photo Guidelines", link: "#", external: false },
+      ]
     },
     {
+      category: "Compliance & Licensing",
       icon: ClipboardList,
-      title: "Complete EHR System",
-      description: "Digital care notes, MAR, incident reports - all mobile-friendly"
+      items: [
+        { title: "DSHS Licensing Requirements", link: "https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-home-licensing", external: true },
+        { title: "Inspection Preparation", link: "#", external: false },
+        { title: "Training Requirements", link: "https://www.dshs.wa.gov/altsa/training/adult-family-home-training-requirements", external: true },
+      ]
     },
     {
-      icon: CheckCircle,
-      title: "DSHS Compliance Made Easy",
-      description: "Fillable NCP forms, auto-generated reports, credential tracking"
-    },
-    {
-      icon: Users,
-      title: "Staff Management",
-      description: "Track credentials, certifications, and training expiration"
-    },
-    {
-      icon: BarChart3,
-      title: "Powerful Reporting",
-      description: "Print-ready reports for DSHS inspections and audits"
-    },
-    {
+      category: "Training & Education",
       icon: GraduationCap,
-      title: "Okapi Academy",
-      description: "Training resources and compliance guides included"
+      items: [
+        { title: "Okapi Academy", link: "/academy", external: false },
+        { title: "Continuing Education", link: "/academy/courses", external: false },
+        { title: "Specialty Certifications", link: "/academy/certifications", external: false },
+      ]
+    },
+    {
+      category: "Business Resources",
+      icon: FileText,
+      items: [
+        { title: "AFH Association of Washington", link: "https://www.wa-afh.org/", external: true },
+        { title: "Insurance Requirements", link: "#", external: false },
+        { title: "Medicaid Provider Enrollment", link: "https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-enrollment", external: true },
+      ]
     }
   ];
 
@@ -110,7 +115,9 @@ export default function OwnerLogin() {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="relative z-50 px-6 py-4 flex items-center justify-between border-b border-border bg-white shadow-soft">
-        <Logo size="md" />
+        <Link href="/">
+          <Logo size="md" />
+        </Link>
 
         <Link href="/">
           <Button variant="ghost" className="text-foreground/70 hover:text-primary">
@@ -122,93 +129,13 @@ export default function OwnerLogin() {
 
       {/* Main Content - Two Column Layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Value Proposition */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-primary to-plum-700 p-12 xl:p-16 flex-col">
-          <div className="flex-1 flex flex-col justify-center max-w-xl">
-            {/* Hero Section */}
-            <div className="space-y-6 mb-10">
-              <p className="text-plum-200 text-sm font-medium tracking-wide uppercase">
-                Washington State's Premier Platform
-              </p>
-              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-                Grow Your Adult Family Home Business
-              </h1>
-              <p className="text-plum-100 text-lg leading-relaxed">
-                Join hundreds of AFH providers using Okapi to streamline operations,
-                stay compliant, and connect with families seeking quality care.
-              </p>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex items-center gap-8 mb-10 pb-10 border-b border-plum-400/30">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">500+</div>
-                <div className="text-plum-200 text-sm">Active Facilities</div>
-              </div>
-              <div className="w-px h-12 bg-plum-300/30" />
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">98%</div>
-                <div className="text-plum-200 text-sm">Satisfaction Rate</div>
-              </div>
-              <div className="w-px h-12 bg-plum-300/30" />
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">24/7</div>
-                <div className="text-plum-200 text-sm">Support Available</div>
-              </div>
-            </div>
-
-            {/* Features List */}
-            <div className="space-y-4">
-              {features.map((feature, index) => (
-                <div key={index} className="flex items-start gap-4 group">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <feature.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white">{feature.title}</h3>
-                    <p className="text-plum-100 text-sm">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Contact Section - Bottom of left panel */}
-          <div className="mt-auto pt-10 border-t border-plum-400/30">
-            <p className="text-plum-200 text-sm font-medium mb-4">Questions? We're here to help.</p>
-            <div className="space-y-3">
-              <a
-                href="tel:1-800-225-5652"
-                className="flex items-center gap-3 text-white hover:text-plum-200 transition-colors group"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="font-semibold">1-800-CALL-OKAPI</span>
-                  <span className="text-plum-300 text-sm ml-2">(1-800-225-5652)</span>
-                </div>
-              </a>
-              <a
-                href="mailto:info@okapihealthcare.com"
-                className="flex items-center gap-3 text-white hover:text-plum-200 transition-colors group"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <span>info@okapihealthcare.com</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-ivory">
+        {/* LEFT SIDE - Login Form */}
+        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-ivory order-1 lg:order-1">
           <div className="w-full max-w-md">
             {/* Welcome Header */}
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-foreground">
-                Welcome Back
+                Owner Portal
               </h2>
               <p className="text-foreground/60 mt-2">Sign in to manage your facilities</p>
             </div>
@@ -279,12 +206,6 @@ export default function OwnerLogin() {
                   <Link href="/owner/forgot-password" className="text-primary hover:text-primary/80 text-sm font-medium block transition-colors">
                     Forgot password?
                   </Link>
-                  <p className="text-foreground/60 text-sm">
-                    Need help?{" "}
-                    <a href="mailto:info@okapihealthcare.com" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                      Contact support
-                    </a>
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -322,6 +243,78 @@ export default function OwnerLogin() {
                   info@okapihealthcare.com
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDE - Owner Resources */}
+        <div className="hidden lg:flex lg:w-1/2 xl:w-[50%] bg-gradient-to-br from-secondary to-sage-700 p-12 xl:p-16 flex-col order-2 lg:order-2">
+          <div className="flex-1 flex flex-col justify-center max-w-lg">
+            {/* Resources Header */}
+            <div className="mb-8">
+              <h2 className="text-2xl xl:text-3xl font-bold text-white mb-3">
+                Resources for Owners
+              </h2>
+              <p className="text-sage-100 text-lg">
+                Everything you need to manage and grow your Adult Family Home.
+              </p>
+            </div>
+
+            {/* Resources List */}
+            <div className="space-y-6">
+              {ownerResources.map((section, idx) => (
+                <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-xl p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                      <section.icon className="h-4 w-4 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-white">{section.category}</h3>
+                  </div>
+                  <ul className="space-y-2 ml-11">
+                    {section.items.map((item, itemIdx) => (
+                      <li key={itemIdx}>
+                        <a
+                          href={item.link}
+                          target={item.external ? "_blank" : undefined}
+                          rel={item.external ? "noopener noreferrer" : undefined}
+                          className="flex items-center justify-between text-sm text-sage-100 hover:text-white transition-colors group"
+                        >
+                          <span>{item.title}</span>
+                          {item.external && <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100" />}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Contact Section - Bottom of right panel */}
+          <div className="mt-auto pt-8 border-t border-sage-400/30">
+            <p className="text-sage-200 text-sm font-medium mb-4">Questions? We're here to help.</p>
+            <div className="space-y-3">
+              <a
+                href="tel:1-800-225-5652"
+                className="flex items-center gap-3 text-white hover:text-sage-200 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-semibold">1-800-CALL-OKAPI</span>
+                  <span className="text-sage-300 text-sm ml-2">(1-800-225-5652)</span>
+                </div>
+              </a>
+              <a
+                href="mailto:info@okapihealthcare.com"
+                className="flex items-center gap-3 text-white hover:text-sage-200 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <span>info@okapihealthcare.com</span>
+              </a>
             </div>
           </div>
         </div>
