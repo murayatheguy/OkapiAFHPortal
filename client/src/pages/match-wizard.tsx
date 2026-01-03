@@ -357,18 +357,18 @@ export default function MatchWizard() {
     const message = INTRO_MESSAGES[introIndex];
 
     return (
-      <div className="min-h-screen w-full overflow-hidden relative flex flex-col">
+      <div className="min-h-screen w-full flex flex-col">
         {/* Header - solid light background */}
-        <div className="relative z-30 bg-white border-b border-gray-100">
+        <div className="bg-white border-b border-gray-100">
           <Header />
         </div>
 
         {/* Flash intro content area */}
-        <div className="flex-1 relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
+        <div className="flex-1 relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 overflow-hidden">
           {/* Background blobs */}
-          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl" />
-          <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl" />
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl pointer-events-none" />
 
           {/* Skip button */}
           <button
@@ -378,35 +378,35 @@ export default function MatchWizard() {
             Skip <ArrowRight className="w-4 h-4" />
           </button>
 
-          {/* Content */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
-          <div
-            className={cn(
-              "text-center transition-all duration-300",
-              introFading ? "opacity-0 transform scale-95" : "opacity-100 transform scale-100"
-            )}
-          >
-            <div className="text-6xl mb-6">{message.icon}</div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
-              {message.title}
-            </h1>
-            <p className="text-lg text-white/70 max-w-md mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              {message.text}
-            </p>
+          {/* Centered content */}
+          <div className="absolute inset-0 flex items-center justify-center px-6">
+            <div
+              className={cn(
+                "text-center transition-all duration-300",
+                introFading ? "opacity-0 transform scale-95" : "opacity-100 transform scale-100"
+              )}
+            >
+              <div className="text-6xl mb-6">{message.icon}</div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                {message.title}
+              </h1>
+              <p className="text-lg text-white/70 max-w-md mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                {message.text}
+              </p>
+            </div>
           </div>
 
-          {/* Progress dots */}
-          <div className="absolute bottom-12 flex gap-2">
+          {/* Progress dots - fixed at bottom */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-10">
             {INTRO_MESSAGES.map((_, idx) => (
               <div
                 key={idx}
                 className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-300",
-                  idx === introIndex ? "bg-teal-400 w-6" : "bg-white/30"
+                  "h-2 rounded-full transition-all duration-300",
+                  idx === introIndex ? "bg-teal-400 w-6" : "bg-white/30 w-2"
                 )}
               />
             ))}
-          </div>
           </div>
         </div>
       </div>
