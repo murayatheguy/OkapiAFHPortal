@@ -357,27 +357,29 @@ export default function MatchWizard() {
     const message = INTRO_MESSAGES[introIndex];
 
     return (
-      <div className="min-h-screen w-full overflow-hidden relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
-        {/* Header - light background for consistency */}
-        <div className="relative z-30 bg-white shadow-sm">
+      <div className="min-h-screen w-full overflow-hidden relative flex flex-col">
+        {/* Header - solid light background */}
+        <div className="relative z-30 bg-white border-b border-gray-100">
           <Header />
         </div>
 
-        {/* Background blobs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl" />
+        {/* Flash intro content area */}
+        <div className="flex-1 relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
+          {/* Background blobs */}
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl" />
+          <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl" />
 
-        {/* Skip button */}
-        <button
-          onClick={skipIntro}
-          className="absolute top-24 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
-        >
-          Skip <ArrowRight className="w-4 h-4" />
-        </button>
+          {/* Skip button */}
+          <button
+            onClick={skipIntro}
+            className="absolute top-6 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
+          >
+            Skip <ArrowRight className="w-4 h-4" />
+          </button>
 
-        {/* Content */}
-        <div className="relative z-10 h-[calc(100vh-72px)] flex flex-col items-center justify-center px-6">
+          {/* Content */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
           <div
             className={cn(
               "text-center transition-all duration-300",
@@ -404,6 +406,7 @@ export default function MatchWizard() {
                 )}
               />
             ))}
+          </div>
           </div>
         </div>
       </div>
