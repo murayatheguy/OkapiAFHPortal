@@ -3,7 +3,7 @@
  * Flash intro with 4 messages, then 7-step questionnaire
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, ArrowRight, Heart, CheckCircle2, MapPin,
@@ -16,16 +16,25 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-// Washington State Counties
-const WA_COUNTIES = [
-  "King", "Pierce", "Snohomish", "Spokane", "Clark", "Thurston",
-  "Kitsap", "Yakima", "Whatcom", "Benton", "Skagit", "Cowlitz",
-  "Grant", "Franklin", "Chelan", "Lewis", "Grays Harbor", "Mason",
-  "Clallam", "Walla Walla", "Stevens", "Whitman", "Island", "Douglas",
-  "Okanogan", "Kittitas", "Jefferson", "Pacific", "Adams", "Klickitat",
-  "San Juan", "Asotin", "Skamania", "Pend Oreille", "Ferry", "Lincoln",
-  "Columbia", "Garfield", "Wahkiakum"
+// Washington State Cities for autocomplete
+const WA_CITIES = [
+  "Seattle", "Tacoma", "Bellevue", "Spokane", "Vancouver", "Kent", "Everett",
+  "Renton", "Federal Way", "Spokane Valley", "Kirkland", "Bellingham", "Auburn",
+  "Pasco", "Marysville", "Lakewood", "Redmond", "Shoreline", "Richland", "Burien",
+  "Olympia", "Lacey", "Sammamish", "Kennewick", "Edmonds", "Bothell", "Puyallup",
+  "Bremerton", "Lynnwood", "Issaquah", "Longview", "Mount Vernon", "Wenatchee",
+  "University Place", "Walla Walla", "Pullman", "Des Moines", "Lake Stevens",
+  "SeaTac", "Oak Harbor", "Tumwater", "Mercer Island", "Maple Valley", "Covington",
+  "Kenmore", "Woodinville", "Tukwila", "Moses Lake", "Anacortes", "Ellensburg"
 ].sort();
+
+// Common zip codes for autocomplete
+const WA_ZIPS = [
+  "98101", "98102", "98103", "98104", "98105", "98106", "98107", "98108", "98109",
+  "98112", "98115", "98116", "98117", "98118", "98119", "98121", "98122", "98125",
+  "98126", "98133", "98144", "98146", "98177", "98178", "98199", "98402", "98403",
+  "98404", "98405", "98406", "98407", "98408", "98409", "98418", "98421", "98422"
+];
 
 // Flash intro messages
 const INTRO_MESSAGES = [
@@ -51,15 +60,138 @@ const INTRO_MESSAGES = [
   }
 ];
 
+// Care level options with expanded descriptions
+const CARE_LEVELS = [
+  {
+    id: "independent",
+    icon: "🏠",
+    label: "Independent Living",
+    description: "Minimal daily assistance. Social activities, meals, and light housekeeping. For those who are mostly self-sufficient."
+  },
+  {
+    id: "assisted",
+    icon: "🤝",
+    label: "Personal Care / Assisted Living",
+    description: "Help with daily activities like bathing, dressing, grooming, and medication reminders. 24/7 staff available."
+  },
+  {
+    id: "afh",
+    icon: "🏡",
+    label: "Adult Family Home (AFH)",
+    description: "Small residential setting (2-6 residents) with personalized care in a home environment. Licensed caregivers on-site."
+  },
+  {
+    id: "memory",
+    icon: "🧠",
+    label: "Specialized Memory Care",
+    description: "Secure environment for dementia, Alzheimer's, or cognitive decline. Specialized staff trained in memory care techniques."
+  },
+  {
+    id: "skilled",
+    icon: "⚕️",
+    label: "Skilled Nursing Facility",
+    description: "24/7 medical care by licensed nurses. For complex medical needs, post-surgery recovery, or rehabilitation."
+  },
+  {
+    id: "unsure",
+    icon: "❓",
+    label: "Not Sure Yet",
+    description: "That's okay! We'll help determine the right level based on your other answers."
+  }
+];
+
+// Specific care needs - categorized
+const CARE_NEEDS = {
+  physical: {
+    label: "Physical Needs",
+    options: [
+      "Mobility assistance (wheelchair, walker, transfer help)",
+      "Fall risk / fall prevention",
+      "Incontinence care",
+      "Feeding assistance",
+      "Physical therapy needs"
+    ]
+  },
+  medical: {
+    label: "Medical Needs",
+    options: [
+      "Medication management",
+      "Diabetes care (insulin, monitoring)",
+      "Wound care",
+      "Oxygen therapy",
+      "Dialysis coordination",
+      "Parkinson's care",
+      "Stroke recovery"
+    ]
+  },
+  cognitive: {
+    label: "Cognitive / Behavioral",
+    options: [
+      "Memory care / dementia support",
+      "Mental health support",
+      "Behavioral support",
+      "Wandering prevention",
+      "Sundowning management"
+    ]
+  },
+  endOfLife: {
+    label: "End of Life",
+    options: [
+      "Hospice / palliative care",
+      "Respite care (temporary)"
+    ]
+  }
+};
+
+// Preferences - categorized
+const PREFERENCES = {
+  payment: {
+    label: "Payment Options",
+    options: [
+      "Accepts Medicaid",
+      "Accepts Medicare",
+      "Accepts Private Pay",
+      "Accepts VA Benefits",
+      "Accepts Long-Term Care Insurance"
+    ]
+  },
+  room: {
+    label: "Room Preferences",
+    options: [
+      "Private room required",
+      "Shared room okay",
+      "Private bathroom preferred"
+    ]
+  },
+  lifestyle: {
+    label: "Lifestyle",
+    options: [
+      "Pet-friendly (can bring pet)",
+      "Pets on-site okay",
+      "Smoking allowed",
+      "Cultural/language preferences",
+      "Religious services available"
+    ]
+  },
+  location: {
+    label: "Location",
+    options: [
+      "Near public transit",
+      "Outdoor space / garden",
+      "Ground floor / elevator access"
+    ]
+  }
+};
+
 interface MatchAnswers {
   relationship: string;
-  county: string;
-  city: string;
+  location: string;
   careLevel: string;
   specificNeeds: string[];
   preferences: string[];
   timeline: string;
   firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   textUpdates: boolean;
@@ -79,20 +211,40 @@ export default function MatchWizard() {
   const [showResults, setShowResults] = useState(false);
   const [matchCount, setMatchCount] = useState(0);
 
+  // Location autocomplete
+  const [locationInput, setLocationInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   // Answers
   const [answers, setAnswers] = useState<MatchAnswers>({
     relationship: "",
-    county: "",
-    city: "",
+    location: "",
     careLevel: "",
     specificNeeds: [],
     preferences: [],
     timeline: "",
     firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     textUpdates: false
   });
+
+  // Filtered suggestions for location autocomplete
+  const locationSuggestions = useMemo(() => {
+    if (!locationInput || locationInput.length < 2) return [];
+    const input = locationInput.toLowerCase();
+
+    // Check if it's a zip code (numeric)
+    if (/^\d+$/.test(locationInput)) {
+      return WA_ZIPS.filter(zip => zip.startsWith(locationInput)).slice(0, 5);
+    }
+
+    // Otherwise search cities
+    return WA_CITIES.filter(city =>
+      city.toLowerCase().startsWith(input)
+    ).slice(0, 5);
+  }, [locationInput]);
 
   // Auto-advance intro messages
   useEffect(() => {
@@ -152,11 +304,14 @@ export default function MatchWizard() {
     setShowResults(true);
   };
 
+  const handleSkipToResults = () => {
+    handleSubmit();
+  };
+
   const viewMatches = () => {
     // Build query params from answers
     const params = new URLSearchParams();
-    if (answers.county) params.set("county", answers.county);
-    if (answers.city) params.set("city", answers.city);
+    if (answers.location) params.set("city", answers.location);
     if (answers.careLevel) params.set("careLevel", answers.careLevel);
     if (answers.preferences.includes("Accepts Medicaid")) params.set("medicaid", "true");
 
@@ -170,18 +325,30 @@ export default function MatchWizard() {
     return [...arr, value];
   };
 
+  const handleNoneOfAbove = (field: 'specificNeeds' | 'preferences') => {
+    setAnswers({ ...answers, [field]: [] });
+  };
+
+  // All steps are now optional except welcome and timeline
   const canProceed = () => {
     switch (step) {
       case 0: return true;
-      case 1: return answers.relationship !== "";
-      case 2: return answers.county !== "";
-      case 3: return answers.careLevel !== "";
-      case 4: return true; // Optional
-      case 5: return true; // Optional
-      case 6: return answers.timeline !== "";
-      case 7: return answers.firstName !== "" && answers.email !== "";
+      case 1: return true; // Relationship optional
+      case 2: return true; // Location optional
+      case 3: return true; // Care level optional
+      case 4: return true; // Specific needs optional
+      case 5: return true; // Preferences optional
+      case 6: return true; // Timeline optional
+      case 7: return true; // Contact info optional
       default: return false;
     }
+  };
+
+  // Select location from suggestions
+  const selectLocation = (loc: string) => {
+    setLocationInput(loc);
+    setAnswers({ ...answers, location: loc });
+    setShowSuggestions(false);
   };
 
   // =============== FLASH INTRO ===============
@@ -249,7 +416,7 @@ export default function MatchWizard() {
             We found {matchCount} homes that match your needs!
           </h1>
           <p className="text-slate-500 mb-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Based on your preferences, we've identified Adult Family Homes in {answers.county} County that could be a great fit.
+            Based on your preferences, we've identified care homes{answers.location ? ` near ${answers.location}` : ""} that could be a great fit.
           </p>
           <Button
             onClick={viewMatches}
@@ -279,6 +446,33 @@ export default function MatchWizard() {
       </div>
     );
   }
+
+  // Card component for selectable options with animations
+  const SelectableCard = ({
+    selected,
+    onClick,
+    children,
+    className = ""
+  }: {
+    selected: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full p-4 rounded-xl border-2 text-left transition-all duration-200",
+        "hover:scale-[1.01] active:scale-[0.99]",
+        selected
+          ? "border-l-4 border-l-teal-500 border-t-teal-200 border-r-teal-200 border-b-teal-200 bg-teal-50/50"
+          : "border-slate-200 bg-white hover:border-teal-300 hover:shadow-sm",
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
 
   // =============== MAIN WIZARD ===============
   return (
@@ -366,27 +560,22 @@ export default function MatchWizard() {
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               Who are you looking for care for?
             </h2>
-            <p className="text-slate-500 text-center mb-8">Select one option</p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="grid gap-3">
               {["Myself", "My Parent", "My Spouse/Partner", "Another Family Member", "A Client (I'm a professional)"].map((option) => (
-                <button
+                <SelectableCard
                   key={option}
+                  selected={answers.relationship === option}
                   onClick={() => setAnswers({ ...answers, relationship: option })}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    answers.relationship === option
-                      ? "border-teal-500 bg-teal-50 text-teal-800"
-                      : "border-slate-200 bg-white hover:border-teal-300 text-slate-700"
-                  )}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{option}</span>
+                    <span className="font-medium text-slate-700">{option}</span>
                     {answers.relationship === option && (
                       <CheckCircle2 className="w-5 h-5 text-teal-500" />
                     )}
                   </div>
-                </button>
+                </SelectableCard>
               ))}
             </div>
           </div>
@@ -398,31 +587,60 @@ export default function MatchWizard() {
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               What area are you searching in?
             </h2>
-            <p className="text-slate-500 text-center mb-8">Select a Washington State county</p>
+            <p className="text-slate-500 text-center mb-8">Enter a city or zip code (optional)</p>
 
-            <div className="space-y-4">
-              <div>
-                <Label className="text-slate-700 mb-2 block">County *</Label>
-                <select
-                  value={answers.county}
-                  onChange={(e) => setAnswers({ ...answers, county: e.target.value })}
-                  className="w-full p-4 rounded-xl border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-0 text-slate-700"
-                >
-                  <option value="">Select a county...</option>
-                  {WA_COUNTIES.map((county) => (
-                    <option key={county} value={county}>{county} County</option>
-                  ))}
-                </select>
+            <div className="max-w-md mx-auto relative">
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Input
+                  placeholder="Enter city or zip code"
+                  value={locationInput}
+                  onChange={(e) => {
+                    setLocationInput(e.target.value);
+                    setAnswers({ ...answers, location: e.target.value });
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="w-full pl-12 py-6 text-lg rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
+                />
               </div>
 
-              <div>
-                <Label className="text-slate-700 mb-2 block">Specific city or zip (optional)</Label>
-                <Input
-                  placeholder="e.g., Seattle or 98101"
-                  value={answers.city}
-                  onChange={(e) => setAnswers({ ...answers, city: e.target.value })}
-                  className="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
-                />
+              {/* Autocomplete suggestions */}
+              {showSuggestions && locationSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-10">
+                  {locationSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onMouseDown={() => selectLocation(suggestion)}
+                      className="w-full px-4 py-3 text-left hover:bg-teal-50 transition-colors flex items-center gap-2"
+                    >
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-700">{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Popular cities */}
+              <div className="mt-6">
+                <p className="text-sm text-slate-500 mb-3">Popular areas:</p>
+                <div className="flex flex-wrap gap-2">
+                  {["Seattle", "Tacoma", "Bellevue", "Spokane", "Everett", "Olympia"].map((city) => (
+                    <button
+                      key={city}
+                      onClick={() => selectLocation(city)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm transition-all",
+                        answers.location === city
+                          ? "bg-teal-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-teal-100 hover:text-teal-700"
+                      )}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -434,36 +652,26 @@ export default function MatchWizard() {
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               What level of care is needed?
             </h2>
-            <p className="text-slate-500 text-center mb-8">Select the best match</p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="grid gap-3">
-              {[
-                { id: "independent", label: "Independent Living", desc: "Minimal assistance, mostly social" },
-                { id: "personal", label: "Personal Care", desc: "Help with daily activities (bathing, dressing)" },
-                { id: "memory", label: "Specialized Memory Care", desc: "Dementia or Alzheimer's support" },
-                { id: "skilled", label: "Skilled Nursing", desc: "Medical care needs" },
-                { id: "unsure", label: "Not Sure", desc: "We'll help figure it out" },
-              ].map((option) => (
-                <button
+              {CARE_LEVELS.map((option) => (
+                <SelectableCard
                   key={option.id}
+                  selected={answers.careLevel === option.id}
                   onClick={() => setAnswers({ ...answers, careLevel: option.id })}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    answers.careLevel === option.id
-                      ? "border-teal-500 bg-teal-50"
-                      : "border-slate-200 bg-white hover:border-teal-300"
-                  )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-slate-800">{option.label}</div>
-                      <div className="text-sm text-slate-500">{option.desc}</div>
+                  <div className="flex items-start gap-4">
+                    <span className="text-2xl flex-shrink-0">{option.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-slate-800 mb-1">{option.label}</div>
+                      <div className="text-sm text-slate-500 leading-relaxed">{option.description}</div>
                     </div>
                     {answers.careLevel === option.id && (
-                      <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0 mt-1" />
                     )}
                   </div>
-                </button>
+                </SelectableCard>
               ))}
             </div>
           </div>
@@ -477,44 +685,51 @@ export default function MatchWizard() {
             </h2>
             <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
-            <div className="grid gap-3">
-              {[
-                "Mobility assistance (wheelchair, walker)",
-                "Medication management",
-                "Diabetes care",
-                "Mental health support",
-                "Behavioral support",
-                "Hospice/End of life care",
-                "None of the above"
-              ].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => {
-                    if (option === "None of the above") {
-                      setAnswers({ ...answers, specificNeeds: ["None of the above"] });
-                    } else {
-                      const newNeeds = toggleArrayValue(
-                        answers.specificNeeds.filter(n => n !== "None of the above"),
-                        option
-                      );
-                      setAnswers({ ...answers, specificNeeds: newNeeds });
-                    }
-                  }}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    answers.specificNeeds.includes(option)
-                      ? "border-teal-500 bg-teal-50"
-                      : "border-slate-200 bg-white hover:border-teal-300"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700">{option}</span>
-                    {answers.specificNeeds.includes(option) && (
-                      <Check className="w-5 h-5 text-teal-500" />
-                    )}
+            <div className="space-y-6">
+              {Object.entries(CARE_NEEDS).map(([key, category]) => (
+                <div key={key}>
+                  <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">
+                    {category.label}
+                  </h3>
+                  <div className="grid gap-2">
+                    {category.options.map((option) => (
+                      <SelectableCard
+                        key={option}
+                        selected={answers.specificNeeds.includes(option)}
+                        onClick={() => {
+                          const newNeeds = toggleArrayValue(answers.specificNeeds, option);
+                          setAnswers({ ...answers, specificNeeds: newNeeds });
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-700">{option}</span>
+                          {answers.specificNeeds.includes(option) && (
+                            <Check className="w-5 h-5 text-teal-500" />
+                          )}
+                        </div>
+                      </SelectableCard>
+                    ))}
                   </div>
-                </button>
+                </div>
               ))}
+
+              {/* None of the above */}
+              <button
+                onClick={() => handleNoneOfAbove('specificNeeds')}
+                className={cn(
+                  "w-full p-4 rounded-xl border-2 text-left transition-all",
+                  answers.specificNeeds.length === 0
+                    ? "border-slate-400 bg-slate-50"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600">None of the above / Skip this step</span>
+                  {answers.specificNeeds.length === 0 && (
+                    <Check className="w-5 h-5 text-slate-500" />
+                  )}
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -527,33 +742,32 @@ export default function MatchWizard() {
             </h2>
             <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
-            <div className="grid gap-3">
-              {[
-                "Private room",
-                "Accepts Medicaid",
-                "Accepts VA benefits",
-                "Pet-friendly",
-                "Cultural/language preferences",
-                "Near public transit",
-                "Outdoor space/garden"
-              ].map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setAnswers({ ...answers, preferences: toggleArrayValue(answers.preferences, option) })}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    answers.preferences.includes(option)
-                      ? "border-teal-500 bg-teal-50"
-                      : "border-slate-200 bg-white hover:border-teal-300"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-700">{option}</span>
-                    {answers.preferences.includes(option) && (
-                      <Check className="w-5 h-5 text-teal-500" />
-                    )}
+            <div className="space-y-6">
+              {Object.entries(PREFERENCES).map(([key, category]) => (
+                <div key={key}>
+                  <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">
+                    {category.label}
+                  </h3>
+                  <div className="grid gap-2">
+                    {category.options.map((option) => (
+                      <SelectableCard
+                        key={option}
+                        selected={answers.preferences.includes(option)}
+                        onClick={() => {
+                          const newPrefs = toggleArrayValue(answers.preferences, option);
+                          setAnswers({ ...answers, preferences: newPrefs });
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-700">{option}</span>
+                          {answers.preferences.includes(option) && (
+                            <Check className="w-5 h-5 text-teal-500" />
+                          )}
+                        </div>
+                      </SelectableCard>
+                    ))}
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -565,24 +779,19 @@ export default function MatchWizard() {
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               When do you need placement?
             </h2>
-            <p className="text-slate-500 text-center mb-8">Select your timeline</p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="grid gap-3">
               {[
                 { id: "immediate", label: "Immediately (within days)", icon: "🚨" },
-                { id: "2weeks", label: "Within 2 weeks", icon: "📅" },
-                { id: "1-2months", label: "Within 1-2 months", icon: "🗓️" },
+                { id: "1-3months", label: "Within 1-3 months", icon: "📅" },
+                { id: "3-6months", label: "Within 3-6 months", icon: "🗓️" },
                 { id: "researching", label: "Just researching for now", icon: "🔍" },
               ].map((option) => (
-                <button
+                <SelectableCard
                   key={option.id}
+                  selected={answers.timeline === option.id}
                   onClick={() => setAnswers({ ...answers, timeline: option.id })}
-                  className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all",
-                    answers.timeline === option.id
-                      ? "border-teal-500 bg-teal-50"
-                      : "border-slate-200 bg-white hover:border-teal-300"
-                  )}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -593,7 +802,7 @@ export default function MatchWizard() {
                       <CheckCircle2 className="w-5 h-5 text-teal-500" />
                     )}
                   </div>
-                </button>
+                </SelectableCard>
               ))}
             </div>
           </div>
@@ -603,75 +812,109 @@ export default function MatchWizard() {
         {step === 7 && (
           <div className="animate-in fade-in duration-500">
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
-              How can we reach you with matches?
+              How can we reach you?
             </h2>
-            <p className="text-slate-500 text-center mb-8">We'll send your personalized results</p>
+            <p className="text-slate-500 text-center mb-2">
+              Want us to send your matches? Leave your info below, or skip to see results now.
+            </p>
+            <p className="text-sm text-teal-600 text-center mb-8">All fields are optional</p>
 
-            <div className="space-y-4 max-w-md mx-auto">
-              <div>
-                <Label className="text-slate-700 mb-2 block">First Name *</Label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <div className="max-w-md mx-auto space-y-5">
+              {/* Name row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-slate-700 mb-2 block text-sm font-medium">First Name</Label>
                   <Input
-                    placeholder="Your first name"
+                    placeholder="First name"
                     value={answers.firstName}
                     onChange={(e) => setAnswers({ ...answers, firstName: e.target.value })}
-                    className="w-full pl-12 p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
+                    className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                   />
                 </div>
-              </div>
-
-              <div>
-                <Label className="text-slate-700 mb-2 block">Email *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <div>
+                  <Label className="text-slate-700 mb-2 block text-sm font-medium">Last Name</Label>
                   <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={answers.email}
-                    onChange={(e) => setAnswers({ ...answers, email: e.target.value })}
-                    className="w-full pl-12 p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
+                    placeholder="Last name"
+                    value={answers.lastName}
+                    onChange={(e) => setAnswers({ ...answers, lastName: e.target.value })}
+                    className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                   />
                 </div>
               </div>
 
+              {/* Email */}
               <div>
-                <Label className="text-slate-700 mb-2 block">Phone (optional)</Label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    value={answers.phone}
-                    onChange={(e) => setAnswers({ ...answers, phone: e.target.value })}
-                    className="w-full pl-12 p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
-                  />
-                </div>
+                <Label className="text-slate-700 mb-2 block text-sm font-medium">Email</Label>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={answers.email}
+                  onChange={(e) => setAnswers({ ...answers, email: e.target.value })}
+                  className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
+                />
               </div>
 
+              {/* Phone */}
+              <div>
+                <Label className="text-slate-700 mb-2 block text-sm font-medium">Phone</Label>
+                <Input
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={answers.phone}
+                  onChange={(e) => setAnswers({ ...answers, phone: e.target.value })}
+                  className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
+                />
+              </div>
+
+              {/* Text updates checkbox - only show if phone entered */}
               {answers.phone && (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <Checkbox
                     id="textUpdates"
                     checked={answers.textUpdates}
                     onCheckedChange={(checked) => setAnswers({ ...answers, textUpdates: checked as boolean })}
                   />
-                  <Label htmlFor="textUpdates" className="text-slate-600 cursor-pointer">
+                  <Label htmlFor="textUpdates" className="text-slate-600 cursor-pointer text-sm">
                     Text me updates about my matches
                   </Label>
                 </div>
               )}
 
-              <p className="text-sm text-slate-400 text-center flex items-center justify-center gap-1">
-                <Shield className="w-4 h-4" />
-                We'll never spam you or share your info.
-              </p>
+              {/* Privacy note */}
+              <div className="flex items-center justify-center gap-2 text-sm text-slate-500 pt-2">
+                <Shield className="w-4 h-4 text-teal-500" />
+                <span>Your information is never shared. We only use it to send your personalized matches.</span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleSkipToResults}
+                  className="flex-1 py-6 rounded-xl border-2 border-slate-300 text-slate-600 hover:bg-slate-50"
+                >
+                  Skip & View Results
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!answers.email}
+                  className={cn(
+                    "flex-1 py-6 rounded-xl transition-all",
+                    answers.email
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  )}
+                >
+                  Send My Matches
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Navigation buttons */}
-        {step > 0 && (
+        {/* Navigation buttons - hide on step 7 since it has its own buttons */}
+        {step > 0 && step < 7 && (
           <div className="flex justify-between mt-10">
             <Button
               variant="ghost"
@@ -684,16 +927,24 @@ export default function MatchWizard() {
 
             <Button
               onClick={handleNext}
-              disabled={!canProceed()}
-              className={cn(
-                "px-8 rounded-xl transition-all",
-                canProceed()
-                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl"
-                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
-              )}
+              className="px-8 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all"
             >
-              {step === 7 ? "Find My Matches" : "Next"}
+              Next
               <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        )}
+
+        {/* Back button only for step 7 */}
+        {step === 7 && (
+          <div className="flex justify-start mt-6">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="text-slate-600 hover:text-slate-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
             </Button>
           </div>
         )}
