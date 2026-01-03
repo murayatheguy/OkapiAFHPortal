@@ -1,11 +1,10 @@
 /**
  * Care Matching Wizard - Premium Design
  * Flash intro with 4 messages, then 7-step questionnaire
- * Updated to match homepage UI (dark green + gold/amber)
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import {
   ArrowLeft, ArrowRight, Heart, CheckCircle2, MapPin,
   Clock, Shield, Sparkles, Loader2, Phone, Mail, User,
@@ -357,40 +356,19 @@ export default function MatchWizard() {
     const message = INTRO_MESSAGES[introIndex];
 
     return (
-      <div className="min-h-screen w-full overflow-hidden relative" style={{ backgroundColor: '#0d1a14' }}>
-        {/* Texture overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-20"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
-        />
-
+      <div className="min-h-screen w-full overflow-hidden relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
         {/* Background blobs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-900/20 blur-3xl" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-amber-900/10 blur-3xl" />
-        <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-emerald-800/10 blur-3xl" />
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl" />
 
-        {/* Header with logo */}
-        <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 z-20">
-          <Link href="/" className="flex items-center gap-1.5">
-            <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#d4b56a', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
-              OKAPI
-            </span>
-            <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, fontStyle: 'italic', color: '#f5f3ef', fontSize: '1.25rem' }}>
-              Care Network
-            </span>
-          </Link>
-
-          {/* Skip button */}
-          <button
-            onClick={skipIntro}
-            className="flex items-center gap-1 transition-colors hover:text-amber-300"
-            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.85rem', color: '#a8a49c' }}
-          >
-            Skip <ArrowRight className="w-4 h-4" />
-          </button>
-        </header>
+        {/* Skip button */}
+        <button
+          onClick={skipIntro}
+          className="absolute top-6 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
+        >
+          Skip <ArrowRight className="w-4 h-4" />
+        </button>
 
         {/* Content */}
         <div className="relative z-10 h-screen flex flex-col items-center justify-center px-6">
@@ -401,16 +379,10 @@ export default function MatchWizard() {
             )}
           >
             <div className="text-6xl mb-6">{message.icon}</div>
-            <h1
-              className="text-3xl md:text-4xl mb-4"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
               {message.title}
             </h1>
-            <p
-              className="text-lg max-w-md mx-auto"
-              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, color: '#c8c4bc' }}
-            >
+            <p className="text-lg text-white/70 max-w-md mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {message.text}
             </p>
           </div>
@@ -421,10 +393,9 @@ export default function MatchWizard() {
               <div
                 key={idx}
                 className={cn(
-                  "h-2 rounded-full transition-all duration-300",
-                  idx === introIndex ? "w-6" : "w-2"
+                  "w-2 h-2 rounded-full transition-all duration-300",
+                  idx === introIndex ? "bg-teal-400 w-6" : "bg-white/30"
                 )}
-                style={{ backgroundColor: idx === introIndex ? '#c9a962' : 'rgba(201, 169, 98, 0.3)' }}
               />
             ))}
           </div>
@@ -436,50 +407,24 @@ export default function MatchWizard() {
   // =============== RESULTS SCREEN ===============
   if (showResults) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#0d1a14' }}>
-        {/* Texture overlay */}
-        <div
-          className="fixed inset-0 pointer-events-none opacity-20"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
-        />
-
-        <div className="relative z-10 text-center max-w-md">
-          <div
-            className="w-20 h-20 rounded flex items-center justify-center mx-auto mb-6"
-            style={{ backgroundColor: 'rgba(201, 169, 98, 0.2)' }}
-          >
-            <Sparkles className="w-10 h-10" style={{ color: '#e8c55a' }} />
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Sparkles className="w-10 h-10 text-white" />
           </div>
-          <h1
-            className="text-3xl mb-3"
-            style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-          >
+          <h1 className="text-3xl font-bold text-slate-800 mb-3" style={{ fontFamily: "'DM Serif Display', serif" }}>
             We found {matchCount} homes that match your needs!
           </h1>
-          <p
-            className="mb-8"
-            style={{ fontFamily: "'Jost', sans-serif", fontSize: '1rem', color: '#c8c4bc' }}
-          >
+          <p className="text-slate-500 mb-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Based on your preferences, we've identified care homes{answers.location ? ` near ${answers.location}` : ""} that could be a great fit.
           </p>
-          <button
+          <Button
             onClick={viewMatches}
-            className="inline-flex items-center gap-2 px-8 py-4 transition-all hover:opacity-90"
-            style={{
-              backgroundColor: '#c9a962',
-              color: '#0d1a14',
-              fontFamily: "'Jost', sans-serif",
-              fontWeight: 500,
-              fontSize: '1rem',
-              letterSpacing: '0.05em',
-              borderRadius: '2px'
-            }}
+            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
           >
             View My Matches
-            <ArrowRight className="w-5 h-5" />
-          </button>
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
         </div>
       </div>
     );
@@ -488,16 +433,13 @@ export default function MatchWizard() {
   // =============== LOADING SCREEN ===============
   if (isSubmitting) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#0d1a14' }}>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30 flex items-center justify-center px-4">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-6" style={{ color: '#c9a962' }} />
-          <h2
-            className="text-2xl mb-2"
-            style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-          >
+          <Loader2 className="w-12 h-12 text-teal-500 animate-spin mx-auto mb-6" />
+          <h2 className="text-2xl font-semibold text-slate-800 mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Finding your matches...
           </h2>
-          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '1rem', color: '#c8c4bc' }}>
+          <p className="text-slate-500" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Our algorithm is searching for the perfect homes for you.
           </p>
         </div>
@@ -520,15 +462,13 @@ export default function MatchWizard() {
     <button
       onClick={onClick}
       className={cn(
-        "w-full p-4 rounded text-left transition-all duration-200",
+        "w-full p-4 rounded-xl border-2 text-left transition-all duration-200",
         "hover:scale-[1.01] active:scale-[0.99]",
+        selected
+          ? "border-l-4 border-l-teal-500 border-t-teal-200 border-r-teal-200 border-b-teal-200 bg-teal-50/50"
+          : "border-slate-200 bg-white hover:border-teal-300 hover:shadow-sm",
         className
       )}
-      style={{
-        backgroundColor: selected ? 'rgba(201, 169, 98, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-        border: selected ? '1px solid rgba(201, 169, 98, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
-        borderLeft: selected ? '4px solid #c9a962' : '1px solid rgba(255, 255, 255, 0.1)'
-      }}
     >
       {children}
     </button>
@@ -536,141 +476,79 @@ export default function MatchWizard() {
 
   // =============== MAIN WIZARD ===============
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0d1a14' }}>
-      {/* Texture overlay */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Header with logo and progress */}
-      <header className="sticky top-0 z-20 border-b bg-[#0d1a14]/90 backdrop-blur-sm" style={{ borderColor: 'rgba(201, 169, 98, 0.2)' }}>
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <Link href="/" className="flex items-center gap-1.5">
-              <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#d4b56a', letterSpacing: '0.1em', fontSize: '1.1rem' }}>
-                OKAPI
-              </span>
-              <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, fontStyle: 'italic', color: '#f5f3ef', fontSize: '1.1rem' }}>
-                Care Network
-              </span>
-            </Link>
-            {step > 0 && (
-              <span style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#c9a962' }}>
-                {Math.round((step / 7) * 100)}% complete
-              </span>
-            )}
-          </div>
-          {step > 0 && (
-            <div className="flex items-center gap-3">
-              <span style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', color: '#a8a49c' }}>
-                Step {step} of 7
-              </span>
-              <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(201, 169, 98, 0.2)' }}>
-                <div
-                  className="h-full transition-all duration-500 ease-out rounded-full"
-                  style={{ width: `${(step / 7) * 100}%`, backgroundColor: '#c9a962' }}
-                />
-              </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30">
+      {/* Header with progress */}
+      {step > 0 && (
+        <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-slate-200/50 z-20">
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Step {step} of 7</span>
+              <span className="text-sm text-teal-600 font-medium">{Math.round((step / 7) * 100)}% complete</span>
             </div>
-          )}
+            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${(step / 7) * 100}%` }}
+              />
+            </div>
+          </div>
         </div>
-      </header>
+      )}
 
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
         {/* Step 0: Welcome */}
         {step === 0 && (
           <div className="text-center animate-in fade-in duration-500">
             {/* Trust badge */}
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-8"
-              style={{
-                backgroundColor: 'rgba(34, 87, 64, 0.2)',
-                border: '1px solid rgba(34, 87, 64, 0.4)',
-                color: '#4ade80'
-              }}
-            >
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 border border-green-200 text-green-700 text-sm mb-8">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               Secure & Confidential
             </div>
 
             {/* Icon */}
-            <div
-              className="w-20 h-20 rounded flex items-center justify-center mx-auto mb-6"
-              style={{ backgroundColor: 'rgba(201, 169, 98, 0.15)' }}
-            >
-              <Heart className="w-10 h-10" style={{ color: '#e8c55a' }} />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Heart className="w-10 h-10 text-white" />
             </div>
 
-            <h1
-              className="text-3xl md:text-4xl mb-3"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
-              Let's Find Your <span style={{ color: '#e8c55a', fontStyle: 'italic' }}>Perfect Match</span>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-3" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Let's Find Your Perfect Match
             </h1>
-            <p
-              className="text-lg mb-8 max-w-md mx-auto"
-              style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, color: '#c8c4bc' }}
-            >
+            <p className="text-lg text-slate-500 mb-8 max-w-md mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               A few quick questions help our algorithm match you with homes that truly fit your needs.
             </p>
 
             {/* Info boxes */}
             <div className="flex justify-center gap-4 mb-10">
-              {[
-                { value: '7', label: 'Questions' },
-                { value: '~3', label: 'Minutes' },
-                { value: '✨', label: 'Smart Matches' }
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="px-4 py-3 rounded"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(201, 169, 98, 0.2)'
-                  }}
-                >
-                  <div style={{ fontFamily: "'Cormorant', serif", fontSize: '1.5rem', fontWeight: 600, color: '#e8c55a' }}>
-                    {item.value}
-                  </div>
-                  <div style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', color: '#a8a49c', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    {item.label}
-                  </div>
+              <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-slate-200">
+                <div className="text-2xl font-bold text-teal-600">7</div>
+                <div className="text-xs text-slate-500">Questions</div>
+              </div>
+              <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-slate-200">
+                <div className="text-2xl font-bold text-teal-600">~3</div>
+                <div className="text-xs text-slate-500">Minutes</div>
+              </div>
+              <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-slate-200">
+                <div className="text-2xl font-bold text-teal-600">
+                  <Sparkles className="w-6 h-6 inline" />
                 </div>
-              ))}
+                <div className="text-xs text-slate-500">Smart Matches</div>
+              </div>
             </div>
 
-            <button
+            <Button
               onClick={handleNext}
-              className="inline-flex items-center gap-2 px-8 py-4 transition-all hover:opacity-90"
-              style={{
-                backgroundColor: '#c9a962',
-                color: '#0d1a14',
-                fontFamily: "'Jost', sans-serif",
-                fontWeight: 500,
-                fontSize: '1rem',
-                letterSpacing: '0.05em',
-                borderRadius: '2px'
-              }}
+              className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
             >
               Begin Matching
-              <ArrowRight className="w-5 h-5" />
-            </button>
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
 
-            <p
-              className="mt-6 flex items-center justify-center gap-2"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#6b7c72' }}
-            >
+            <p className="mt-6 text-sm text-slate-400 flex items-center justify-center gap-1">
               <Shield className="w-4 h-4" />
               Your information stays private. We never share your data.
             </p>
 
-            <p
-              className="mt-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.7rem', color: '#6b7c72' }}
-            >
+            <p className="mt-8 text-xs text-slate-400">
               Powered by Okapi's proprietary matching algorithm
             </p>
           </div>
@@ -679,18 +557,10 @@ export default function MatchWizard() {
         {/* Step 1: Relationship */}
         {step === 1 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               Who are you looking for care for?
             </h2>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
-              Select all that apply (optional)
-            </p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="grid gap-3">
               {["Myself", "My Parent", "My Spouse/Partner", "Another Family Member", "A Client (I'm a professional)"].map((option) => (
@@ -700,9 +570,9 @@ export default function MatchWizard() {
                   onClick={() => setAnswers({ ...answers, relationship: option })}
                 >
                   <div className="flex items-center justify-between">
-                    <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, color: '#f5f3ef' }}>{option}</span>
+                    <span className="font-medium text-slate-700">{option}</span>
                     {answers.relationship === option && (
-                      <CheckCircle2 className="w-5 h-5" style={{ color: '#c9a962' }} />
+                      <CheckCircle2 className="w-5 h-5 text-teal-500" />
                     )}
                   </div>
                 </SelectableCard>
@@ -714,23 +584,15 @@ export default function MatchWizard() {
         {/* Step 2: Location */}
         {step === 2 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               What area are you searching in?
             </h2>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
-              Enter a city or zip code (optional)
-            </p>
+            <p className="text-slate-500 text-center mb-8">Enter a city or zip code (optional)</p>
 
             <div className="max-w-md mx-auto relative">
               <div className="relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#c9a962' }} />
-                <input
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Input
                   placeholder="Enter city or zip code"
                   value={locationInput}
                   onChange={(e) => {
@@ -740,34 +602,21 @@ export default function MatchWizard() {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  className="w-full pl-12 py-4 rounded focus:outline-none"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(201, 169, 98, 0.3)',
-                    color: '#f5f3ef',
-                    fontFamily: "'Jost', sans-serif",
-                    fontSize: '1rem'
-                  }}
+                  className="w-full pl-12 py-6 text-lg rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                 />
               </div>
 
               {/* Autocomplete suggestions */}
               {showSuggestions && locationSuggestions.length > 0 && (
-                <div
-                  className="absolute top-full left-0 right-0 mt-2 rounded overflow-hidden z-10"
-                  style={{
-                    backgroundColor: '#1a2f25',
-                    border: '1px solid rgba(201, 169, 98, 0.3)'
-                  }}
-                >
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-10">
                   {locationSuggestions.map((suggestion) => (
                     <button
                       key={suggestion}
                       onMouseDown={() => selectLocation(suggestion)}
-                      className="w-full px-4 py-3 text-left flex items-center gap-2 transition-colors hover:bg-amber-900/20"
+                      className="w-full px-4 py-3 text-left hover:bg-teal-50 transition-colors flex items-center gap-2"
                     >
-                      <MapPin className="w-4 h-4" style={{ color: '#c9a962' }} />
-                      <span style={{ fontFamily: "'Jost', sans-serif", color: '#f5f3ef' }}>{suggestion}</span>
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-700">{suggestion}</span>
                     </button>
                   ))}
                 </div>
@@ -775,22 +624,18 @@ export default function MatchWizard() {
 
               {/* Popular cities */}
               <div className="mt-6">
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#a8a49c', marginBottom: '0.75rem' }}>
-                  Popular areas:
-                </p>
+                <p className="text-sm text-slate-500 mb-3">Popular areas:</p>
                 <div className="flex flex-wrap gap-2">
                   {["Seattle", "Tacoma", "Bellevue", "Spokane", "Everett", "Olympia"].map((city) => (
                     <button
                       key={city}
                       onClick={() => selectLocation(city)}
-                      className="px-4 py-2 rounded-full text-sm transition-all"
-                      style={{
-                        backgroundColor: answers.location === city ? '#c9a962' : 'rgba(255, 255, 255, 0.08)',
-                        color: answers.location === city ? '#0d1a14' : '#c8c4bc',
-                        fontFamily: "'Jost', sans-serif",
-                        border: '1px solid',
-                        borderColor: answers.location === city ? '#c9a962' : 'rgba(255, 255, 255, 0.1)'
-                      }}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm transition-all",
+                        answers.location === city
+                          ? "bg-teal-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-teal-100 hover:text-teal-700"
+                      )}
                     >
                       {city}
                     </button>
@@ -804,18 +649,10 @@ export default function MatchWizard() {
         {/* Step 3: Care Level */}
         {step === 3 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               What level of care is needed?
             </h2>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
-              Select all that apply (optional)
-            </p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="grid gap-3">
               {CARE_LEVELS.map((option) => (
@@ -827,15 +664,11 @@ export default function MatchWizard() {
                   <div className="flex items-start gap-4">
                     <span className="text-2xl flex-shrink-0">{option.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 600, color: '#f5f3ef', marginBottom: '0.25rem' }}>
-                        {option.label}
-                      </div>
-                      <div style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', color: '#a8a49c', lineHeight: 1.5 }}>
-                        {option.description}
-                      </div>
+                      <div className="font-semibold text-slate-800 mb-1">{option.label}</div>
+                      <div className="text-sm text-slate-500 leading-relaxed">{option.description}</div>
                     </div>
                     {answers.careLevel === option.id && (
-                      <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#c9a962' }} />
+                      <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0 mt-1" />
                     )}
                   </div>
                 </SelectableCard>
@@ -847,26 +680,15 @@ export default function MatchWizard() {
         {/* Step 4: Specific Needs */}
         {step === 4 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               Any specific care needs?
             </h2>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
-              Select all that apply (optional)
-            </p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="space-y-6">
               {Object.entries(CARE_NEEDS).map(([key, category]) => (
                 <div key={key}>
-                  <h3
-                    className="mb-3"
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', fontWeight: 600, color: '#c9a962', letterSpacing: '0.15em', textTransform: 'uppercase' }}
-                  >
+                  <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">
                     {category.label}
                   </h3>
                   <div className="grid gap-2">
@@ -880,9 +702,9 @@ export default function MatchWizard() {
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <span style={{ fontFamily: "'Jost', sans-serif", color: '#e8e4dc' }}>{option}</span>
+                          <span className="text-slate-700">{option}</span>
                           {answers.specificNeeds.includes(option) && (
-                            <Check className="w-5 h-5" style={{ color: '#c9a962' }} />
+                            <Check className="w-5 h-5 text-teal-500" />
                           )}
                         </div>
                       </SelectableCard>
@@ -894,17 +716,17 @@ export default function MatchWizard() {
               {/* None of the above */}
               <button
                 onClick={() => handleNoneOfAbove('specificNeeds')}
-                className="w-full p-4 rounded text-left transition-all"
-                style={{
-                  backgroundColor: answers.specificNeeds.length === 0 ? 'rgba(107, 124, 114, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid',
-                  borderColor: answers.specificNeeds.length === 0 ? 'rgba(107, 124, 114, 0.5)' : 'rgba(255, 255, 255, 0.1)'
-                }}
+                className={cn(
+                  "w-full p-4 rounded-xl border-2 text-left transition-all",
+                  answers.specificNeeds.length === 0
+                    ? "border-slate-400 bg-slate-50"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                )}
               >
                 <div className="flex items-center justify-between">
-                  <span style={{ fontFamily: "'Jost', sans-serif", color: '#a8a49c' }}>None of the above / Skip this step</span>
+                  <span className="text-slate-600">None of the above / Skip this step</span>
                   {answers.specificNeeds.length === 0 && (
-                    <Check className="w-5 h-5" style={{ color: '#6b7c72' }} />
+                    <Check className="w-5 h-5 text-slate-500" />
                   )}
                 </div>
               </button>
@@ -915,26 +737,15 @@ export default function MatchWizard() {
         {/* Step 5: Preferences */}
         {step === 5 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               What matters most to you?
             </h2>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
-              Select all that apply (optional)
-            </p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="space-y-6">
               {Object.entries(PREFERENCES).map(([key, category]) => (
                 <div key={key}>
-                  <h3
-                    className="mb-3"
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', fontWeight: 600, color: '#c9a962', letterSpacing: '0.15em', textTransform: 'uppercase' }}
-                  >
+                  <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">
                     {category.label}
                   </h3>
                   <div className="grid gap-2">
@@ -948,9 +759,9 @@ export default function MatchWizard() {
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <span style={{ fontFamily: "'Jost', sans-serif", color: '#e8e4dc' }}>{option}</span>
+                          <span className="text-slate-700">{option}</span>
                           {answers.preferences.includes(option) && (
-                            <Check className="w-5 h-5" style={{ color: '#c9a962' }} />
+                            <Check className="w-5 h-5 text-teal-500" />
                           )}
                         </div>
                       </SelectableCard>
@@ -965,18 +776,10 @@ export default function MatchWizard() {
         {/* Step 6: Timeline */}
         {step === 6 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               When do you need placement?
             </h2>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
-              Select all that apply (optional)
-            </p>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
 
             <div className="grid gap-3">
               {[
@@ -993,10 +796,10 @@ export default function MatchWizard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{option.icon}</span>
-                      <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, color: '#f5f3ef' }}>{option.label}</span>
+                      <span className="font-medium text-slate-700">{option.label}</span>
                     </div>
                     {answers.timeline === option.id && (
-                      <CheckCircle2 className="w-5 h-5" style={{ color: '#c9a962' }} />
+                      <CheckCircle2 className="w-5 h-5 text-teal-500" />
                     )}
                   </div>
                 </SelectableCard>
@@ -1008,178 +811,103 @@ export default function MatchWizard() {
         {/* Step 7: Contact Info */}
         {step === 7 && (
           <div className="animate-in fade-in duration-500">
-            <h2
-              className="text-2xl md:text-3xl mb-2 text-center"
-              style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#ffffff' }}
-            >
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
               How can we reach you?
             </h2>
-            <p
-              className="text-center mb-2"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#a8a49c' }}
-            >
+            <p className="text-slate-500 text-center mb-2">
               Want us to send your matches? Leave your info below, or skip to see results now.
             </p>
-            <p
-              className="text-center mb-8"
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#c9a962' }}
-            >
-              All fields are optional
-            </p>
+            <p className="text-sm text-teal-600 text-center mb-8">All fields are optional</p>
 
             <div className="max-w-md mx-auto space-y-5">
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label
-                    className="block mb-2"
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', fontWeight: 500, color: '#c8c4bc' }}
-                  >
-                    First Name
-                  </label>
-                  <input
+                  <Label className="text-slate-700 mb-2 block text-sm font-medium">First Name</Label>
+                  <Input
                     placeholder="First name"
                     value={answers.firstName}
                     onChange={(e) => setAnswers({ ...answers, firstName: e.target.value })}
-                    className="w-full py-3 px-4 rounded focus:outline-none"
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(201, 169, 98, 0.2)',
-                      color: '#f5f3ef',
-                      fontFamily: "'Jost', sans-serif"
-                    }}
+                    className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                   />
                 </div>
                 <div>
-                  <label
-                    className="block mb-2"
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', fontWeight: 500, color: '#c8c4bc' }}
-                  >
-                    Last Name
-                  </label>
-                  <input
+                  <Label className="text-slate-700 mb-2 block text-sm font-medium">Last Name</Label>
+                  <Input
                     placeholder="Last name"
                     value={answers.lastName}
                     onChange={(e) => setAnswers({ ...answers, lastName: e.target.value })}
-                    className="w-full py-3 px-4 rounded focus:outline-none"
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(201, 169, 98, 0.2)',
-                      color: '#f5f3ef',
-                      fontFamily: "'Jost', sans-serif"
-                    }}
+                    className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                   />
                 </div>
               </div>
 
               {/* Email */}
               <div>
-                <label
-                  className="block mb-2"
-                  style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', fontWeight: 500, color: '#c8c4bc' }}
-                >
-                  Email
-                </label>
-                <input
+                <Label className="text-slate-700 mb-2 block text-sm font-medium">Email</Label>
+                <Input
                   type="email"
                   placeholder="you@example.com"
                   value={answers.email}
                   onChange={(e) => setAnswers({ ...answers, email: e.target.value })}
-                  className="w-full py-3 px-4 rounded focus:outline-none"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(201, 169, 98, 0.2)',
-                    color: '#f5f3ef',
-                    fontFamily: "'Jost', sans-serif"
-                  }}
+                  className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label
-                  className="block mb-2"
-                  style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.85rem', fontWeight: 500, color: '#c8c4bc' }}
-                >
-                  Phone
-                </label>
-                <input
+                <Label className="text-slate-700 mb-2 block text-sm font-medium">Phone</Label>
+                <Input
                   type="tel"
                   placeholder="(555) 123-4567"
                   value={answers.phone}
                   onChange={(e) => setAnswers({ ...answers, phone: e.target.value })}
-                  className="w-full py-3 px-4 rounded focus:outline-none"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(201, 169, 98, 0.2)',
-                    color: '#f5f3ef',
-                    fontFamily: "'Jost', sans-serif"
-                  }}
+                  className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 focus:border-teal-500 focus:ring-0"
                 />
               </div>
 
               {/* Text updates checkbox - only show if phone entered */}
               {answers.phone && (
-                <div
-                  className="flex items-center gap-3 p-4 rounded"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(201, 169, 98, 0.15)'
-                  }}
-                >
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <Checkbox
                     id="textUpdates"
                     checked={answers.textUpdates}
                     onCheckedChange={(checked) => setAnswers({ ...answers, textUpdates: checked as boolean })}
                   />
-                  <label
-                    htmlFor="textUpdates"
-                    className="cursor-pointer"
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.9rem', color: '#c8c4bc' }}
-                  >
+                  <Label htmlFor="textUpdates" className="text-slate-600 cursor-pointer text-sm">
                     Text me updates about my matches
-                  </label>
+                  </Label>
                 </div>
               )}
 
               {/* Privacy note */}
-              <div
-                className="flex items-center justify-center gap-2 pt-2"
-                style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#6b7c72' }}
-              >
-                <Shield className="w-4 h-4" style={{ color: '#c9a962' }} />
+              <div className="flex items-center justify-center gap-2 text-sm text-slate-500 pt-2">
+                <Shield className="w-4 h-4 text-teal-500" />
                 <span>Your information is never shared. We only use it to send your personalized matches.</span>
               </div>
 
               {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <button
+                <Button
+                  variant="outline"
                   onClick={handleSkipToResults}
-                  className="flex-1 py-4 rounded transition-all hover:bg-white/5"
-                  style={{
-                    border: '1px solid rgba(201, 169, 98, 0.4)',
-                    color: '#c9a962',
-                    fontFamily: "'Jost', sans-serif",
-                    fontWeight: 500
-                  }}
+                  className="flex-1 py-6 rounded-xl border-2 border-slate-300 text-slate-600 hover:bg-slate-50"
                 >
                   Skip & View Results
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSubmit}
                   disabled={!answers.email}
-                  className="flex-1 py-4 rounded transition-all flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: answers.email ? '#c9a962' : 'rgba(107, 124, 114, 0.3)',
-                    color: answers.email ? '#0d1a14' : '#6b7c72',
-                    fontFamily: "'Jost', sans-serif",
-                    fontWeight: 500,
-                    cursor: answers.email ? 'pointer' : 'not-allowed'
-                  }}
+                  className={cn(
+                    "flex-1 py-6 rounded-xl transition-all",
+                    answers.email
+                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  )}
                 >
                   Send My Matches
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
             </div>
           </div>
@@ -1188,43 +916,36 @@ export default function MatchWizard() {
         {/* Navigation buttons - hide on step 7 since it has its own buttons */}
         {step > 0 && step < 7 && (
           <div className="flex justify-between mt-10">
-            <button
+            <Button
+              variant="ghost"
               onClick={handleBack}
-              className="flex items-center gap-2 px-4 py-2 transition-colors hover:text-amber-300"
-              style={{ fontFamily: "'Jost', sans-serif", color: '#a8a49c' }}
+              className="text-slate-600 hover:text-slate-800"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={handleNext}
-              className="flex items-center gap-2 px-8 py-3 transition-all hover:opacity-90"
-              style={{
-                backgroundColor: '#c9a962',
-                color: '#0d1a14',
-                fontFamily: "'Jost', sans-serif",
-                fontWeight: 500,
-                borderRadius: '2px'
-              }}
+              className="px-8 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all"
             >
               Next
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
         )}
 
         {/* Back button only for step 7 */}
         {step === 7 && (
           <div className="flex justify-start mt-6">
-            <button
+            <Button
+              variant="ghost"
               onClick={handleBack}
-              className="flex items-center gap-2 px-4 py-2 transition-colors hover:text-amber-300"
-              style={{ fontFamily: "'Jost', sans-serif", color: '#a8a49c' }}
+              className="text-slate-600 hover:text-slate-800"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back
-            </button>
+            </Button>
           </div>
         )}
       </div>
