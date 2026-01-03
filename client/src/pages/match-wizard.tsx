@@ -358,9 +358,9 @@ export default function MatchWizard() {
 
     return (
       <div className="min-h-screen w-full overflow-hidden relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
-        {/* Header */}
-        <div className="relative z-30">
-          <Header variant="transparent" />
+        {/* Header - light background for consistency */}
+        <div className="relative z-30 bg-white shadow-sm">
+          <Header />
         </div>
 
         {/* Background blobs */}
