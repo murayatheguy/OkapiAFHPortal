@@ -52,8 +52,8 @@ export default function OwnerLogin() {
 
   if (authLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      <div className="h-screen w-screen flex items-center justify-center" style={{ backgroundColor: '#0d1a14' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#c9a962' }} />
       </div>
     );
   }
@@ -84,37 +84,37 @@ export default function OwnerLogin() {
   ];
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative">
-      {/* Gradient Background */}
+    <div className="h-screen w-screen overflow-hidden relative" style={{ backgroundColor: '#0d1a14' }}>
+      {/* Texture overlay */}
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 pointer-events-none opacity-20"
         style={{
-          background: "linear-gradient(135deg, #1a365d 0%, #2d3748 40%, #1a202c 100%)",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
 
-      {/* Decorative Blobs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-teal-500/20 blur-3xl" />
-      <div className="absolute top-[30%] right-[20%] w-[300px] h-[300px] rounded-full bg-blue-500/10 blur-3xl" />
+      {/* Decorative Blobs - Updated to match homepage */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-900/20 blur-3xl" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-amber-900/10 blur-3xl" />
+      <div className="absolute top-[30%] right-[20%] w-[300px] h-[300px] rounded-full bg-emerald-800/10 blur-3xl" />
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col">
 
-        {/* Header */}
-        <header className="flex items-center justify-between px-8 py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <span className="text-white font-bold text-xl">O</span>
-            </div>
-            <div>
-              <span className="text-white font-semibold text-lg">Okapi</span>
-              <span className="text-white/60 text-xs block -mt-1">Care Network</span>
-            </div>
+        {/* Header - Matching Homepage */}
+        <header className="flex items-center justify-between px-8 py-4 border-b border-amber-900/30 bg-[#0d1a14]/80 backdrop-blur-sm">
+          <Link href="/" className="flex items-center gap-1.5">
+            <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 500, color: '#d4b56a', letterSpacing: '0.1em', fontSize: '1.25rem' }}>
+              OKAPI
+            </span>
+            <span style={{ fontFamily: "'Cormorant', serif", fontWeight: 400, fontStyle: 'italic', color: '#f5f3ef', fontSize: '1.25rem' }}>
+              Care Network
+            </span>
           </Link>
           <Link
             href="/"
-            className="text-white/70 hover:text-white text-sm flex items-center gap-1 transition-colors"
+            className="flex items-center gap-1 transition-colors"
+            style={{ fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '0.85rem', letterSpacing: '0.1em', color: '#c8c4bc' }}
           >
             <Home className="w-4 h-4" />
             Home
@@ -128,28 +128,45 @@ export default function OwnerLogin() {
             {/* Left - Login Form */}
             <div className="flex justify-center lg:justify-end">
               <div
-                className="w-full max-w-md p-8 rounded-2xl border border-white/20"
+                className="w-full max-w-md p-8 rounded border"
                 style={{
-                  background: "rgba(255, 255, 255, 0.1)",
+                  background: "rgba(255, 255, 255, 0.05)",
                   backdropFilter: "blur(20px)",
                   WebkitBackdropFilter: "blur(20px)",
+                  borderColor: "rgba(201, 169, 98, 0.3)",
                   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
                 }}
               >
                 <div className="text-center mb-6">
-                  <h1 className="text-2xl font-bold text-white mb-1">Owner Portal</h1>
-                  <p className="text-white/60 text-sm">Sign in to manage your facilities</p>
+                  <h1 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.75rem', fontWeight: 500, color: '#ffffff', marginBottom: '0.25rem' }}>
+                    Owner Portal
+                  </h1>
+                  <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.875rem', color: '#c8c4bc' }}>
+                    Sign in to manage your facilities
+                  </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {error && (
-                    <div className="p-3 text-sm text-red-300 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <div
+                      className="p-3 text-sm rounded border"
+                      style={{
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        borderColor: 'rgba(220, 38, 38, 0.3)',
+                        color: '#fca5a5'
+                      }}
+                    >
                       {error}
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-white/80 text-sm mb-1.5">Email</label>
+                    <label
+                      className="block mb-1.5"
+                      style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.875rem', color: '#c8c4bc' }}
+                    >
+                      Email
+                    </label>
                     <input
                       type="email"
                       placeholder="you@example.com"
@@ -157,28 +174,48 @@ export default function OwnerLogin() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled={isSubmitting}
-                      className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all disabled:opacity-50"
+                      className="w-full px-4 py-3 rounded transition-all disabled:opacity-50 focus:outline-none"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(201, 169, 98, 0.2)',
+                        color: '#f5f3ef',
+                        fontFamily: "'Jost', sans-serif",
+                        fontSize: '0.9rem'
+                      }}
                       data-testid="input-login-email"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-white/80 text-sm mb-1.5">Password</label>
+                    <label
+                      className="block mb-1.5"
+                      style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.875rem', color: '#c8c4bc' }}
+                    >
+                      Password
+                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         disabled={isSubmitting}
-                        className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all disabled:opacity-50"
+                        className="w-full px-4 py-3 rounded transition-all disabled:opacity-50 focus:outline-none"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(201, 169, 98, 0.2)',
+                          color: '#f5f3ef',
+                          fontFamily: "'Jost', sans-serif",
+                          fontSize: '0.9rem'
+                        }}
                         data-testid="input-login-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                        style={{ color: '#a8a49c' }}
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
@@ -186,7 +223,11 @@ export default function OwnerLogin() {
                   </div>
 
                   <div className="flex justify-end">
-                    <Link href="/owner/forgot-password" className="text-sm text-white/60 hover:text-white transition-colors">
+                    <Link
+                      href="/owner/forgot-password"
+                      className="transition-colors hover:text-amber-300"
+                      style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.8rem', color: '#a8a49c' }}
+                    >
                       Forgot password?
                     </Link>
                   </div>
@@ -194,7 +235,14 @@ export default function OwnerLogin() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 rounded-lg bg-white text-gray-900 font-semibold hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded font-medium transition-all flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                    style={{
+                      backgroundColor: '#c9a962',
+                      color: '#0d1a14',
+                      fontFamily: "'Jost', sans-serif",
+                      fontWeight: 500,
+                      letterSpacing: '0.05em'
+                    }}
                     data-testid="button-login-submit"
                   >
                     {isSubmitting ? (
@@ -211,11 +259,20 @@ export default function OwnerLogin() {
                   </button>
                 </form>
 
-                <div className="mt-6 pt-6 border-t border-white/10 text-center">
-                  <p className="text-white/50 text-sm mb-3">Don't have an account?</p>
+                <div className="mt-6 pt-6 border-t text-center" style={{ borderColor: 'rgba(201, 169, 98, 0.2)' }}>
+                  <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.875rem', color: '#a8a49c', marginBottom: '0.75rem' }}>
+                    Don't have an account?
+                  </p>
                   <Link
                     href="/"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-all"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded border transition-all hover:bg-white/5"
+                    style={{
+                      borderColor: 'rgba(201, 169, 98, 0.4)',
+                      color: '#c9a962',
+                      fontFamily: "'Jost', sans-serif",
+                      fontSize: '0.875rem',
+                      fontWeight: 500
+                    }}
                   >
                     Claim Your Facility
                     <ArrowRight className="w-4 h-4" />
@@ -227,24 +284,31 @@ export default function OwnerLogin() {
             {/* Right - Resources */}
             <div className="hidden lg:block">
               <div className="mb-6">
-                <h2 className="text-xl font-semibold text-white mb-1">Resources for Owners</h2>
-                <p className="text-white/50 text-sm">Everything you need to succeed</p>
+                <h2 style={{ fontFamily: "'Cormorant', serif", fontSize: '1.5rem', fontWeight: 500, color: '#ffffff', marginBottom: '0.25rem' }}>
+                  Resources for Owners
+                </h2>
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.875rem', color: '#a8a49c' }}>
+                  Everything you need to succeed
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {resources.map((section, idx) => (
                   <div
                     key={idx}
-                    className="p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all group"
+                    className="p-4 rounded border transition-all hover:border-amber-700/40"
                     style={{
-                      background: "rgba(255, 255, 255, 0.05)",
+                      background: "rgba(255, 255, 255, 0.03)",
+                      borderColor: "rgba(201, 169, 98, 0.15)",
                       backdropFilter: "blur(10px)",
                       WebkitBackdropFilter: "blur(10px)",
                     }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <section.icon className="w-4 h-4 text-teal-400" />
-                      <span className="text-white font-medium text-sm">{section.title}</span>
+                      <section.icon className="w-4 h-4" style={{ color: '#c9a962' }} />
+                      <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, fontSize: '0.875rem', color: '#f5f3ef' }}>
+                        {section.title}
+                      </span>
                     </div>
                     <ul className="space-y-1">
                       {section.items.map((item, i) => (
@@ -253,7 +317,8 @@ export default function OwnerLogin() {
                             href={item.link}
                             target={item.external ? "_blank" : undefined}
                             rel={item.external ? "noopener noreferrer" : undefined}
-                            className="text-white/50 text-xs hover:text-white/80 transition-colors flex items-center gap-1"
+                            className="flex items-center gap-1 transition-colors hover:text-amber-300"
+                            style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', color: '#a8a49c' }}
                           >
                             {item.name}
                             {item.external && <ExternalLink className="w-2.5 h-2.5" />}
@@ -269,27 +334,30 @@ export default function OwnerLogin() {
                 href={OKAPI_ACADEMY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 p-4 rounded-xl border border-teal-500/30 block hover:border-teal-400/50 transition-all"
+                className="mt-4 p-4 rounded border block transition-all hover:border-amber-600/50"
                 style={{
-                  background: "rgba(20, 184, 166, 0.1)",
+                  background: "rgba(201, 169, 98, 0.08)",
+                  borderColor: "rgba(201, 169, 98, 0.25)",
                   backdropFilter: "blur(10px)",
                   WebkitBackdropFilter: "blur(10px)",
                 }}
               >
-                <p className="text-teal-300 text-sm font-medium flex items-center gap-2">
+                <p className="flex items-center gap-2" style={{ fontFamily: "'Jost', sans-serif", fontWeight: 500, fontSize: '0.875rem', color: '#e8c55a' }}>
                   New: Okapi Academy
                   <ExternalLink className="w-3 h-3" />
                 </p>
-                <p className="text-white/50 text-xs mt-1">Complete your required training online</p>
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', color: '#a8a49c', marginTop: '0.25rem' }}>
+                  Complete your required training online
+                </p>
               </a>
             </div>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="px-8 py-3 text-center">
-          <p className="text-white/30 text-xs">
-            © 2025 Okapi Care Network · <Link href="/privacy" className="hover:text-white/50">Privacy</Link> · <Link href="/terms" className="hover:text-white/50">Terms</Link>
+        <footer className="px-8 py-3 text-center border-t" style={{ borderColor: 'rgba(201, 169, 98, 0.15)' }}>
+          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: '0.75rem', color: '#6b7c72' }}>
+            © 2025 Okapi Care Network · <Link href="/privacy" className="hover:text-amber-300 transition-colors">Privacy</Link> · <Link href="/terms" className="hover:text-amber-300 transition-colors">Terms</Link>
           </p>
         </footer>
       </div>
