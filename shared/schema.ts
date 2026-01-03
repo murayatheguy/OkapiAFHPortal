@@ -383,6 +383,99 @@ export const insertFacilityImageSchema = createInsertSchema(facilityImages).omit
 export type InsertFacilityImage = z.infer<typeof insertFacilityImageSchema>;
 export type FacilityImage = typeof facilityImages.$inferSelect;
 
+// Facility Photos table - Google Places photos with full metadata
+export const facilityPhotos = pgTable("facility_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  facilityId: varchar("facility_id").references(() => facilities.id, { onDelete: "cascade" }).notNull(),
+
+  // Source tracking
+  source: text("source").notNull().default("google_places"), // google_places, owner_upload, dshs, stock
+  googlePhotoReference: text("google_photo_reference"), // Google's photo_reference token
+  googlePlaceId: text("google_place_id"),
+
+  // Storage
+  storageKey: text("storage_key"), // S3/R2 key
+  storageUrl: text("storage_url"), // Public URL after upload
+  originalUrl: text("original_url"), // Original source URL (for stock images)
+
+  // Metadata
+  width: integer("width"),
+  height: integer("height"),
+  contentHash: text("content_hash"), // SHA256 for deduplication
+  mimeType: text("mime_type").default("image/jpeg"),
+  fileSize: integer("file_size"), // bytes
+
+  // Attribution (required for Google Places)
+  attributionText: text("attribution_text"),
+  attributionUrl: text("attribution_url"),
+  photographerName: text("photographer_name"),
+
+  // Display
+  isPrimary: boolean("is_primary").default(false),
+  sortOrder: integer("sort_order").default(0),
+  caption: text("caption"),
+  altText: text("alt_text"),
+
+  // Status
+  status: text("status").notNull().default("pending"), // pending, processing, active, failed, deleted
+  errorMessage: text("error_message"),
+
+  // Timestamps
+  fetchedAt: timestamp("fetched_at"),
+  uploadedAt: timestamp("uploaded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  facilityIdx: index("facility_photos_facility_idx").on(table.facilityId),
+  sourceIdx: index("facility_photos_source_idx").on(table.source),
+  statusIdx: index("facility_photos_status_idx").on(table.status),
+  hashIdx: index("facility_photos_hash_idx").on(table.contentHash),
+  primaryIdx: index("facility_photos_primary_idx").on(table.facilityId, table.isPrimary),
+}));
+
+export const insertFacilityPhotoSchema = createInsertSchema(facilityPhotos).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFacilityPhoto = z.infer<typeof insertFacilityPhotoSchema>;
+export type FacilityPhoto = typeof facilityPhotos.$inferSelect;
+
+// Photo Sync Logs - track sync operations
+export const photoSyncLogs = pgTable("photo_sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+
+  // Scope
+  facilityId: varchar("facility_id"), // null = batch operation
+  batchId: text("batch_id"), // Groups related operations
+
+  // Operation details
+  operation: text("operation").notNull(), // find_place, fetch_photos, download_photo, upload_to_storage
+  status: text("status").notNull().default("started"), // started, success, failed, skipped
+
+  // Results
+  itemsProcessed: integer("items_processed").default(0),
+  itemsSucceeded: integer("items_succeeded").default(0),
+  itemsFailed: integer("items_failed").default(0),
+
+  // Error tracking
+  errorMessage: text("error_message"),
+  errorDetails: json("error_details").$type<Record<string, any>>(),
+
+  // Performance
+  durationMs: integer("duration_ms"),
+  apiCallsUsed: integer("api_calls_used").default(0),
+
+  // Timestamps
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => ({
+  facilityIdx: index("photo_sync_logs_facility_idx").on(table.facilityId),
+  batchIdx: index("photo_sync_logs_batch_idx").on(table.batchId),
+  operationIdx: index("photo_sync_logs_operation_idx").on(table.operation),
+  statusIdx: index("photo_sync_logs_status_idx").on(table.status),
+}));
+
+export const insertPhotoSyncLogSchema = createInsertSchema(photoSyncLogs).omit({ id: true, startedAt: true });
+export type InsertPhotoSyncLog = z.infer<typeof insertPhotoSyncLogSchema>;
+export type PhotoSyncLog = typeof photoSyncLogs.$inferSelect;
+
 // Inquiries table for family inquiries
 export const inquiries = pgTable("inquiries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

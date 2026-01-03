@@ -20,7 +20,10 @@
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
     "test:e2e:debug": "npx playwright test --debug",
-    "test:e2e:report": "npx playwright show-report tests/e2e/reports/html"
+    "test:e2e:report": "npx playwright show-report tests/e2e/reports/html",
+    "photos:sync": "npx tsx scripts/photos-sync.ts",
+    "photos:sync:check": "npx tsx scripts/photos-sync.ts --check",
+    "photos:sync:dry": "npx tsx scripts/photos-sync.ts --dry-run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
