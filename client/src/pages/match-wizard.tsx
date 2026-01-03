@@ -1,637 +1,702 @@
 /**
- * Care Matching Wizard - Redesigned
- * Emotional, glassmorphism design
- * Questions match owner dashboard capabilities for proper matching
+ * Care Matching Wizard - Premium Design
+ * Flash intro with 4 messages, then 7-step questionnaire
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, ArrowRight, Heart, CheckCircle2, MapPin,
-  Brain, Stethoscope, HandHeart, DollarSign, Home,
-  Calendar, Sparkles
+  Clock, Shield, Sparkles, Loader2, Phone, Mail, User,
+  Home, Brain, Stethoscope, HandHeart, Calendar, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { LogoInline } from "@/components/shared/logo";
-import { WA_CITIES } from "@/lib/constants";
 
-interface MatchData {
-  location: string;
-  distance: string;
-  specializations: string[];
-  medicalNeeds: string[];
+// Washington State Counties
+const WA_COUNTIES = [
+  "King", "Pierce", "Snohomish", "Spokane", "Clark", "Thurston",
+  "Kitsap", "Yakima", "Whatcom", "Benton", "Skagit", "Cowlitz",
+  "Grant", "Franklin", "Chelan", "Lewis", "Grays Harbor", "Mason",
+  "Clallam", "Walla Walla", "Stevens", "Whitman", "Island", "Douglas",
+  "Okanogan", "Kittitas", "Jefferson", "Pacific", "Adams", "Klickitat",
+  "San Juan", "Asotin", "Skamania", "Pend Oreille", "Ferry", "Lincoln",
+  "Columbia", "Garfield", "Wahkiakum"
+].sort();
+
+// Flash intro messages
+const INTRO_MESSAGES = [
+  {
+    icon: "🔒",
+    title: "Your Privacy Matters",
+    text: "Everything you share stays confidential and secure with us."
+  },
+  {
+    icon: "🎯",
+    title: "Smarter Matching",
+    text: "Your answers power our algorithm to find homes that truly fit."
+  },
+  {
+    icon: "✨",
+    title: "Keep It Simple",
+    text: "No need for sensitive details—just tell us what matters most."
+  },
+  {
+    icon: "🧠",
+    title: "The Okapi Difference",
+    text: "We match based on care level, credentials, staff experience & facility type."
+  }
+];
+
+interface MatchAnswers {
+  relationship: string;
+  county: string;
+  city: string;
   careLevel: string;
-  paymentTypes: string[];
-  amenities: string[];
+  specificNeeds: string[];
+  preferences: string[];
   timeline: string;
+  firstName: string;
+  email: string;
+  phone: string;
+  textUpdates: boolean;
 }
 
-// Match these to owner dashboard options exactly (from schema.ts)
-const SPECIALIZATIONS = [
-  { id: "dementia", label: "Dementia Care", desc: "Memory support & safety", icon: "🧠" },
-  { id: "alzheimers", label: "Alzheimer's Disease", desc: "Specialized Alzheimer's care", icon: "💜" },
-  { id: "mentalHealth", label: "Mental Health", desc: "Depression, anxiety, bipolar", icon: "💚" },
-  { id: "developmentalDisabilities", label: "Developmental Disabilities", desc: "DD/ID support", icon: "🤝" },
-  { id: "parkinsons", label: "Parkinson's Disease", desc: "Movement disorder care", icon: "🧬" },
-  { id: "diabetes", label: "Diabetes Management", desc: "Blood sugar monitoring", icon: "💉" },
-  { id: "hospicePalliative", label: "Hospice & Palliative", desc: "End of life care", icon: "🕊️" },
-  { id: "bariatric", label: "Bariatric Care", desc: "Specialized equipment", icon: "🏋️" },
-];
-
-const MEDICAL_NEEDS = [
-  { id: "medicationManagement", label: "Medication Management", desc: "Daily medication help" },
-  { id: "medicationAdministration", label: "Medication Administration", desc: "Staff gives medications" },
-  { id: "injections", label: "Injections", desc: "Insulin, B12, etc." },
-  { id: "woundCare", label: "Wound Care", desc: "Dressing changes" },
-  { id: "catheterCare", label: "Catheter Care", desc: "Foley catheter management" },
-  { id: "oxygenTherapy", label: "Oxygen Therapy", desc: "Supplemental oxygen" },
-  { id: "cpapBipap", label: "CPAP/BiPAP", desc: "Sleep apnea equipment" },
-  { id: "physicalTherapy", label: "Physical Therapy", desc: "PT services" },
-];
-
-const CARE_LEVELS = [
-  { id: "independent", label: "Mostly Independent", desc: "Light supervision, companionship", icon: "🚶" },
-  { id: "minimal", label: "Minimal Assistance", desc: "Help with some daily tasks", icon: "🤝" },
-  { id: "moderate", label: "Moderate Assistance", desc: "Help with bathing, dressing, meals", icon: "💪" },
-  { id: "extensive", label: "Extensive Care", desc: "Help with most daily activities", icon: "🏥" },
-  { id: "total", label: "Total Care", desc: "24/7 hands-on assistance", icon: "❤️" },
-];
-
-const PAYMENT_TYPES = [
-  { id: "privatePay", label: "Private Pay", desc: "Out of pocket" },
-  { id: "medicaidCOPES", label: "Medicaid COPES", desc: "Washington State program" },
-  { id: "medicaidWaiver", label: "Medicaid Waiver", desc: "Alternative care" },
-  { id: "longTermCareInsurance", label: "Long-Term Care Insurance", desc: "LTC policy" },
-  { id: "vaAidAttendance", label: "VA Aid & Attendance", desc: "Veterans benefits" },
-  { id: "unsure", label: "Not Sure Yet", desc: "Need guidance" },
-];
-
-const AMENITIES = [
-  { id: "privateRooms", label: "Private Room", icon: "🚪" },
-  { id: "privateBathroom", label: "Private Bathroom", icon: "🚿" },
-  { id: "outdoorSpace", label: "Outdoor Space", icon: "🌳" },
-  { id: "petFriendly", label: "Pet Friendly", icon: "🐕" },
-  { id: "wheelchairAccessible", label: "Wheelchair Accessible", icon: "♿" },
-  { id: "hospitalBeds", label: "Hospital Bed Available", icon: "🛏️" },
-];
-
-const TIMELINE = [
-  { id: "urgent", label: "As soon as possible", desc: "Within days", icon: "🚨" },
-  { id: "soon", label: "Within 2-4 weeks", desc: "Soon but not urgent", icon: "📅" },
-  { id: "planning", label: "1-3 months", desc: "Planning ahead", icon: "📋" },
-  { id: "exploring", label: "Just exploring", desc: "No timeline yet", icon: "🔍" },
-];
-
-const STEPS = [
-  {
-    id: "intro",
-    title: "Let's find the right home together",
-    subtitle: "We'll ask a few questions to match you with homes that truly fit"
-  },
-  {
-    id: "location",
-    title: "Where are you looking for care?",
-    subtitle: "We'll show you Adult Family Homes in this area"
-  },
-  {
-    id: "specializations",
-    title: "Does your loved one need specialized care?",
-    subtitle: "Select any conditions or situations that apply"
-  },
-  {
-    id: "medical",
-    title: "What medical support do they need?",
-    subtitle: "Select any medical services they require"
-  },
-  {
-    id: "care-level",
-    title: "How much daily help do they need?",
-    subtitle: "This helps us find homes with the right level of care"
-  },
-  {
-    id: "payment",
-    title: "How will care be paid for?",
-    subtitle: "We'll show homes that accept your payment method"
-  },
-  {
-    id: "amenities",
-    title: "Any must-have amenities?",
-    subtitle: "Select what's important for their comfort"
-  },
-  {
-    id: "timeline",
-    title: "When do you need to find a home?",
-    subtitle: "This helps us prioritize homes with availability"
-  },
-];
-
-export default function MatchWizardPage() {
+export default function MatchWizard() {
   const [, setLocation] = useLocation();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState<MatchData>({
-    location: "",
-    distance: "25",
-    specializations: [],
-    medicalNeeds: [],
+
+  // Intro state
+  const [showIntro, setShowIntro] = useState(true);
+  const [introIndex, setIntroIndex] = useState(0);
+  const [introFading, setIntroFading] = useState(false);
+
+  // Wizard state
+  const [step, setStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [matchCount, setMatchCount] = useState(0);
+
+  // Answers
+  const [answers, setAnswers] = useState<MatchAnswers>({
+    relationship: "",
+    county: "",
+    city: "",
     careLevel: "",
-    paymentTypes: [],
-    amenities: [],
+    specificNeeds: [],
+    preferences: [],
     timeline: "",
+    firstName: "",
+    email: "",
+    phone: "",
+    textUpdates: false
   });
 
-  const progress = (currentStep / (STEPS.length - 1)) * 100;
+  // Auto-advance intro messages
+  useEffect(() => {
+    if (!showIntro) return;
 
-  const toggleArrayItem = (field: keyof MatchData, item: string) => {
-    const current = data[field] as string[];
-    if (current.includes(item)) {
-      setData({ ...data, [field]: current.filter(i => i !== item) });
-    } else {
-      setData({ ...data, [field]: [...current, item] });
-    }
-  };
+    const timer = setTimeout(() => {
+      if (introIndex < INTRO_MESSAGES.length - 1) {
+        setIntroFading(true);
+        setTimeout(() => {
+          setIntroIndex(introIndex + 1);
+          setIntroFading(false);
+        }, 300);
+      } else {
+        // Fade out intro after last message
+        setIntroFading(true);
+        setTimeout(() => {
+          setShowIntro(false);
+        }, 500);
+      }
+    }, 2500);
 
-  const canProceed = () => {
-    const step = STEPS[currentStep];
-    switch (step.id) {
-      case "intro": return true;
-      case "location": return data.location.length > 0;
-      case "specializations": return true; // Optional
-      case "medical": return true; // Optional
-      case "care-level": return data.careLevel.length > 0;
-      case "payment": return data.paymentTypes.length > 0;
-      case "amenities": return true; // Optional
-      case "timeline": return data.timeline.length > 0;
-      default: return true;
-    }
+    return () => clearTimeout(timer);
+  }, [introIndex, showIntro]);
+
+  const skipIntro = () => {
+    setIntroFading(true);
+    setTimeout(() => {
+      setShowIntro(false);
+    }, 300);
   };
 
   const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
+    if (step === 7) {
+      // Submit and show results
       handleSubmit();
+    } else {
+      setStep(step + 1);
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+    if (step > 0) {
+      setStep(step - 1);
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Calculate match count (mock)
+    const count = Math.floor(Math.random() * 15) + 8;
+    setMatchCount(count);
+    setIsSubmitting(false);
+    setShowResults(true);
+  };
+
+  const viewMatches = () => {
+    // Build query params from answers
     const params = new URLSearchParams();
-    if (data.location) params.set("city", data.location);
-    if (data.specializations.length) params.set("specializations", data.specializations.join(","));
-    if (data.medicalNeeds.length) params.set("medical", data.medicalNeeds.join(","));
-    if (data.careLevel) params.set("careLevel", data.careLevel);
-    if (data.paymentTypes.length) params.set("payment", data.paymentTypes.join(","));
-    if (data.amenities.length) params.set("amenities", data.amenities.join(","));
-    params.set("matched", "true");
+    if (answers.county) params.set("county", answers.county);
+    if (answers.city) params.set("city", answers.city);
+    if (answers.careLevel) params.set("careLevel", answers.careLevel);
+    if (answers.preferences.includes("Accepts Medicaid")) params.set("medicaid", "true");
 
     setLocation(`/directory?${params.toString()}`);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-blue-50 to-purple-50 relative overflow-hidden">
-      {/* Background blobs for glassmorphism */}
-      <div className="absolute top-20 left-10 w-96 h-96 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10" />
+  const toggleArrayValue = (arr: string[], value: string) => {
+    if (arr.includes(value)) {
+      return arr.filter(v => v !== value);
+    }
+    return [...arr, value];
+  };
 
-      {/* Header */}
-      <header className="bg-white/70 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <LogoInline />
-          <span className="text-sm text-gray-500 hidden sm:block">
-            Finding the right home
-          </span>
-        </div>
-      </header>
+  const canProceed = () => {
+    switch (step) {
+      case 0: return true;
+      case 1: return answers.relationship !== "";
+      case 2: return answers.county !== "";
+      case 3: return answers.careLevel !== "";
+      case 4: return true; // Optional
+      case 5: return true; // Optional
+      case 6: return answers.timeline !== "";
+      case 7: return answers.firstName !== "" && answers.email !== "";
+      default: return false;
+    }
+  };
 
-      <div className="max-w-3xl mx-auto px-4 py-8 relative z-10">
-        {/* Progress */}
-        {currentStep > 0 && (
-          <div className="mb-8">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Step {currentStep} of {STEPS.length - 1}</span>
-              <span className="text-[#4C1D95] font-medium">{Math.round(progress)}% complete</span>
-            </div>
-            <div className="h-2 bg-white/50 rounded-full overflow-hidden backdrop-blur-sm">
+  // =============== FLASH INTRO ===============
+  if (showIntro) {
+    const message = INTRO_MESSAGES[introIndex];
+
+    return (
+      <div className="min-h-screen w-full overflow-hidden relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
+        {/* Background blobs */}
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl" />
+
+        {/* Skip button */}
+        <button
+          onClick={skipIntro}
+          className="absolute top-6 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
+        >
+          Skip <ArrowRight className="w-4 h-4" />
+        </button>
+
+        {/* Content */}
+        <div className="relative z-10 h-screen flex flex-col items-center justify-center px-6">
+          <div
+            className={cn(
+              "text-center transition-all duration-300",
+              introFading ? "opacity-0 transform scale-95" : "opacity-100 transform scale-100"
+            )}
+          >
+            <div className="text-6xl mb-6">{message.icon}</div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              {message.title}
+            </h1>
+            <p className="text-lg text-white/70 max-w-md mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              {message.text}
+            </p>
+          </div>
+
+          {/* Progress dots */}
+          <div className="absolute bottom-12 flex gap-2">
+            {INTRO_MESSAGES.map((_, idx) => (
               <div
-                className="h-full bg-gradient-to-r from-[#4C1D95] to-[#5B21B6] transition-all duration-500 rounded-full"
-                style={{ width: `${progress}%` }}
+                key={idx}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all duration-300",
+                  idx === introIndex ? "bg-teal-400 w-6" : "bg-white/30"
+                )}
               />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =============== RESULTS SCREEN ===============
+  if (showResults) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-3" style={{ fontFamily: "'DM Serif Display', serif" }}>
+            We found {matchCount} homes that match your needs!
+          </h1>
+          <p className="text-slate-500 mb-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Based on your preferences, we've identified Adult Family Homes in {answers.county} County that could be a great fit.
+          </p>
+          <Button
+            onClick={viewMatches}
+            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+          >
+            View My Matches
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // =============== LOADING SCREEN ===============
+  if (isSubmitting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30 flex items-center justify-center px-4">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-teal-500 animate-spin mx-auto mb-6" />
+          <h2 className="text-2xl font-semibold text-slate-800 mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
+            Finding your matches...
+          </h2>
+          <p className="text-slate-500" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Our algorithm is searching for the perfect homes for you.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // =============== MAIN WIZARD ===============
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30">
+      {/* Header with progress */}
+      {step > 0 && (
+        <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-slate-200/50 z-20">
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-slate-500">Step {step} of 7</span>
+              <span className="text-sm text-teal-600 font-medium">{Math.round((step / 7) * 100)}% complete</span>
+            </div>
+            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${(step / 7) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
+        {/* Step 0: Welcome */}
+        {step === 0 && (
+          <div className="text-center animate-in fade-in duration-500">
+            {/* Trust badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-50 border border-green-200 text-green-700 text-sm mb-8">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Secure & Confidential
+            </div>
+
+            {/* Icon */}
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Heart className="w-10 h-10 text-white" />
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-3" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Let's Find Your Perfect Match
+            </h1>
+            <p className="text-lg text-slate-500 mb-8 max-w-md mx-auto" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              A few quick questions help our algorithm match you with homes that truly fit your needs.
+            </p>
+
+            {/* Info boxes */}
+            <div className="flex justify-center gap-4 mb-10">
+              <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-slate-200">
+                <div className="text-2xl font-bold text-teal-600">7</div>
+                <div className="text-xs text-slate-500">Questions</div>
+              </div>
+              <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-slate-200">
+                <div className="text-2xl font-bold text-teal-600">~3</div>
+                <div className="text-xs text-slate-500">Minutes</div>
+              </div>
+              <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-slate-200">
+                <div className="text-2xl font-bold text-teal-600">
+                  <Sparkles className="w-6 h-6 inline" />
+                </div>
+                <div className="text-xs text-slate-500">Smart Matches</div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleNext}
+              className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+            >
+              Begin Matching
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+
+            <p className="mt-6 text-sm text-slate-400 flex items-center justify-center gap-1">
+              <Shield className="w-4 h-4" />
+              Your information stays private. We never share your data.
+            </p>
+
+            <p className="mt-8 text-xs text-slate-400">
+              Powered by Okapi's proprietary matching algorithm
+            </p>
+          </div>
+        )}
+
+        {/* Step 1: Relationship */}
+        {step === 1 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Who are you looking for care for?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">Select one option</p>
+
+            <div className="grid gap-3">
+              {["Myself", "My Parent", "My Spouse/Partner", "Another Family Member", "A Client (I'm a professional)"].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setAnswers({ ...answers, relationship: option })}
+                  className={cn(
+                    "w-full p-4 rounded-xl border-2 text-left transition-all",
+                    answers.relationship === option
+                      ? "border-teal-500 bg-teal-50 text-teal-800"
+                      : "border-slate-200 bg-white hover:border-teal-300 text-slate-700"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{option}</span>
+                    {answers.relationship === option && (
+                      <CheckCircle2 className="w-5 h-5 text-teal-500" />
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Glass Card */}
-        <div className="bg-white/70 backdrop-blur-md rounded-3xl border border-white/40 shadow-xl p-8 mb-6">
+        {/* Step 2: Location */}
+        {step === 2 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              What area are you searching in?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">Select a Washington State county</p>
 
-          {/* STEP: Intro */}
-          {STEPS[currentStep].id === "intro" && (
-            <div className="text-center py-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Heart className="h-10 w-10 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {STEPS[currentStep].title}
-              </h1>
-              <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
-                {STEPS[currentStep].subtitle}
-              </p>
-
-              {/* Emotional hook */}
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 mb-8 border border-amber-100">
-                <p className="text-gray-700 italic">
-                  "Finding care for someone you love is one of the hardest things you'll do.
-                  We're here to make it a little easier."
-                </p>
-              </div>
-
-              {/* What to expect */}
-              <div className="grid grid-cols-3 gap-4 text-center mb-8">
-                <div className="p-4">
-                  <div className="text-3xl mb-2">📋</div>
-                  <p className="text-sm text-gray-600">7 quick questions</p>
-                </div>
-                <div className="p-4">
-                  <div className="text-3xl mb-2">⏱️</div>
-                  <p className="text-sm text-gray-600">About 3 minutes</p>
-                </div>
-                <div className="p-4">
-                  <div className="text-3xl mb-2">🎯</div>
-                  <p className="text-sm text-gray-600">Personalized matches</p>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleNext}
-                size="lg"
-                className="bg-[#4C1D95] hover:bg-[#5B21B6] h-14 px-8 text-lg"
-              >
-                <Sparkles className="h-5 w-5 mr-2" />
-                Let's Get Started
-              </Button>
-
-              <p className="text-sm text-gray-500 mt-4">
-                Your information stays private. We never share it.
-              </p>
-            </div>
-          )}
-
-          {/* STEP: Location */}
-          {STEPS[currentStep].id === "location" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-8 w-8 text-teal-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
-              </div>
-
-              <div className="max-w-md mx-auto">
-                <div className="relative mb-6">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    placeholder="Enter city or zip code"
-                    value={data.location}
-                    onChange={(e) => setData({ ...data, location: e.target.value })}
-                    list="cities"
-                    className="pl-12 h-14 text-lg bg-white/50 border-gray-200"
-                  />
-                  <datalist id="cities">
-                    {WA_CITIES.map(city => <option key={city} value={city} />)}
-                  </datalist>
-                </div>
-
-                <p className="text-center text-sm text-gray-500 mb-6">
-                  We serve Adult Family Homes throughout Washington State
-                </p>
-
-                {/* Distance options */}
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { value: "10", label: "Within 10 miles" },
-                    { value: "25", label: "Within 25 miles" },
-                    { value: "50", label: "Within 50 miles" },
-                    { value: "any", label: "Anywhere in WA" },
-                  ].map(option => (
-                    <button
-                      key={option.value}
-                      onClick={() => setData({ ...data, distance: option.value })}
-                      className={cn(
-                        "p-4 rounded-xl border-2 transition-all text-sm",
-                        data.distance === option.value
-                          ? "border-teal-500 bg-teal-50 text-teal-700"
-                          : "border-gray-200 hover:border-gray-300 bg-white/50"
-                      )}
-                    >
-                      {option.label}
-                    </button>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-700 mb-2 block">County *</Label>
+                <select
+                  value={answers.county}
+                  onChange={(e) => setAnswers({ ...answers, county: e.target.value })}
+                  className="w-full p-4 rounded-xl border-2 border-slate-200 bg-white focus:border-teal-500 focus:ring-0 text-slate-700"
+                >
+                  <option value="">Select a county...</option>
+                  {WA_COUNTIES.map((county) => (
+                    <option key={county} value={county}>{county} County</option>
                   ))}
-                </div>
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-slate-700 mb-2 block">Specific city or zip (optional)</Label>
+                <Input
+                  placeholder="e.g., Seattle or 98101"
+                  value={answers.city}
+                  onChange={(e) => setAnswers({ ...answers, city: e.target.value })}
+                  className="w-full p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
+                />
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* STEP: Specializations */}
-          {STEPS[currentStep].id === "specializations" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Brain className="h-8 w-8 text-purple-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
-              </div>
+        {/* Step 3: Care Level */}
+        {step === 3 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              What level of care is needed?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">Select the best match</p>
 
-              <div className="grid grid-cols-2 gap-3">
-                {SPECIALIZATIONS.map(spec => (
-                  <button
-                    key={spec.id}
-                    onClick={() => toggleArrayItem("specializations", spec.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-left transition-all",
-                      data.specializations.includes(spec.id)
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white/50"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">{spec.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900">{spec.label}</p>
-                        <p className="text-xs text-gray-500 truncate">{spec.desc}</p>
-                      </div>
-                      {data.specializations.includes(spec.id) && (
-                        <CheckCircle2 className="h-5 w-5 text-teal-500 flex-shrink-0" />
-                      )}
+            <div className="grid gap-3">
+              {[
+                { id: "independent", label: "Independent Living", desc: "Minimal assistance, mostly social" },
+                { id: "personal", label: "Personal Care", desc: "Help with daily activities (bathing, dressing)" },
+                { id: "memory", label: "Specialized Memory Care", desc: "Dementia or Alzheimer's support" },
+                { id: "skilled", label: "Skilled Nursing", desc: "Medical care needs" },
+                { id: "unsure", label: "Not Sure", desc: "We'll help figure it out" },
+              ].map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setAnswers({ ...answers, careLevel: option.id })}
+                  className={cn(
+                    "w-full p-4 rounded-xl border-2 text-left transition-all",
+                    answers.careLevel === option.id
+                      ? "border-teal-500 bg-teal-50"
+                      : "border-slate-200 bg-white hover:border-teal-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-slate-800">{option.label}</div>
+                      <div className="text-sm text-slate-500">{option.desc}</div>
                     </div>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={handleNext}
-                className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700"
-              >
-                None of these apply — skip this step →
-              </button>
-            </div>
-          )}
-
-          {/* STEP: Medical Needs */}
-          {STEPS[currentStep].id === "medical" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Stethoscope className="h-8 w-8 text-blue-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {MEDICAL_NEEDS.map(need => (
-                  <button
-                    key={need.id}
-                    onClick={() => toggleArrayItem("medicalNeeds", need.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-left transition-all",
-                      data.medicalNeeds.includes(need.id)
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white/50"
+                    {answers.careLevel === option.id && (
+                      <CheckCircle2 className="w-5 h-5 text-teal-500 flex-shrink-0" />
                     )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{need.label}</p>
-                        <p className="text-xs text-gray-500">{need.desc}</p>
-                      </div>
-                      {data.medicalNeeds.includes(need.id) && (
-                        <CheckCircle2 className="h-5 w-5 text-teal-500 flex-shrink-0" />
-                      )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Specific Needs */}
+        {step === 4 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Any specific care needs?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
+
+            <div className="grid gap-3">
+              {[
+                "Mobility assistance (wheelchair, walker)",
+                "Medication management",
+                "Diabetes care",
+                "Mental health support",
+                "Behavioral support",
+                "Hospice/End of life care",
+                "None of the above"
+              ].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    if (option === "None of the above") {
+                      setAnswers({ ...answers, specificNeeds: ["None of the above"] });
+                    } else {
+                      const newNeeds = toggleArrayValue(
+                        answers.specificNeeds.filter(n => n !== "None of the above"),
+                        option
+                      );
+                      setAnswers({ ...answers, specificNeeds: newNeeds });
+                    }
+                  }}
+                  className={cn(
+                    "w-full p-4 rounded-xl border-2 text-left transition-all",
+                    answers.specificNeeds.includes(option)
+                      ? "border-teal-500 bg-teal-50"
+                      : "border-slate-200 bg-white hover:border-teal-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">{option}</span>
+                    {answers.specificNeeds.includes(option) && (
+                      <Check className="w-5 h-5 text-teal-500" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Preferences */}
+        {step === 5 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              What matters most to you?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">Select all that apply (optional)</p>
+
+            <div className="grid gap-3">
+              {[
+                "Private room",
+                "Accepts Medicaid",
+                "Accepts VA benefits",
+                "Pet-friendly",
+                "Cultural/language preferences",
+                "Near public transit",
+                "Outdoor space/garden"
+              ].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setAnswers({ ...answers, preferences: toggleArrayValue(answers.preferences, option) })}
+                  className={cn(
+                    "w-full p-4 rounded-xl border-2 text-left transition-all",
+                    answers.preferences.includes(option)
+                      ? "border-teal-500 bg-teal-50"
+                      : "border-slate-200 bg-white hover:border-teal-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-700">{option}</span>
+                    {answers.preferences.includes(option) && (
+                      <Check className="w-5 h-5 text-teal-500" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Timeline */}
+        {step === 6 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              When do you need placement?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">Select your timeline</p>
+
+            <div className="grid gap-3">
+              {[
+                { id: "immediate", label: "Immediately (within days)", icon: "🚨" },
+                { id: "2weeks", label: "Within 2 weeks", icon: "📅" },
+                { id: "1-2months", label: "Within 1-2 months", icon: "🗓️" },
+                { id: "researching", label: "Just researching for now", icon: "🔍" },
+              ].map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setAnswers({ ...answers, timeline: option.id })}
+                  className={cn(
+                    "w-full p-4 rounded-xl border-2 text-left transition-all",
+                    answers.timeline === option.id
+                      ? "border-teal-500 bg-teal-50"
+                      : "border-slate-200 bg-white hover:border-teal-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{option.icon}</span>
+                      <span className="font-medium text-slate-700">{option.label}</span>
                     </div>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={handleNext}
-                className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700"
-              >
-                No special medical needs — skip →
-              </button>
+                    {answers.timeline === option.id && (
+                      <CheckCircle2 className="w-5 h-5 text-teal-500" />
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* STEP: Care Level */}
-          {STEPS[currentStep].id === "care-level" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <HandHeart className="h-8 w-8 text-rose-600" />
+        {/* Step 7: Contact Info */}
+        {step === 7 && (
+          <div className="animate-in fade-in duration-500">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 text-center" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              How can we reach you with matches?
+            </h2>
+            <p className="text-slate-500 text-center mb-8">We'll send your personalized results</p>
+
+            <div className="space-y-4 max-w-md mx-auto">
+              <div>
+                <Label className="text-slate-700 mb-2 block">First Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Input
+                    placeholder="Your first name"
+                    value={answers.firstName}
+                    onChange={(e) => setAnswers({ ...answers, firstName: e.target.value })}
+                    className="w-full pl-12 p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
+                  />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
               </div>
 
-              <div className="space-y-3">
-                {CARE_LEVELS.map(level => (
-                  <button
-                    key={level.id}
-                    onClick={() => setData({ ...data, careLevel: level.id })}
-                    className={cn(
-                      "w-full p-5 rounded-xl border-2 text-left transition-all flex items-center gap-4",
-                      data.careLevel === level.id
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white/50"
-                    )}
-                  >
-                    <span className="text-3xl">{level.icon}</span>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{level.label}</p>
-                      <p className="text-sm text-gray-500">{level.desc}</p>
-                    </div>
-                    {data.careLevel === level.id && (
-                      <CheckCircle2 className="h-6 w-6 text-teal-500" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP: Payment */}
-          {STEPS[currentStep].id === "payment" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="h-8 w-8 text-green-600" />
+              <div>
+                <Label className="text-slate-700 mb-2 block">Email *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={answers.email}
+                    onChange={(e) => setAnswers({ ...answers, email: e.target.value })}
+                    className="w-full pl-12 p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
+                  />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {PAYMENT_TYPES.map(payment => (
-                  <button
-                    key={payment.id}
-                    onClick={() => toggleArrayItem("paymentTypes", payment.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-left transition-all",
-                      data.paymentTypes.includes(payment.id)
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white/50"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{payment.label}</p>
-                        <p className="text-xs text-gray-500">{payment.desc}</p>
-                      </div>
-                      {data.paymentTypes.includes(payment.id) && (
-                        <CheckCircle2 className="h-5 w-5 text-teal-500" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP: Amenities */}
-          {STEPS[currentStep].id === "amenities" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Home className="h-8 w-8 text-amber-600" />
+              <div>
+                <Label className="text-slate-700 mb-2 block">Phone (optional)</Label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Input
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={answers.phone}
+                    onChange={(e) => setAnswers({ ...answers, phone: e.target.value })}
+                    className="w-full pl-12 p-4 rounded-xl border-2 border-slate-200 focus:border-teal-500"
+                  />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {AMENITIES.map(amenity => (
-                  <button
-                    key={amenity.id}
-                    onClick={() => toggleArrayItem("amenities", amenity.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-center transition-all",
-                      data.amenities.includes(amenity.id)
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white/50"
-                    )}
-                  >
-                    <span className="text-3xl block mb-2">{amenity.icon}</span>
-                    <p className="font-medium text-gray-900 text-sm">{amenity.label}</p>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={handleNext}
-                className="w-full mt-4 text-sm text-gray-500 hover:text-gray-700"
-              >
-                No specific preferences — skip →
-              </button>
-            </div>
-          )}
-
-          {/* STEP: Timeline */}
-          {STEPS[currentStep].id === "timeline" && (
-            <div>
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-8 w-8 text-indigo-600" />
+              {answers.phone && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50">
+                  <Checkbox
+                    id="textUpdates"
+                    checked={answers.textUpdates}
+                    onCheckedChange={(checked) => setAnswers({ ...answers, textUpdates: checked as boolean })}
+                  />
+                  <Label htmlFor="textUpdates" className="text-slate-600 cursor-pointer">
+                    Text me updates about my matches
+                  </Label>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {STEPS[currentStep].title}
-                </h2>
-                <p className="text-gray-600">{STEPS[currentStep].subtitle}</p>
-              </div>
+              )}
 
-              <div className="space-y-3">
-                {TIMELINE.map(option => (
-                  <button
-                    key={option.id}
-                    onClick={() => setData({ ...data, timeline: option.id })}
-                    className={cn(
-                      "w-full p-5 rounded-xl border-2 text-left transition-all flex items-center gap-4",
-                      data.timeline === option.id
-                        ? "border-teal-500 bg-teal-50"
-                        : "border-gray-200 hover:border-gray-300 bg-white/50"
-                    )}
-                  >
-                    <span className="text-3xl">{option.icon}</span>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{option.label}</p>
-                      <p className="text-sm text-gray-500">{option.desc}</p>
-                    </div>
-                    {data.timeline === option.id && (
-                      <CheckCircle2 className="h-6 w-6 text-teal-500" />
-                    )}
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-slate-400 text-center flex items-center justify-center gap-1">
+                <Shield className="w-4 h-4" />
+                We'll never spam you or share your info.
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-        </div>
-
-        {/* Navigation */}
-        {currentStep > 0 && (
-          <div className="flex justify-between">
+        {/* Navigation buttons */}
+        {step > 0 && (
+          <div className="flex justify-between mt-10">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handleBack}
-              className="h-12 bg-white/50 backdrop-blur-sm"
+              className="text-slate-600 hover:text-slate-800"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
 
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
-              className="h-12 px-8 bg-[#4C1D95] hover:bg-[#5B21B6]"
-            >
-              {currentStep === STEPS.length - 1 ? (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Show My Matches
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
+              className={cn(
+                "px-8 rounded-xl transition-all",
+                canProceed()
+                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl"
+                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
               )}
+            >
+              {step === 7 ? "Find My Matches" : "Next"}
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         )}
-
-        {/* Privacy note */}
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Your information stays with us. We don't share it with anyone.
-        </p>
       </div>
     </div>
   );
