@@ -370,12 +370,12 @@ export default function MatchWizard() {
           <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
           <div className="absolute top-[40%] right-[30%] w-[300px] h-[300px] rounded-full bg-teal-400/5 blur-3xl pointer-events-none" />
 
-          {/* Skip button */}
+          {/* Skip button - prominent for impatient users */}
           <button
             onClick={skipIntro}
-            className="absolute top-6 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
+            className="absolute top-6 right-6 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 rounded-full text-white font-medium text-sm flex items-center gap-2 transition-all z-20 backdrop-blur-sm"
           >
-            Skip <ArrowRight className="w-4 h-4" />
+            Skip Intro <ArrowRight className="w-4 h-4" />
           </button>
 
           {/* Centered content */}
