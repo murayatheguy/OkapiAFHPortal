@@ -20,6 +20,7 @@ import OwnerDashboard from "@/pages/owner-dashboard";
 import AdminPage from "@/pages/admin";
 import TermsPage from "@/pages/terms";
 import PrivacyPage from "@/pages/privacy";
+import ResourcesPage from "@/pages/resources";
 import StaffLogin from "@/pages/staff/staff-login";
 import StaffDashboard from "@/pages/staff/staff-dashboard";
 import StaffMAR from "@/pages/staff/staff-mar";
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/terms" component={TermsPage} />
       <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/resources" component={ResourcesPage} />
       {/* Staff EHR Routes */}
       <Route path="/staff/login" component={StaffLogin} />
       <Route path="/staff/dashboard">
