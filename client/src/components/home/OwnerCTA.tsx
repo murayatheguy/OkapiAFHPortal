@@ -77,7 +77,7 @@ export function OwnerCTA() {
                   {/* Main image card */}
                   <div className="w-80 h-80 rounded-3xl overflow-hidden shadow-card-hover">
                     <img
-                      src="/images/owner-cta.jpg"
+                      src="/owner-cta.jpg"
                       alt="Adult Family Home owner welcoming families"
                       className="w-full h-full object-cover"
                     />
