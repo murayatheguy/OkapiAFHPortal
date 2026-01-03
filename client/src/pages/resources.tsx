@@ -310,16 +310,22 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Prominent Section Tabs */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
-            <TabsTrigger value="families" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-2 mb-10 h-auto p-2 bg-muted/50 rounded-2xl">
+            <TabsTrigger
+              value="families"
+              className="flex items-center justify-center gap-3 py-5 px-6 text-lg font-semibold rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
+            >
+              <Users className="h-6 w-6" />
               For Families
             </TabsTrigger>
-            <TabsTrigger value="owners" className="flex items-center gap-2">
-              <Home className="h-4 w-4" />
+            <TabsTrigger
+              value="owners"
+              className="flex items-center justify-center gap-3 py-5 px-6 text-lg font-semibold rounded-xl data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all"
+            >
+              <Home className="h-6 w-6" />
               For Owners
             </TabsTrigger>
           </TabsList>
