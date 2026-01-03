@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { Header } from "@/components/layout/Header";
 
 // Washington State Cities for autocomplete
 const WA_CITIES = [
@@ -357,6 +358,11 @@ export default function MatchWizard() {
 
     return (
       <div className="min-h-screen w-full overflow-hidden relative bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
+        {/* Header */}
+        <div className="relative z-30">
+          <Header variant="transparent" />
+        </div>
+
         {/* Background blobs */}
         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-teal-500/10 blur-3xl" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-3xl" />
@@ -365,13 +371,13 @@ export default function MatchWizard() {
         {/* Skip button */}
         <button
           onClick={skipIntro}
-          className="absolute top-6 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
+          className="absolute top-24 right-6 text-white/50 hover:text-white text-sm flex items-center gap-1 transition-colors z-20"
         >
           Skip <ArrowRight className="w-4 h-4" />
         </button>
 
         {/* Content */}
-        <div className="relative z-10 h-screen flex flex-col items-center justify-center px-6">
+        <div className="relative z-10 h-[calc(100vh-72px)] flex flex-col items-center justify-center px-6">
           <div
             className={cn(
               "text-center transition-all duration-300",
@@ -407,7 +413,9 @@ export default function MatchWizard() {
   // =============== RESULTS SCREEN ===============
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-16">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Sparkles className="w-10 h-10 text-white" />
@@ -426,6 +434,7 @@ export default function MatchWizard() {
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
+        </div>
       </div>
     );
   }
@@ -433,15 +442,18 @@ export default function MatchWizard() {
   // =============== LOADING SCREEN ===============
   if (isSubmitting) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30 flex items-center justify-center px-4">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-teal-500 animate-spin mx-auto mb-6" />
-          <h2 className="text-2xl font-semibold text-slate-800 mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
-            Finding your matches...
-          </h2>
-          <p className="text-slate-500" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Our algorithm is searching for the perfect homes for you.
-          </p>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30">
+        <Header />
+        <div className="flex items-center justify-center px-4 py-16">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-teal-500 animate-spin mx-auto mb-6" />
+            <h2 className="text-2xl font-semibold text-slate-800 mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Finding your matches...
+            </h2>
+            <p className="text-slate-500" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Our algorithm is searching for the perfect homes for you.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -477,9 +489,12 @@ export default function MatchWizard() {
   // =============== MAIN WIZARD ===============
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-teal-50/30">
-      {/* Header with progress */}
+      {/* Site Header */}
+      <Header />
+
+      {/* Progress bar */}
       {step > 0 && (
-        <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-slate-200/50 z-20">
+        <div className="sticky top-[72px] bg-white/80 backdrop-blur-sm border-b border-slate-200/50 z-10">
           <div className="max-w-2xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-slate-500">Step {step} of 7</span>
