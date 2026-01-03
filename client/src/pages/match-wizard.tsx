@@ -546,49 +546,51 @@ export default function MatchWizard() {
 
   // =============== MAIN WIZARD ===============
   return (
-    <div className="min-h-screen bg-[#fbf7f2]">
+    <div className="h-screen bg-[#fbf7f2] flex flex-col overflow-hidden">
       {/* Soft top gradient */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-[#f6efe6] to-transparent" />
 
-      <div className="relative">
+      <div className="relative flex-shrink-0">
         <Header />
+      </div>
 
-        <main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+      <main className="relative flex-1 flex flex-col overflow-hidden">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 flex-1 flex flex-col py-4 lg:py-6">
           {/* Mini hero - show on step 0 or step 1+ */}
           {step === 0 ? (
-            // Welcome screen
-            <section className="text-center py-8">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-black/5 backdrop-blur mb-6">
+            // Welcome screen - centered
+            <section className="flex-1 flex flex-col items-center justify-center text-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-black/5 backdrop-blur mb-4">
                 <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse" />
                 Washington State Licensed Homes Only
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 mb-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mb-3">
                 Let's find the right <span className="text-primary">care home</span> — together
               </h1>
-              <p className="max-w-2xl mx-auto text-base sm:text-lg leading-relaxed text-slate-600 mb-6">
+              <p className="max-w-2xl mx-auto text-sm sm:text-base leading-relaxed text-slate-600 mb-4">
                 Answer a few quick questions so we can match you with licensed, compassionate homes that fit your needs.
               </p>
 
-              <div className="flex flex-wrap justify-center gap-2 mb-8">
+              <div className="flex flex-wrap justify-center gap-2 mb-5">
                 <TrustChip icon="✔" text="Washington Licensed" />
                 <TrustChip icon="✔" text="Verified & Inspected" />
                 <TrustChip icon="✔" text="Free Guidance" />
               </div>
 
               {/* Info boxes */}
-              <div className="flex justify-center gap-4 mb-10">
-                <div className="px-5 py-4 rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                  <div className="text-2xl font-bold text-primary">7</div>
+              <div className="flex justify-center gap-3 mb-6">
+                <div className="px-4 py-3 rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+                  <div className="text-xl font-bold text-primary">7</div>
                   <div className="text-xs text-slate-500">Questions</div>
                 </div>
-                <div className="px-5 py-4 rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                  <div className="text-2xl font-bold text-primary">~3</div>
+                <div className="px-4 py-3 rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+                  <div className="text-xl font-bold text-primary">~3</div>
                   <div className="text-xs text-slate-500">Minutes</div>
                 </div>
-                <div className="px-5 py-4 rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                  <div className="text-2xl font-bold text-primary">
-                    <Sparkles className="w-6 h-6 inline" />
+                <div className="px-4 py-3 rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+                  <div className="text-xl font-bold text-primary">
+                    <Sparkles className="w-5 h-5 inline" />
                   </div>
                   <div className="text-xs text-slate-500">Smart Match</div>
                 </div>
@@ -596,61 +598,51 @@ export default function MatchWizard() {
 
               <button
                 onClick={handleNext}
-                className="inline-flex items-center justify-center rounded-xl px-8 py-4 text-lg font-semibold text-white shadow-lg bg-gradient-to-r from-primary to-sage-600 hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
+                className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-semibold text-white shadow-lg bg-gradient-to-r from-primary to-sage-600 hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
               >
                 Begin Matching
                 <ArrowRight className="w-5 h-5 ml-2" />
               </button>
 
-              <p className="mt-6 text-sm text-slate-500 flex items-center justify-center gap-1">
-                <Shield className="w-4 h-4" />
+              <p className="mt-4 text-xs text-slate-500 flex items-center justify-center gap-1">
+                <Shield className="w-3 h-3" />
                 Your information stays private. We never share your data.
               </p>
             </section>
           ) : (
-            // Steps 1-7
-            <>
-              {/* Hero + Progress */}
-              <section className="grid gap-8 lg:grid-cols-12 lg:items-start mb-8">
-                <div className="lg:col-span-7">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-black/5 backdrop-blur mb-4">
-                    <span className="inline-block h-2 w-2 rounded-full bg-primary" />
-                    Washington State Licensed Homes Only
+            // Steps 1-7 - compact layout
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Compact header with progress */}
+              <div className="flex-shrink-0 flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-black/5 backdrop-blur">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                    WA Licensed
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mb-3">
-                    Let's find the right <span className="text-primary">care home</span>
-                  </h1>
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    <TrustChip icon="✔" text="Washington Licensed" />
+                  <div className="hidden sm:flex gap-1.5">
                     <TrustChip icon="✔" text="Verified" />
                     <TrustChip icon="✔" text="Free" />
                   </div>
-                  <ProgressBar step={step} total={7} />
                 </div>
-
-                {/* Optional side panel */}
-                <div className="hidden lg:block lg:col-span-5">
-                  <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                    <div className="aspect-[4/3] w-full bg-gradient-to-br from-white via-plum-50 to-sage-50 flex items-center justify-center">
-                      <Heart className="w-16 h-16 text-primary/20" />
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-slate-600">
-                        We'll match you with homes that align with care needs, budget, and location.
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-slate-500">Step {step}/7</span>
+                  <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-sage-500 rounded-full transition-all duration-300"
+                      style={{ width: `${(step / 7) * 100}%` }}
+                    />
                   </div>
                 </div>
-              </section>
+              </div>
 
-              {/* Step Card */}
-              <section className="rounded-3xl bg-white shadow-sm ring-1 ring-black/5">
-                <div className="border-b border-slate-100 px-6 py-5">
-                  <h2 className="text-xl font-semibold text-slate-900">{currentMeta.title}</h2>
-                  {currentMeta.helper && <p className="mt-1 text-sm text-slate-500">{currentMeta.helper}</p>}
+              {/* Step Card - fills remaining space */}
+              <section className="flex-1 flex flex-col rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden min-h-0">
+                <div className="flex-shrink-0 border-b border-slate-100 px-5 py-3">
+                  <h2 className="text-lg font-semibold text-slate-900">{currentMeta.title}</h2>
+                  {currentMeta.helper && <p className="text-sm text-slate-500">{currentMeta.helper}</p>}
                 </div>
 
-                <div className="px-6 py-6">
+                <div className="flex-1 overflow-y-auto px-5 py-4">
                   {/* Step 1: Relationship */}
                   {step === 1 && (
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -878,63 +870,61 @@ export default function MatchWizard() {
                     </div>
                   )}
 
-                  {/* Navigation */}
-                  <div className="mt-8 flex items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </button>
+                </div>
 
-                    <div className="flex items-center gap-3">
-                      <p className="hidden text-sm text-slate-500 sm:block">
-                        {step < 7 ? "You can change this later." : ""}
-                      </p>
-                      {step === 7 ? (
-                        <div className="flex gap-3">
-                          <button
-                            type="button"
-                            onClick={handleSkipToResults}
-                            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                          >
-                            Skip & View Results
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={!answers.email}
-                            className={cn(
-                              "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm",
-                              answers.email
-                                ? "text-white bg-gradient-to-r from-primary to-sage-600 hover:opacity-95"
-                                : "text-slate-400 bg-slate-200 cursor-not-allowed"
-                            )}
-                          >
-                            Send My Matches
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                          </button>
-                        </div>
-                      ) : (
+                {/* Navigation - fixed at bottom of card */}
+                <div className="flex-shrink-0 border-t border-slate-100 px-5 py-3 flex items-center justify-between gap-3 bg-slate-50/50">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1.5" />
+                    Back
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    {step === 7 ? (
+                      <>
                         <button
                           type="button"
-                          onClick={handleNext}
-                          className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm bg-gradient-to-r from-primary to-sage-600 hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                          onClick={handleSkipToResults}
+                          className="inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-white"
                         >
-                          Continue
-                          <ArrowRight className="w-4 h-4 ml-2" />
+                          Skip
                         </button>
-                      )}
-                    </div>
+                        <button
+                          type="button"
+                          onClick={handleSubmit}
+                          disabled={!answers.email}
+                          className={cn(
+                            "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm",
+                            answers.email
+                              ? "text-white bg-gradient-to-r from-primary to-sage-600 hover:opacity-95"
+                              : "text-slate-400 bg-slate-200 cursor-not-allowed"
+                          )}
+                        >
+                          Send Matches
+                          <ArrowRight className="w-4 h-4 ml-1.5" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleNext}
+                        className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm bg-gradient-to-r from-primary to-sage-600 hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      >
+                        Continue
+                        <ArrowRight className="w-4 h-4 ml-1.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </section>
-            </>
+            </div>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
