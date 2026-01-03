@@ -894,14 +894,14 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
   const handleCredentialSubmit = () => {
     if (!selectedTeamMember) return;
 
-    // Convert empty strings to null for optional fields (prevents date parsing errors)
+    // Convert empty strings to undefined for optional fields (prevents date parsing errors)
     const cleanedData = {
       credentialType: credentialForm.credentialType,
-      credentialNumber: credentialForm.credentialNumber || null,
-      issuingAuthority: credentialForm.issuingAuthority || null,
-      issueDate: credentialForm.issueDate || null,
-      expirationDate: credentialForm.expirationDate || null,
-      notes: credentialForm.notes || null,
+      credentialNumber: credentialForm.credentialNumber || undefined,
+      issuingAuthority: credentialForm.issuingAuthority || undefined,
+      issueDate: credentialForm.issueDate || undefined,
+      expirationDate: credentialForm.expirationDate || undefined,
+      notes: credentialForm.notes || undefined,
     };
 
     if (editingCredential) {
@@ -2312,7 +2312,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         <IncidentSummaryReport
           facilityName={facilityData?.name || "Facility"}
           facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-          facilityPhone={facilityData?.phone}
+          facilityPhone={facilityData?.phone ?? undefined}
           incidents={fullIncidents}
           residents={residents}
           startDate={reportStartDate}
@@ -2329,7 +2329,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         <MedicationComplianceReport
           facilityName={facilityData?.name || "Facility"}
           facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-          facilityPhone={facilityData?.phone}
+          facilityPhone={facilityData?.phone ?? undefined}
           logs={medicationLogs}
           residents={residents}
           startDate={reportStartDate}
@@ -2346,7 +2346,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         <CensusReport
           facilityName={facilityData?.name || "Facility"}
           facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-          facilityPhone={facilityData?.phone}
+          facilityPhone={facilityData?.phone ?? undefined}
           residents={residents}
           capacity={facilityData?.capacity || 6}
         />
@@ -2361,13 +2361,13 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         <StaffActivityReport
           facilityName={facilityData?.name || "Facility"}
           facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-          facilityPhone={facilityData?.phone}
+          facilityPhone={facilityData?.phone ?? undefined}
           staff={staff.map((s) => ({
             id: s.id,
             firstName: s.firstName,
             lastName: s.lastName,
             role: s.role,
-            lastLoginAt: s.lastLoginAt,
+            lastLoginAt: s.lastLoginAt ?? undefined,
           }))}
           activityData={[]}
           startDate={reportStartDate}
@@ -2389,7 +2389,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           <MedicationListReport
             facilityName={facilityData?.name || "Facility"}
             facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-            facilityPhone={facilityData?.phone}
+            facilityPhone={facilityData?.phone ?? undefined}
             resident={medListResident}
             medications={residentMedications}
           />
@@ -2410,7 +2410,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
           <VitalsReport
             facilityName={facilityData?.name || "Facility"}
             facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-            facilityPhone={facilityData?.phone}
+            facilityPhone={facilityData?.phone ?? undefined}
             resident={vitalsResident}
             vitals={residentVitals}
             startDate={reportStartDate}
@@ -2432,7 +2432,7 @@ export function CareManagement({ facilityId, facilityName, facilityCapacity = 6,
         <CredentialStatusReport
           facilityName={facilityData?.name || "Facility"}
           facilityAddress={facilityData?.address ? `${facilityData.address}, ${facilityData.city}, ${facilityData.state} ${facilityData.zipCode}` : undefined}
-          facilityPhone={facilityData?.phone}
+          facilityPhone={facilityData?.phone ?? undefined}
           teamMember={reportStaffId ? teamMembers.find(m => m.id === reportStaffId) || null : null}
           teamMembers={teamMembers}
           credentials={allCredentials}
