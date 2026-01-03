@@ -481,10 +481,17 @@ export default function OwnerDashboard() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  {/* Temporarily disabled - link: https://okapi-health-ai-info10705.replit.app/academy */}
-                  <Button size="sm" variant="outline" className="w-full text-xs border-primary/20 text-muted-foreground opacity-50 cursor-not-allowed" disabled>
-                    Go to Academy
-                  </Button>
+                  <a
+                    href="https://okapi-health-ai-info10705.replit.app/academy/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full"
+                  >
+                    <Button size="sm" variant="outline" className="w-full text-xs border-primary/20 hover:bg-primary/10">
+                      Go to Academy
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </Button>
+                  </a>
                 </CardFooter>
               </Card>
 

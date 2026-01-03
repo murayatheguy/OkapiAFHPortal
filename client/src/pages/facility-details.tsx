@@ -624,7 +624,7 @@ export default function FacilityDetails() {
               </div>
 
               {hasOkapiCertifiedStaff && (
-                <a href="https://okapi-health-ai-info10705.replit.app/academy" target="_blank" rel="noopener noreferrer" className="block">
+                <a href="https://okapi-health-ai-info10705.replit.app/academy/login" target="_blank" rel="noopener noreferrer" className="block">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors cursor-pointer">
                     <div className="flex items-center gap-3">
                       <Star className="h-6 w-6 text-blue-600 fill-blue-500" />

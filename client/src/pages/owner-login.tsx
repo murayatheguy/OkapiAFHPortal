@@ -10,7 +10,8 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Loader2
+  Loader2,
+  ExternalLink
 } from "lucide-react";
 
 export default function OwnerLogin() {
@@ -57,11 +58,29 @@ export default function OwnerLogin() {
     );
   }
 
+  const OKAPI_ACADEMY_URL = "https://okapi-health-ai-info10705.replit.app/academy/login";
+
   const resources = [
-    { icon: Home, title: "Getting Listed", items: ["Claim Your Listing", "Optimize Profile", "Photo Tips"] },
-    { icon: ClipboardList, title: "Compliance", items: ["DSHS Requirements", "Inspection Prep", "Training"] },
-    { icon: GraduationCap, title: "Education", items: ["Okapi Academy", "CE Courses", "Certifications"] },
-    { icon: FileText, title: "Business", items: ["AFH Association", "Insurance", "Medicaid Enrollment"] },
+    { icon: Home, title: "Getting Listed", items: [
+      { name: "Claim Your Listing", link: "/" },
+      { name: "Optimize Profile", link: "#" },
+      { name: "Photo Tips", link: "#" }
+    ]},
+    { icon: ClipboardList, title: "Compliance", items: [
+      { name: "DSHS Requirements", link: "https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-home-licensing", external: true },
+      { name: "Inspection Prep", link: "#" },
+      { name: "Training Requirements", link: "https://www.dshs.wa.gov/altsa/training/adult-family-home-training-requirements", external: true }
+    ]},
+    { icon: GraduationCap, title: "Education", items: [
+      { name: "Okapi Academy", link: OKAPI_ACADEMY_URL, external: true },
+      { name: "CE Courses", link: OKAPI_ACADEMY_URL, external: true },
+      { name: "Certifications", link: OKAPI_ACADEMY_URL, external: true }
+    ]},
+    { icon: FileText, title: "Business", items: [
+      { name: "AFH Association", link: "https://www.wa-afh.org/", external: true },
+      { name: "Insurance", link: "#" },
+      { name: "Medicaid Enrollment", link: "https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-enrollment", external: true }
+    ]},
   ];
 
   return (
@@ -216,7 +235,7 @@ export default function OwnerLogin() {
                 {resources.map((section, idx) => (
                   <div
                     key={idx}
-                    className="p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all cursor-pointer group"
+                    className="p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all group"
                     style={{
                       background: "rgba(255, 255, 255, 0.05)",
                       backdropFilter: "blur(10px)",
@@ -229,8 +248,16 @@ export default function OwnerLogin() {
                     </div>
                     <ul className="space-y-1">
                       {section.items.map((item, i) => (
-                        <li key={i} className="text-white/50 text-xs hover:text-white/80 transition-colors">
-                          {item}
+                        <li key={i}>
+                          <a
+                            href={item.link}
+                            target={item.external ? "_blank" : undefined}
+                            rel={item.external ? "noopener noreferrer" : undefined}
+                            className="text-white/50 text-xs hover:text-white/80 transition-colors flex items-center gap-1"
+                          >
+                            {item.name}
+                            {item.external && <ExternalLink className="w-2.5 h-2.5" />}
+                          </a>
                         </li>
                       ))}
                     </ul>
@@ -238,17 +265,23 @@ export default function OwnerLogin() {
                 ))}
               </div>
 
-              <div
-                className="mt-4 p-4 rounded-xl border border-teal-500/30"
+              <a
+                href={OKAPI_ACADEMY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 p-4 rounded-xl border border-teal-500/30 block hover:border-teal-400/50 transition-all"
                 style={{
                   background: "rgba(20, 184, 166, 0.1)",
                   backdropFilter: "blur(10px)",
                   WebkitBackdropFilter: "blur(10px)",
                 }}
               >
-                <p className="text-teal-300 text-sm font-medium">New: Okapi Academy</p>
+                <p className="text-teal-300 text-sm font-medium flex items-center gap-2">
+                  New: Okapi Academy
+                  <ExternalLink className="w-3 h-3" />
+                </p>
                 <p className="text-white/50 text-xs mt-1">Complete your required training online</p>
-              </div>
+              </a>
             </div>
           </div>
         </main>

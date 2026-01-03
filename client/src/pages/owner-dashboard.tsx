@@ -342,7 +342,7 @@ export default function OwnerDashboardPage() {
 
             <div className="pt-4 mt-4 border-t border-gray-200">
               <a
-                href="https://okapi-health-ai-info10705.replit.app/academy"
+                href="https://okapi-health-ai-info10705.replit.app/academy/login"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100"
