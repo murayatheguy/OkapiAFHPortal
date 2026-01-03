@@ -320,8 +320,8 @@ export default function SearchResults() {
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* Filters - Desktop Sidebar */}
-          <div className="hidden md:block w-64 shrink-0 space-y-8">
-            <div className="sticky top-36 space-y-6">
+          <div className="hidden md:block w-64 shrink-0">
+            <div className="sticky top-36 max-h-[calc(100vh-10rem)] overflow-y-auto pr-2 space-y-6 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-serif font-bold text-lg">Filters</h3>
