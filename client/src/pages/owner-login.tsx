@@ -1,35 +1,28 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useOwnerAuth } from "@/lib/owner-auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Logo } from "@/components/brand/Logo";
 import {
-  Loader2,
   Home,
-  Eye,
-  EyeOff,
   ClipboardList,
   GraduationCap,
   FileText,
-  ExternalLink,
+  Eye,
+  EyeOff,
   ArrowRight,
-  Phone,
-  Mail,
+  Loader2
 } from "lucide-react";
 
 export default function OwnerLogin() {
   const [, setLocation] = useLocation();
-  const { login, isLoading, isAuthenticated } = useOwnerAuth();
+  const { login, isLoading: authLoading, isAuthenticated } = useOwnerAuth();
   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   if (isAuthenticated) {
     setLocation("/owner/dashboard");
@@ -38,24 +31,17 @@ export default function OwnerLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email || !password) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter your email and password.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
+    setError("");
+
     try {
       await login(email, password);
       setLocation("/owner/dashboard");
-    } catch (error) {
+    } catch (err: any) {
+      setError(err.message || "Invalid credentials. Please try again.");
       toast({
         title: "Login Failed",
-        description: error instanceof Error ? error.message : "Invalid credentials. Please try again.",
+        description: err.message || "Invalid credentials. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -63,261 +49,216 @@ export default function OwnerLogin() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     );
   }
 
-  // Owner Resources
-  const ownerResources = [
-    {
-      category: "Getting Listed",
-      icon: Home,
-      items: [
-        { title: "How to Claim Your Listing", link: "#", external: false },
-        { title: "Optimizing Your Profile", link: "#", external: false },
-        { title: "Photo Guidelines", link: "#", external: false },
-      ]
-    },
-    {
-      category: "Compliance & Licensing",
-      icon: ClipboardList,
-      items: [
-        { title: "DSHS Licensing Requirements", link: "https://www.dshs.wa.gov/altsa/residential-care-services/adult-family-home-licensing", external: true },
-        { title: "Inspection Preparation", link: "#", external: false },
-        { title: "Training Requirements", link: "https://www.dshs.wa.gov/altsa/training/adult-family-home-training-requirements", external: true },
-      ]
-    },
-    {
-      category: "Training & Education",
-      icon: GraduationCap,
-      items: [
-        { title: "Okapi Academy", link: "/academy", external: false },
-        { title: "Continuing Education", link: "/academy/courses", external: false },
-        { title: "Specialty Certifications", link: "/academy/certifications", external: false },
-      ]
-    },
-    {
-      category: "Business Resources",
-      icon: FileText,
-      items: [
-        { title: "AFH Association of Washington", link: "https://www.wa-afh.org/", external: true },
-        { title: "Insurance Requirements", link: "#", external: false },
-        { title: "Medicaid Provider Enrollment", link: "https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-enrollment", external: true },
-      ]
-    }
+  const resources = [
+    { icon: Home, title: "Getting Listed", items: ["Claim Your Listing", "Optimize Profile", "Photo Tips"] },
+    { icon: ClipboardList, title: "Compliance", items: ["DSHS Requirements", "Inspection Prep", "Training"] },
+    { icon: GraduationCap, title: "Education", items: ["Okapi Academy", "CE Courses", "Certifications"] },
+    { icon: FileText, title: "Business", items: ["AFH Association", "Insurance", "Medicaid Enrollment"] },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="relative z-50 px-6 py-4 flex items-center justify-between border-b border-border bg-white shadow-soft">
-        <Link href="/">
-          <Logo size="md" />
-        </Link>
+    <div className="h-screen w-screen overflow-hidden relative">
+      {/* Gradient Background */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: "linear-gradient(135deg, #1a365d 0%, #2d3748 40%, #1a202c 100%)",
+        }}
+      />
 
-        <Link href="/">
-          <Button variant="ghost" className="text-foreground/70 hover:text-primary">
-            <Home className="h-4 w-4 mr-2" />
-            Home
-          </Button>
-        </Link>
-      </header>
+      {/* Decorative Blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-3xl" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-teal-500/20 blur-3xl" />
+      <div className="absolute top-[30%] right-[20%] w-[300px] h-[300px] rounded-full bg-blue-500/10 blur-3xl" />
 
-      {/* Main Content - Two Column Layout */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-ivory order-1 lg:order-1">
-          <div className="w-full max-w-md">
-            {/* Welcome Header */}
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground">
-                Owner Portal
-              </h2>
-              <p className="text-foreground/60 mt-2">Sign in to manage your facilities</p>
+      {/* Content */}
+      <div className="relative z-10 h-full flex flex-col">
+
+        {/* Header */}
+        <header className="flex items-center justify-between px-8 py-4">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <span className="text-white font-bold text-xl">O</span>
             </div>
+            <div>
+              <span className="text-white font-semibold text-lg">Okapi</span>
+              <span className="text-white/60 text-xs block -mt-1">Care Network</span>
+            </div>
+          </Link>
+          <Link
+            href="/"
+            className="text-white/70 hover:text-white text-sm flex items-center gap-1 transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            Home
+          </Link>
+        </header>
 
-            {/* Login Card */}
-            <Card className="shadow-card border-0 bg-white">
-              <CardContent className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium text-foreground/80">
-                      Email Address
-                    </Label>
-                    <Input
-                      id="email"
+        {/* Main Content */}
+        <main className="flex-1 flex items-center justify-center px-8 pb-8">
+          <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
+
+            {/* Left - Login Form */}
+            <div className="flex justify-center lg:justify-end">
+              <div
+                className="w-full max-w-md p-8 rounded-2xl border border-white/20"
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                }}
+              >
+                <div className="text-center mb-6">
+                  <h1 className="text-2xl font-bold text-white mb-1">Owner Portal</h1>
+                  <p className="text-white/60 text-sm">Sign in to manage your facilities</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {error && (
+                    <div className="p-3 text-sm text-red-300 bg-red-500/20 border border-red-500/30 rounded-lg">
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-white/80 text-sm mb-1.5">Email</label>
+                    <input
                       type="email"
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      required
                       disabled={isSubmitting}
-                      className="h-12 px-4 bg-white border-gray-200 text-foreground focus:border-primary focus:ring-primary"
+                      className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all disabled:opacity-50"
                       data-testid="input-login-email"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm font-medium text-foreground/80">
-                      Password
-                    </Label>
+                  <div>
+                    <label className="block text-white/80 text-sm mb-1.5">Password</label>
                     <div className="relative">
-                      <Input
-                        id="password"
+                      <input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
+                        placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        required
                         disabled={isSubmitting}
-                        className="h-12 px-4 bg-white border-gray-200 text-foreground pr-12 focus:border-primary focus:ring-primary"
+                        className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all disabled:opacity-50"
                         data-testid="input-login-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/60 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                   </div>
 
-                  <Button
+                  <div className="flex justify-end">
+                    <Link href="/owner/forgot-password" className="text-sm text-white/60 hover:text-white transition-colors">
+                      Forgot password?
+                    </Link>
+                  </div>
+
+                  <button
                     type="submit"
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold text-base rounded-xl transition-colors"
                     disabled={isSubmitting}
+                    className="w-full py-3 rounded-lg bg-white text-gray-900 font-semibold hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                     data-testid="button-login-submit"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         Signing in...
                       </>
                     ) : (
-                      "Sign In"
+                      <>
+                        Sign In
+                        <ArrowRight className="w-4 h-4" />
+                      </>
                     )}
-                  </Button>
+                  </button>
                 </form>
 
-                <div className="mt-6 text-center space-y-3">
-                  <Link href="/owner/forgot-password" className="text-primary hover:text-primary/80 text-sm font-medium block transition-colors">
-                    Forgot password?
+                <div className="mt-6 pt-6 border-t border-white/10 text-center">
+                  <p className="text-white/50 text-sm mb-3">Don't have an account?</p>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-white/30 text-white text-sm font-medium hover:bg-white/10 transition-all"
+                  >
+                    Claim Your Facility
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* CTA for new users */}
-            <div className="mt-8 text-center">
-              <p className="text-foreground/60 mb-4">Don't have a facility listed yet?</p>
-              <Link href="/">
-                <Button
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-plum-50 rounded-xl transition-colors"
-                >
-                  Claim Your Facility
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              </div>
             </div>
 
-            {/* Mobile Contact Info */}
-            <div className="lg:hidden mt-10 pt-8 border-t border-gray-200 text-center">
-              <p className="text-foreground/60 text-sm mb-4">Questions? We're here to help.</p>
-              <div className="space-y-2">
-                <a
-                  href="tel:1-800-225-5652"
-                  className="flex items-center justify-center gap-2 text-primary hover:text-primary/80 font-medium"
-                >
-                  <Phone className="w-4 h-4" />
-                  1-800-CALL-OKAPI
-                </a>
-                <a
-                  href="mailto:info@okapihealthcare.com"
-                  className="flex items-center justify-center gap-2 text-primary hover:text-primary/80"
-                >
-                  <Mail className="w-4 h-4" />
-                  info@okapihealthcare.com
-                </a>
+            {/* Right - Resources */}
+            <div className="hidden lg:block">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-white mb-1">Resources for Owners</h2>
+                <p className="text-white/50 text-sm">Everything you need to succeed</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {resources.map((section, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all cursor-pointer group"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.05)",
+                      backdropFilter: "blur(10px)",
+                      WebkitBackdropFilter: "blur(10px)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <section.icon className="w-4 h-4 text-teal-400" />
+                      <span className="text-white font-medium text-sm">{section.title}</span>
+                    </div>
+                    <ul className="space-y-1">
+                      {section.items.map((item, i) => (
+                        <li key={i} className="text-white/50 text-xs hover:text-white/80 transition-colors">
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                className="mt-4 p-4 rounded-xl border border-teal-500/30"
+                style={{
+                  background: "rgba(20, 184, 166, 0.1)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                }}
+              >
+                <p className="text-teal-300 text-sm font-medium">New: Okapi Academy</p>
+                <p className="text-white/50 text-xs mt-1">Complete your required training online</p>
               </div>
             </div>
           </div>
-        </div>
+        </main>
 
-        {/* RIGHT SIDE - Owner Resources */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-[50%] bg-gradient-to-br from-secondary to-sage-700 p-12 xl:p-16 flex-col order-2 lg:order-2">
-          <div className="flex-1 flex flex-col justify-center max-w-lg">
-            {/* Resources Header */}
-            <div className="mb-8">
-              <h2 className="text-2xl xl:text-3xl font-bold text-white mb-3">
-                Resources for Owners
-              </h2>
-              <p className="text-sage-100 text-lg">
-                Everything you need to manage and grow your Adult Family Home.
-              </p>
-            </div>
-
-            {/* Resources List */}
-            <div className="space-y-6">
-              {ownerResources.map((section, idx) => (
-                <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-xl p-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                      <section.icon className="h-4 w-4 text-white" />
-                    </div>
-                    <h3 className="font-semibold text-white">{section.category}</h3>
-                  </div>
-                  <ul className="space-y-2 ml-11">
-                    {section.items.map((item, itemIdx) => (
-                      <li key={itemIdx}>
-                        <a
-                          href={item.link}
-                          target={item.external ? "_blank" : undefined}
-                          rel={item.external ? "noopener noreferrer" : undefined}
-                          className="flex items-center justify-between text-sm text-sage-100 hover:text-white transition-colors group"
-                        >
-                          <span>{item.title}</span>
-                          {item.external && <ExternalLink className="h-3 w-3 opacity-60 group-hover:opacity-100" />}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Contact Section - Bottom of right panel */}
-          <div className="mt-auto pt-8 border-t border-sage-400/30">
-            <p className="text-sage-200 text-sm font-medium mb-4">Questions? We're here to help.</p>
-            <div className="space-y-3">
-              <a
-                href="tel:1-800-225-5652"
-                className="flex items-center gap-3 text-white hover:text-sage-200 transition-colors group"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="font-semibold">1-800-CALL-OKAPI</span>
-                  <span className="text-sage-300 text-sm ml-2">(1-800-225-5652)</span>
-                </div>
-              </a>
-              <a
-                href="mailto:info@okapihealthcare.com"
-                className="flex items-center gap-3 text-white hover:text-sage-200 transition-colors group"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <span>info@okapihealthcare.com</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        {/* Footer */}
+        <footer className="px-8 py-3 text-center">
+          <p className="text-white/30 text-xs">
+            © 2025 Okapi Care Network · <Link href="/privacy" className="hover:text-white/50">Privacy</Link> · <Link href="/terms" className="hover:text-white/50">Terms</Link>
+          </p>
+        </footer>
       </div>
     </div>
   );
