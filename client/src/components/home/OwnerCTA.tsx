@@ -74,16 +74,13 @@ export function OwnerCTA() {
               {/* Visual */}
               <div className="hidden md:flex justify-center">
                 <div className="relative">
-                  {/* Main card */}
-                  <div className="w-72 h-72 bg-gradient-to-br from-sage-50 via-ivory to-plum-50 rounded-3xl flex items-center justify-center shadow-soft">
-                    <div className="text-center">
-                      <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white shadow-card flex items-center justify-center">
-                        <Home className="w-10 h-10 text-sage-600" />
-                      </div>
-                      <p className="text-lg font-medium text-foreground/70">
-                        Your Home Here
-                      </p>
-                    </div>
+                  {/* Main image card */}
+                  <div className="w-80 h-80 rounded-3xl overflow-hidden shadow-card-hover">
+                    <img
+                      src="/images/owner-cta.jpg"
+                      alt="Adult Family Home owner welcoming families"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
                   {/* Floating badge */}
