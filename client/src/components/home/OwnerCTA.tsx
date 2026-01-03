@@ -82,17 +82,6 @@ export function OwnerCTA() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-
-                  {/* Floating badge */}
-                  <div className="absolute -bottom-4 -right-4 bg-white rounded-xl p-4 shadow-card border border-gray-100">
-                    <div className="text-2xl font-bold text-sage-600">$0</div>
-                    <div className="text-sm text-foreground/60">referral fees</div>
-                  </div>
-
-                  {/* Top badge */}
-                  <div className="absolute -top-3 -left-3 bg-gold-100 rounded-lg px-3 py-1.5 shadow-sm">
-                    <span className="text-sm font-semibold text-gold-700">Free Trial</span>
-                  </div>
                 </div>
               </div>
             </div>
