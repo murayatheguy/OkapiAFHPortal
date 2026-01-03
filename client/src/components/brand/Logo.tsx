@@ -17,9 +17,9 @@ export function Logo({
   linkTo = "/"
 }: LogoProps) {
   const sizes = {
-    sm: "h-8",
-    md: "h-10",
-    lg: "h-12",
+    sm: "h-10",
+    md: "h-14",
+    lg: "h-16",
   };
 
   const content = (
@@ -52,9 +52,9 @@ export function LogoStacked({
   linkTo = "/"
 }: Omit<LogoProps, 'showText'>) {
   const sizes = {
-    sm: "h-12",
-    md: "h-16",
-    lg: "h-20",
+    sm: "h-14",
+    md: "h-20",
+    lg: "h-24",
   };
 
   const content = (

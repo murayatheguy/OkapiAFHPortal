@@ -14,9 +14,9 @@ export function Logo({ variant = "default", className = "", size = "md" }: LogoP
   const [, setLocation] = useLocation();
 
   const sizes = {
-    sm: "h-8",
-    md: "h-10",
-    lg: "h-14",
+    sm: "h-10",
+    md: "h-14",
+    lg: "h-16",
   };
 
   return (
@@ -49,7 +49,7 @@ export function LogoInline({ variant = "default", className = "" }: { variant?: 
       <img
         src="/Logo.png"
         alt="Okapi Care Network"
-        className="h-8 w-auto object-contain"
+        className="h-12 w-auto object-contain"
       />
     </button>
   );
@@ -66,9 +66,9 @@ export function LogoButton({
   className = ""
 }: { variant?: "default" | "light"; size?: "sm" | "md" | "lg"; onClick: () => void; className?: string }) {
   const sizes = {
-    sm: "h-8",
-    md: "h-10",
-    lg: "h-14",
+    sm: "h-10",
+    md: "h-14",
+    lg: "h-16",
   };
 
   return (
